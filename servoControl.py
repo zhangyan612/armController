@@ -142,12 +142,17 @@ def serial_servo_get_rmsg(cmd):
     else:
         serialHandle.flushInput()  # 清空接收缓存
         return None
-
+    
+def portRest():
+    time.sleep(0.1)
+    serialHandle.close()
+    serialHandle.open()
+    time.sleep(0.1)
 		
 if __name__ == "__main__":
     while True:
         try:
-            serial_serro_wirte_cmd(1,1,0,1000) #发送命令 参数1 舵机id=1, 参数2 命令 = 1, 参数3 位置 = 0, 参数4 时间 = 1000ms
+            serial_serro_wirte_cmd(1,1,0,2000) #发送命令 参数1 舵机id=1, 参数2 命令 = 1, 参数3 位置 = 0, 参数4 时间 = 1000ms
             time.sleep(1)
             serial_serro_wirte_cmd(1,1,1000,2000)
             time.sleep(1)
