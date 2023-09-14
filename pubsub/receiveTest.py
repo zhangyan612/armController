@@ -1,8 +1,9 @@
 #!/usr/bin/env python
 import pika
 
+credentials = pika.credentials.PlainCredentials('guest', 'guest', erase_on_connect=False)
 connection = pika.BlockingConnection(
-    pika.ConnectionParameters(host='localhost'))
+    pika.ConnectionParameters(host='192.168.0.247', credentials=credentials))
 channel = connection.channel()
 
 channel.exchange_declare(exchange='logs', exchange_type='fanout')
