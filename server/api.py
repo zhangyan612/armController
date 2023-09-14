@@ -1,40 +1,34 @@
-import asyncio
-import websockets
+# from flask import Flask
 
-# Dictionary to store all connected clients for each path
-clients = {}
+# app = Flask(__name__)
 
-# Function to broadcast a message to all clients connected to a specific path
-async def broadcast(path, message):
-    if path in clients:
-        await asyncio.wait([client.send(message) for client in clients[path]])
+# @app.route('/')
+# def hello():
+#     return 'Hello, World from flask!'
 
-# WebSocket server handler
-async def server(websocket, path):
-    # Extract the path from the URL (e.g., /chatroom1)
-    path = path.lstrip('/')
-    
-    # Add the new client to the clients dictionary for the specific path
-    if path not in clients:
-        clients[path] = set()
-    clients[path].add(websocket)
-    
-    try:
-        async for message in websocket:
-            # Broadcast the received message to all clients on the same path
-            await broadcast(path, message)
-    except websockets.exceptions.ConnectionClosedError:
-        pass
-    finally:
-        # Remove the client from the clients set when they disconnect
-        clients[path].remove(websocket)
+# app.run()
 
-# Start the WebSocket server
-start_server = websockets.serve(server, "localhost", 8765)
+from flask import Flask, render_template
+from flask_sock import Sock
 
-async def main():
-    await start_server
-    await asyncio.Future()  # Run indefinitely
+app = Flask(__name__)
+sock = Sock(app)
 
-if __name__ == "__main__":
-    asyncio.run(main())
+
+@app.route('/')
+def index():
+    return 'This is the flask api for robot control'
+
+@app.route('/moveArm')
+def moveArm(data):
+    data= {}
+    return 'move arm '
+
+@sock.route('/echo')
+def echo(sock):
+    while True:
+        data = sock.receive()
+        sock.send(data)
+
+        
+app.run()

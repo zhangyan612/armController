@@ -2,7 +2,7 @@ import asyncio
 import websockets
 
 async def client():
-    uri = "ws://localhost:8765/chatroom1"  # Replace with the desired path
+    uri = "ws://localhost/api/Robot"  # Replace with the desired path
 
     async with websockets.connect(uri) as websocket:
         while True:

@@ -1,10 +1,9 @@
 import websockets
 import asyncio
 
-# The main function that will handle connection and communication 
-# with the server
+# The main function that will handle connection and communication with the server
 async def listen():
-    url = "ws://127.0.0.1:7890/servo"
+    url = "ws://127.0.0.1/echo"
     # Connect to the server
     async with websockets.connect(url) as ws:
         # Send a greeting message
