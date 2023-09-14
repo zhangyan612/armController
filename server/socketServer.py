@@ -1,5 +1,6 @@
 import websockets
 import asyncio
+import time
 
 # Server data
 PORT = 7890
@@ -34,6 +35,11 @@ async def echo(websocket, path):
                                 except websockets.exceptions.ConnectionClosedError:
                                     print("Connection to the server closed.")
                                     break
+            if path == "/servo":
+                for path, conn in connected.items():
+                    while True:
+                        await conn.send('connected to servo')
+                        time.sleep(3)
 
     # Handle disconnecting clients 
     except websockets.exceptions.ConnectionClosed as e:
