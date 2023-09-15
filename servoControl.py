@@ -4,6 +4,7 @@ import serial
 import time
 import ctypes
 import sys
+import serial.tools.list_ports
 
 LOBOT_SERVO_FRAME_HEADER         = 0x55
 LOBOT_SERVO_MOVE_TIME_WRITE      = 1
@@ -35,7 +36,17 @@ LOBOT_SERVO_LED_CTRL_READ        = 34
 LOBOT_SERVO_LED_ERROR_WRITE      = 35
 LOBOT_SERVO_LED_ERROR_READ       = 36
 
-serialHandle = serial.Serial("COM9", 115200)  # 初始化串口， 波特率为115200
+def getServoPort():
+        ports = serial.tools.list_ports.comports()
+        for port, desc, hwid in sorted(ports):
+                if desc == 'USB-SERIAL CH340 (COM10)':
+                        return port
+        print('Error: Servo is not connected to any port')
+        return None
+
+port = getServoPort()
+
+serialHandle = serial.Serial(port, 115200)  # 初始化串口， 波特率为115200
 
 def checksum(buf):
     # 计算校验和
@@ -49,8 +60,8 @@ def checksum(buf):
 def serial_serro_wirte_cmd(id=None, w_cmd=None, dat1=None, dat2=None):
     '''
     写指令
-    :param id:
-    :param w_cmd:
+    :param id: 舵机id=1
+    :param w_cmd: 命令 = 1
     :param dat1:
     :param dat2:
     :return:
@@ -107,7 +118,7 @@ def serial_servo_read_cmd(id=None, r_cmd=None):
     buf.append(r_cmd)  # 指令
     buf.append(checksum(buf))  # 校验和
     serialHandle.write(buf)  # 发送
-    time.sleep(0.00034)
+    # time.sleep(0.00034)
 
 def serial_servo_get_rmsg(cmd):
     '''
@@ -117,7 +128,7 @@ def serial_servo_get_rmsg(cmd):
     '''    
     serialHandle.flushInput()  # 清空接收缓存
     # portRead()  # 将单线串口配置为输入
-    time.sleep(0.005)  # 稍作延时，等待接收完毕
+    time.sleep(0.005)  # 稍作延时，等待接收完毕 重要
     count = serialHandle.inWaiting()    # 获取接收缓存中的字节数
     if count != 0:  # 如果接收到的数据不空
         recv_data = serialHandle.read(count)  # 读取接收到的数据
@@ -149,13 +160,37 @@ def portRest():
     serialHandle.open()
     time.sleep(0.1)
 		
+def move_servo(position, id=1, time=500):
+    # position: 412 - 620 physical limit
+    # time it takes to finish the movement
+    if position < 412:
+        position = 412
+    if position > 620:
+        position = 620
+    if serialHandle.is_open == False:
+        serialHandle.open()
+    serial_serro_wirte_cmd(id,1,position,time)
+    serialHandle.close()
+
+def move_command(command, id=1):
+    if command == 'open':
+        move_servo(412, id)
+    if command == 'close':
+        move_servo(620, id)
+
 if __name__ == "__main__":
-    while True:
-        try:
-            serial_serro_wirte_cmd(1,1,0,2000) #发送命令 参数1 舵机id=1, 参数2 命令 = 1, 参数3 位置 = 0, 参数4 时间 = 1000ms
-            time.sleep(1)
-            serial_serro_wirte_cmd(1,1,1000,2000)
-            time.sleep(1)
-        except Exception as e:
-            print(e)
-            break
+    move_command('open')
+    time.sleep(1)
+    move_command('close')
+
+    # while True:
+    #     try:
+    #         # serial_serro_wirte_cmd(1,1,0,2000) #发送命令 参数1 舵机id=1, 参数2 命令 = 1, 参数3 位置 = 0, 参数4 时间 = 1000ms
+    #         # time.sleep(1)
+    #         # serial_serro_wirte_cmd(1,1,1000,2000)
+    #         # time.sleep(1)
+    #         move_servo(1, 500, 2000)
+    #         move_servo(1, 1000, 2000)
+    #     except Exception as e:
+    #         print(e)
+    #         break

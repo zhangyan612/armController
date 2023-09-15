@@ -9,7 +9,7 @@ timeout_count = 200
 def serial_servo_set_id(oldid, newid):
     """
     配置舵机id号, 出厂默认为1
-    :param oldid: 原来的id， 出厂默认为1
+    :param oldid: 原来的id 出厂默认为1
     :param newid: 新的id
     """
     serial_serro_wirte_cmd(oldid, LOBOT_SERVO_ID_WRITE, newid)
@@ -98,7 +98,7 @@ def serial_servo_read_angle_limit(id):
     '''
     读取舵机转动范围
     :param id:
-    :return: 返回元祖 0： 低位  1： 高位
+    :return: 返回元祖 0 低位  1 高位
     '''
     global timeout_count
     
@@ -129,7 +129,7 @@ def serial_servo_read_vin_limit(id):
     '''
     读取舵机转动范围
     :param id:
-    :return: 返回元祖 0： 低位  1： 高位
+    :return: 返回元祖 0 低位  1 高位
     '''
     global timeout_count
     count = 0
@@ -270,38 +270,97 @@ def show_servo_state():
     :return:
     '''
     oldid = serial_servo_read_id()
-    portRest()
+    # portRest()
     if oldid is not None:
         print('Current Servo ID:%d' % oldid)
         pos = serial_servo_read_pos(oldid)
         print('Current Servo Position:%d' % pos)
-        portRest()
+        # portRest()
 
         now_temp = serial_servo_read_temp(oldid)
         print('Current Servo Temp:%d°' % now_temp)
-        portRest()
+        # portRest()
 
         now_vin = serial_servo_read_vin(oldid)
         print('Current Servo Voltage:%dmv' % now_vin)
-        portRest()
+        # portRest()
 
         d = serial_servo_read_deviation(oldid)
         print('Current Servo deviation:%d' % ctypes.c_int8(d).value)
-        portRest()
+        # portRest()
 
         limit = serial_servo_read_angle_limit(oldid)
         print('Current Servo angle_limit:%d-%d' % (limit[0], limit[1]))
-        portRest()
+        # portRest()
 
         vin = serial_servo_read_vin_limit(oldid)
         print('Current Servo vin_limit:%dmv-%dmv' % (vin[0], vin[1]))
-        portRest()
+        # portRest()
 
         temp = serial_servo_read_temp_limit(oldid)
         print('Current Servo temp_limit:50°-%d°' % temp)
-        portRest()
+        # portRest()
     else:
         print('Read id fail')
 
+def read_servo_limits(servoId):
+    if serialHandle.is_open == False:
+        serialHandle.open()
+
+    d = serial_servo_read_deviation(servoId)
+    limit = serial_servo_read_angle_limit(servoId)
+    vin = serial_servo_read_vin_limit(servoId)
+    temp = serial_servo_read_temp_limit(servoId)
+    servoLimits = {
+        'deviation': ctypes.c_int8(d).value, 'angle_low': limit[0], 'angle_high': limit[1], 'vin_low': vin[0], 'vin_high': vin[1], 'temp': temp
+    }
+    serialHandle.close()
+    return servoLimits
+
+def read_servo_state(servoId):
+    if serialHandle.is_open == False:
+        serialHandle.open()
+    pos = serial_servo_read_pos(servoId)
+    now_temp = serial_servo_read_temp(servoId)
+    now_vin = serial_servo_read_vin(servoId)
+    servoData = {
+        'id': servoId,
+        'position': pos,
+        'temp': now_temp,
+        'voltage': now_vin,
+    }
+    serialHandle.close()
+    return servoData
+
+def servo_state_continuous():
+    servoId = serial_servo_read_id()
+    previousState = {
+        'id': 1,
+        'position': 0,
+        'temp': 0,
+        'voltage': 0
+    }
+    if servoId is not None:
+        while True:
+            pos = serial_servo_read_pos(servoId)
+            now_temp = serial_servo_read_temp(servoId)
+            now_vin = serial_servo_read_vin(servoId)
+            servoData = {
+                'id': servoId,
+                'position': pos,
+                'temp': now_temp,
+                'voltage': now_vin,
+            }
+            if servoData['position'] != previousState['position']:
+                print(servoData)
+                previousState = servoData
+
+            time.sleep(1) # only check every seconds, otherwise will receive too much data
+
+            
 if __name__ == '__main__':
-    show_servo_state()
+    # show_servo_state()
+    state = read_servo_state(1)
+    print(state)
+    # servo_state_continuous()
+    print(read_servo_limits(1))
