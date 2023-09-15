@@ -1,6 +1,6 @@
 import requests
 import time
-import armServerSocket
+import armControlSocket
 
 def isWebServerOn(url):
     while True:
@@ -21,4 +21,7 @@ if __name__ == "__main__":
     url = "http://localhost:8080"
     serverOn = isWebServerOn(url)
     if serverOn:
-        armServerSocket.continuousConnection()
+        armControlSocket.continuousConnection()
+    else:
+        print('please run startServer.bat file to start arm server')
+

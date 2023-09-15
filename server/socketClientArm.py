@@ -23,8 +23,8 @@ import asyncio
 
 # The main function that will handle connection and communication 
 # with the server
-async def listen():
-    url = "ws://localhost/api/Robot"
+async def sending():
+    url = "ws://localhost:7890/"
     # Connect to the server
     async with websockets.connect(url) as ws:
         # Send a greeting message
@@ -39,4 +39,4 @@ async def listen():
         #         break
 
 # Start the connection
-asyncio.get_event_loop().run_until_complete(listen())
+asyncio.get_event_loop().run_until_complete(sending())
