@@ -17,7 +17,7 @@ previousState = []
 
 def list_different(list1, list2):
     for item1, item2 in zip(list1, list2):
-        if abs(item1 - item2) > 1:
+        if abs(item1 - item2) > 0.5:
             return True
     return False
 
@@ -33,16 +33,16 @@ def on_message(ws, message):
         armPortConnect.connect_robot()
     if msg['event'] == 'StatusUpdate':
         angle = msg['payload']['jointState']['jointAngle']
-        print(str(angle))
-        channel.basic_publish(exchange='arm', routing_key='', body=message)
+        # print(str(angle))
+        # channel.basic_publish(exchange='arm', routing_key='', body=message)
 
-        # if list_different(angle, previousState):
-        #     #send this to MQ
-        #     print(msg['payload']['jointState'])
+        # if arm move slowly, we won't notice the change 
+        if list_different(angle, previousState):
+            #send this to MQ
+            print(msg['payload']['jointState'])
         #     channel.basic_publish(exchange='arm', routing_key='', body=message)
-        #     time.sleep(0.5)
 
-        # previousState = angle
+        previousState = angle
 
     # print(msg['payload']['jointState'])
     if msg['event'] == 'TaskUpdate' and msg['payload']['task'] != None:

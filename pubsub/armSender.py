@@ -32,14 +32,20 @@ def arm_actions():
     }
 
 # command = {'command': 'arm', 'action': 'Enable'}
-# command = {'command': 'arm', 'action': 'Disable'}
+command = {'command': 'arm', 'action': 'Disable'}
+
+# command = {
+#     "command": 'arm',
+#     "action": "SetTask",
+#     "payload": {
+#     "type": "BackToZeroTask"
+#     }
+# }
 
 command = {
     "command": 'arm',
-    "action": "SetTask",
-    "payload": {
-    "type": "BackToZeroTask"
-    }
+    "action": "PositionControlWithAccel",
+    "payload": [0, 0, 0, 0, 0, 0]
 }
 
 message = json.dumps(command)
