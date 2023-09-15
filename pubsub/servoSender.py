@@ -3,10 +3,11 @@ import pika
 import sys
 import json
 
+remoteHost = 'localhost'
 credential = pika.credentials.PlainCredentials('yan', 'yan', erase_on_connect=False)
 
 connection = pika.BlockingConnection(
-    pika.ConnectionParameters(host='localhost', credentials=credential))
+    pika.ConnectionParameters(host=remoteHost, credentials=credential))
 channel = connection.channel()
 
 channel.exchange_declare(exchange='servo', exchange_type='fanout')

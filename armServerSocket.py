@@ -2,6 +2,9 @@ import websocket
 import json
 import portConnect
 
+
+# when receiving message from server, send it to MQ
+
 def on_message(ws, message):
     msg = json.loads(message)
     connected = msg['payload']['connected']
