@@ -10,7 +10,7 @@ connection = pika.BlockingConnection(
     pika.ConnectionParameters(host=remoteHost, credentials=credential))
 channel = connection.channel()
 
-channel.exchange_declare(exchange='servo', exchange_type='fanout')
+# channel.exchange_declare(exchange='servo', exchange_type='fanout')
 
 command = {'action': 'status', 'id': 1}
 command = {'action': 'open', 'id': 1}
