@@ -1,8 +1,9 @@
 # Robot Arm Control
 
 1. change value in config
-1. run the startServer.bat file to start the server
-2. run arm state file and armMQ file
+2. run the startServer.bat file to start the socket server
+3. run arm state file and armMQ file
+4. run servo state file
 
 
 rabbitmq service install on windows server for pub sub communication
