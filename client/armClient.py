@@ -31,8 +31,8 @@ def arm_actions():
     "action": "Disable",
     }
 
-# command = {'command': 'arm', 'action': 'Enable'}
-command = {'command': 'arm', 'action': 'Disable'}
+command = {'command': 'arm', 'action': 'Enable'}
+# command = {'command': 'arm', 'action': 'Disable'}
 
 # command = {
 #     "command": 'arm',
@@ -42,11 +42,11 @@ command = {'command': 'arm', 'action': 'Disable'}
 #     }
 # }
 
-command = {
-    "command": 'arm',
-    "action": "PositionControlWithAccel",
-    "payload": [0, 0, 0, 0, 0, 0]
-}
+# command = {
+#     "command": 'arm',
+#     "action": "PositionControlWithAccel",
+#     "payload": [0, 0, 0, 0, 0, 0]
+# }
 
 message = json.dumps(command)
 channel.basic_publish(exchange='arm', routing_key='', body=message)

@@ -1,3 +1,5 @@
 pika
 pyserial
+flask
 flask_cors
+websockets
