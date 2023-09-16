@@ -35,22 +35,22 @@ def action():
             "payload": data['values']
         }
         message = json.dumps(command)
-        # channel.basic_publish(exchange='arm', routing_key='', body=message)
+        channel.basic_publish(exchange='arm', routing_key='', body=message)
 
     if data['action'] == 'enable':
         command = {'command': 'arm', 'action': 'Enable'}
         message = json.dumps(command)
-        # channel.basic_publish(exchange='arm', routing_key='', body=message)
+        channel.basic_publish(exchange='arm', routing_key='', body=message)
 
     if data['action'] == 'disable':
         command = {'command': 'arm', 'action': 'Disable'}
         message = json.dumps(command)
-        # channel.basic_publish(exchange='arm', routing_key='', body=message)
+        channel.basic_publish(exchange='arm', routing_key='', body=message)
 
     if data['action'] == 'open':
         command = {'action': 'open', 'id': 1}
         message = json.dumps(command)
-        # channel.basic_publish(exchange='servo', routing_key='', body=message)
+        channel.basic_publish(exchange='servo', routing_key='', body=message)
 
     if data['action'] == 'close':
         command = {'action': 'close', 'id': 1}
