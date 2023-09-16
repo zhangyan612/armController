@@ -1,7 +1,9 @@
 # Robot Arm Control
 
+1. change value in config
 1. run the startServer.bat file to start the server
-2. run py control file
+2. run arm state file and armMQ file
+
 
 rabbitmq service install on windows server for pub sub communication
 

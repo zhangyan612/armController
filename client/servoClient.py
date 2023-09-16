@@ -13,6 +13,8 @@ channel = connection.channel()
 channel.exchange_declare(exchange='servo', exchange_type='fanout')
 
 command = {'action': 'status', 'id': 1}
+command = {'action': 'open', 'id': 1}
+
 message = json.dumps(command)
 channel.basic_publish(exchange='servo', routing_key='', body=message)
 print(f" [x] Sent {message}")

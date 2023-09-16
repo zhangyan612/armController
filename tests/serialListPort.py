@@ -9,7 +9,9 @@ import serial.tools.list_ports
 def getServoPort():
         ports = serial.tools.list_ports.comports()
         for port, desc, hwid in sorted(ports):
-                if desc == 'USB-SERIAL CH340 (COM10)':
+                print(port)
+                print(desc)
+                if 'USB-SERIAL CH340' in desc:
                         return port
         print('Error: Servo is not connected to any port')
         return None

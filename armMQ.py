@@ -4,12 +4,12 @@ import json
 import time
 import websockets
 import asyncio
+import config
 
-remoteHost = '192.168.0.247'  #'localhost'
-credential = pika.credentials.PlainCredentials('yan', 'yan', erase_on_connect=False)
+credential = pika.credentials.PlainCredentials(config.MQUsername, config.MQPassword, erase_on_connect=False)
 
 connection = pika.BlockingConnection(
-    pika.ConnectionParameters(host=remoteHost, credentials=credential))
+    pika.ConnectionParameters(host=config.MQHost, credentials=credential))
 channel = connection.channel()
 
 channel.exchange_declare(exchange='arm', exchange_type='fanout')

@@ -3,11 +3,12 @@ import json
 import armPortConnect
 import pika
 import time
-remoteHost = '192.168.0.247'  #'localhost'
-credential = pika.credentials.PlainCredentials('yan', 'yan', erase_on_connect=False)
+import config
+
+credential = pika.credentials.PlainCredentials(config.MQUsername, config.MQPassword, erase_on_connect=False)
 
 connection = pika.BlockingConnection(
-    pika.ConnectionParameters(host=remoteHost, credentials=credential))
+    pika.ConnectionParameters(host=config.MQHost, credentials=credential))
 channel = connection.channel()
 
 channel.exchange_declare(exchange='arm', exchange_type='fanout')
@@ -34,13 +35,11 @@ def on_message(ws, message):
     if msg['event'] == 'StatusUpdate':
         angle = msg['payload']['jointState']['jointAngle']
         # print(str(angle))
-        # channel.basic_publish(exchange='arm', routing_key='', body=message)
-
         # if arm move slowly, we won't notice the change 
         if list_different(angle, previousState):
             #send this to MQ
             print(msg['payload']['jointState'])
-        #     channel.basic_publish(exchange='arm', routing_key='', body=message)
+            channel.basic_publish(exchange='arm', routing_key='', body=message)
 
         previousState = angle
 
