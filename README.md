@@ -19,6 +19,7 @@ C:\Users\username\AppData\Roaming\RabbitMQ
 C:\Program Files\RabbitMQ Server\rabbitmq_server-3.12.4\sbin
 %APPDATA%\RabbitMQ\rabbitmq.conf
 
+windows local machine 192.168.0.195
 
 rabbitmq-plugins enable rabbitmq_management
 log in to below site to add a user 

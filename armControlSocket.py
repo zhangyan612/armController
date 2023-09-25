@@ -8,7 +8,7 @@ import config
 credential = pika.credentials.PlainCredentials(config.MQUsername, config.MQPassword, erase_on_connect=False)
 
 connection = pika.BlockingConnection(
-    pika.ConnectionParameters(host=config.MQHost, credentials=credential))
+    pika.ConnectionParameters(host='localhost', credentials=credential))
 channel = connection.channel()
 
 channel.exchange_declare(exchange='arm', exchange_type='fanout')

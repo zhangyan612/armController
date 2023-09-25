@@ -1,5 +1,5 @@
 # store variable values
-MQHost =  '192.168.0.177'
+MQHost =  '192.168.0.195'
 MQUsername = 'yan'
 MQPassword = 'yan'
 remoteArmSocketServer = "ws://192.168.0.177:8080/api/ws"

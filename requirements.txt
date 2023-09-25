@@ -1,6 +1,8 @@
+requests
 pika
 pyserial
 flask
 flask_cors
+websocket
 websockets
 opencv-python
