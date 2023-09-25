@@ -4,5 +4,6 @@ pyserial
 flask
 flask_cors
 websocket
+websocket-client
 websockets
 opencv-python
