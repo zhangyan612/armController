@@ -35,6 +35,7 @@ def action():
     message = ''
 
     if data['action'] == 'apply':
+        exchange='arm'
         command = {
             "command": 'arm',
             "action": "PositionControlWithAccel",
