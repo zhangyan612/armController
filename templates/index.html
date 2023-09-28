@@ -31,8 +31,14 @@
         <div class="title">
             Robot Control
         </div>
-        
-				<div class="row mt-4">
+
+        <div class="row mt-4">
+            <div class="col">
+                <button class="btn btn-warning btn-block" id="resetButton">Reset</button>
+            </div>
+        </div>
+
+		<div class="row mt-4">
             <div class="col">
                 <button class="btn btn-success btn-block" id="enableButton">Enable</button>
             </div>
@@ -154,6 +160,11 @@
         document.getElementById("applyButton").addEventListener("click", function () {
             // Send an AJAX request to apply the values
             sendAjaxRequest("apply");
+        });
+
+        document.getElementById("resetButton").addEventListener("click", function () {
+            // Send an AJAX request to apply the values
+            sendAjaxRequest("reset");
         });
 
         // Event listener for the "Open" button

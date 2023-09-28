@@ -41,6 +41,17 @@ def action():
         message = json.dumps(command)
         channel.basic_publish(exchange='arm', routing_key='', body=message)
 
+    if data['action'] == 'reset':
+        command = {
+            "command": 'arm',
+            "action": "SetTask",
+            "payload": {
+            "type": "BackToZeroTask"
+            }
+        }
+        message = json.dumps(command)
+        channel.basic_publish(exchange='arm', routing_key='', body=message)
+
     if data['action'] == 'enable':
         command = {'command': 'arm', 'action': 'Enable'}
         message = json.dumps(command)
