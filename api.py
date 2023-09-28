@@ -21,7 +21,7 @@ CORS(app)
 
 @app.route('/')
 def index():
-    return 'This is the flask api for robot control'
+    return render_template('index.html')
 
 @app.route('/testui')
 def testui():
