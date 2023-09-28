@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Flask API Example</title>
+</head>
+<body>
+    <h1>Flask API Example</h1>
+    <div id="message"></div>
+    <label for="data">Enter Data:</label>
+    <input type="text" id="data" name="data">
+    <button id="submit">Submit</button>
+
+    <script>
+        document.getElementById('submit').addEventListener('click', function() {
+            var data = document.getElementById('data').value;
+
+            // Create a new XMLHttpRequest object
+            var xhr = new XMLHttpRequest();
+            
+            // Configure the AJAX request
+            xhr.open('POST', '/test', true);
+            xhr.setRequestHeader('Content-Type', 'application/json;charset=UTF-8');
+            
+            // Define a callback function to handle the response
+            xhr.onload = function() {
+                if (xhr.status === 200) {
+                    var response = JSON.parse(xhr.responseText);
+                    var messageDiv = document.getElementById('message');
+                    messageDiv.innerHTML = "Received data: " + response.data;
+                    messageDiv.classList.add('success');
+                } else {
+                    var messageDiv = document.getElementById('message');
+                    messageDiv.innerHTML = "Error: " + xhr.statusText;
+                    messageDiv.classList.add('error');
+                }
+            };
+            
+            // Prepare the data to be sent as JSON
+            var jsonData = JSON.stringify({ "data": data });
+            
+            // Send the request
+            xhr.send(jsonData);
+        });
+    </script>
+    
+    <style>
+        .success {
+            color: green;
+        }
+        
+        .error {
+            color: red;
+        }
+    </style>
+</body>
+</html>

@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-from flask import Flask, request
+from flask import Flask, render_template, request
 from flask_cors import CORS
 import pika
 import sys
@@ -22,6 +22,10 @@ CORS(app)
 @app.route('/')
 def index():
     return 'This is the flask api for robot control'
+
+@app.route('/testui')
+def testui():
+    return render_template('test.html')
 
 @app.route('/action', methods=['POST'])
 def action():
@@ -59,5 +63,12 @@ def action():
 
     return data
 
-        
-app.run()
+@app.route('/test', methods=['POST'])
+def test():
+    data = request.json  # You can access POST data as JSON if the request has a JSON content-type
+    print(data)
+    # Process the data as needed
+    return f"Received data: {data}"
+
+
+app.run(host="0.0.0.0")
