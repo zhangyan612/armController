@@ -31,6 +31,8 @@ def testui():
 def action():
     data = request.json  # Assuming the request data is in JSON format
     print(data)
+    exchange = ''
+    message = ''
 
     if data['action'] == 'apply':
         command = {
@@ -39,9 +41,9 @@ def action():
             "payload": data['values']
         }
         message = json.dumps(command)
-        channel.basic_publish(exchange='arm', routing_key='', body=message)
 
     if data['action'] == 'reset':
+        exchange='arm'
         command = {
             "command": 'arm',
             "action": "SetTask",
@@ -50,27 +52,35 @@ def action():
             }
         }
         message = json.dumps(command)
-        channel.basic_publish(exchange='arm', routing_key='', body=message)
 
     if data['action'] == 'enable':
+        exchange='arm'
         command = {'command': 'arm', 'action': 'Enable'}
         message = json.dumps(command)
-        channel.basic_publish(exchange='arm', routing_key='', body=message)
 
     if data['action'] == 'disable':
+        exchange='arm'
         command = {'command': 'arm', 'action': 'Disable'}
         message = json.dumps(command)
-        channel.basic_publish(exchange='arm', routing_key='', body=message)
 
     if data['action'] == 'open':
+        exchange='servo'
         command = {'action': 'open', 'id': 1}
         message = json.dumps(command)
-        channel.basic_publish(exchange='servo', routing_key='', body=message)
 
     if data['action'] == 'close':
+        exchange='servo'
         command = {'action': 'close', 'id': 1}
         message = json.dumps(command)
-        channel.basic_publish(exchange='servo', routing_key='', body=message)
+
+    try:
+        if exchange and message:
+            channel.basic_publish(exchange=exchange, routing_key='', body=message)
+        else:
+            print("Exchange and/or message is empty, cannot publish.")
+    except Exception as e:
+        # Handle the exception here
+        print(f"An error occurred: {str(e)}")
 
     return data
 
