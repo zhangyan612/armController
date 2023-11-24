@@ -17,8 +17,15 @@ else:
     print("Failed to open serial port")
 
 # Write data to the serial port
-TM1 = 'Up'
-ser.write(str(TM1).encode())
+
+
+# ser.write(b'\x01')  # '1' in hexadecimal
+
+# ser.write(b'\x02')  # '1' in hexadecimal
+
+ser.write(b'\x00')  # '1' in hexadecimal
+
+print("data sent")
 
 # ser.flushInput()  # 清空接收缓存
 # portRead()  # 将单线串口配置为输入
@@ -28,11 +35,5 @@ if count != 0:  # 如果接收到的数据不空
     recv_data = ser.read(count)  # 读取接收到的数据
     print(recv_data)
 
-# Wait for 2 seconds
-time.sleep(2)
 
-
-# # Write more data to the serial port
-TM2 = 'Down'
-ser.write(str(TM2).encode())
 
