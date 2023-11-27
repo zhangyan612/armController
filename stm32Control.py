@@ -19,11 +19,13 @@ else:
 # Write data to the serial port
 
 
-# ser.write(b'\x01')  # '1' in hexadecimal
+# ser.write(b'\x01')  # '1' in hexadecimal, forward
+# time.sleep(1)
 
-# ser.write(b'\x02')  # '1' in hexadecimal
+ser.write(b'\x02')  # '2' in hexadecimal, backward
+time.sleep(1)
 
-ser.write(b'\x00')  # '1' in hexadecimal
+ser.write(b'\x00')  # '0' in hexadecimal, stop
 
 print("data sent")
 
@@ -37,3 +39,14 @@ if count != 0:  # 如果接收到的数据不空
 
 
 
+# 9740
+# 10000
+# 10260
+
+# 10520
+
+# 10260
+# 9740
+# 9480
+# 9220
+# 8960
