@@ -56,3 +56,18 @@ while True:
 
 pipeline.stop()
 cv2.destroyAllWindows()
+
+
+# point cloud
+# https://github.com/IntelRealSense/librealsense/tree/master/wrappers/opencv/kinfu
+
+# pick and place
+# https://roboticscasual.com/ros-tutorial-how-to-use-opencv-in-a-robot-pick-and-place-task-for-computer-vision/
+
+# https://github.com/monkeyrom/3D_Object_Detection_and_Pose_Estimation_for_Automated_Bin-Picking_Application
+
+# mrcnn
+# https://pysource.com/2021/06/24/identify-and-measure-precisely-objects-distance-with-deep-learning-and-intel-realsense/
+
+# tensorflow detection
+# https://www.bing.com/videos/riverview/relatedvideo?q=intel%20realsense%20point%20cloud&mid=A70C3DE7523CA9FB598CA70C3DE7523CA9FB598C&ajaxhist=0

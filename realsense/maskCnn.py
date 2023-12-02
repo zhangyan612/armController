@@ -28,5 +28,7 @@ for i in range(detection_count):
 
 cv2.waitKey(0)
 
+# download model
+# https://github.com/matterport/Mask_RCNN/blob/master/samples/demo.ipynb
 
 # https://pysource.com/2021/05/18/instance-segmentation-mask-r-cnn-with-python-and-opencv/
