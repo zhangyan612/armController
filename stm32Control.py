@@ -25,9 +25,9 @@ else:
 ser.write(b'\x02')  # '2' in hexadecimal, backward
 time.sleep(1)
 
-ser.write(b'\x00')  # '0' in hexadecimal, stop
+# ser.write(b'\x00')  # '0' in hexadecimal, stop
 
-print("data sent")
+# print("data sent")
 
 # ser.flushInput()  # 清空接收缓存
 # portRead()  # 将单线串口配置为输入
