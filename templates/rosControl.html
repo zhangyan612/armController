@@ -5,6 +5,12 @@
     <script src="https://static.robotwebtools.org/roslibjs/current/roslib.min.js"></script>
 </head>
 <body>
+    <button id="forward">Move Forward</button>
+    <button id="backward">Move Backward</button>
+    <button id="turnLeft">Turn Left</button>
+    <button id="turnRight">Turn Right</button>
+    <p id="status">Network: Not Connected</p>
+
     <script type="text/javascript">
         var ros = new ROSLIB.Ros({
             url : 'ws://192.168.0.177:9090'
@@ -19,26 +25,21 @@
         var target = { linear: 0, angular: 0 };
         var control = { linear: 0, angular: 0 };
 
-        // Map keys to actions
+        // Map buttons to actions
         var moveBindings = {
-            'i': { linear: 1.0, angular: 0.0 },
-            'o': { linear: 1.0, angular: -1.0 },
-            'j': { linear: 0.0, angular: 1.0 },
-            'l': { linear: 0.0, angular: -1.0 },
-            'u': { linear: 1.0, angular: 1.0 },
-            ',': { linear: -1.0, angular: 0.0 },
-            '.': { linear: -1.0, angular: 1.0 },
-            'm': { linear: -1.0, angular: -1.0 },
+            'forward': { linear: 1.0, angular: 0.0 },
+            'backward': { linear: -1.0, angular: 0.0 },
+            'turnLeft': { linear: 0.0, angular: 1.0 },
+            'turnRight': { linear: 0.0, angular: -1.0 },
         };
 
-        // Handle keydown event
-        window.addEventListener('keydown', function(event) {
-            var key = event.key;
-            if (key in moveBindings) {
-                target.linear = moveBindings[key].linear;
-                target.angular = moveBindings[key].angular;
-            }
-        });
+        // Handle button click event
+        for (var id in moveBindings) {
+            document.getElementById(id).addEventListener('click', function(event) {
+                target.linear = moveBindings[event.target.id].linear;
+                target.angular = moveBindings[event.target.id].angular;
+            });
+        }
 
         // Smooth control
         setInterval(function() {
@@ -68,6 +69,19 @@
             });
             cmdVelTopic.publish(twist);
         }, 100);  // Run every 100ms
+
+        // ROS connection states
+        ros.on('connection', function() {
+            document.getElementById('status').innerHTML = 'Network: connected';
+        });
+
+        ros.on('error', function(error) {
+            document.getElementById('status').innerHTML = 'Network: error';
+        });
+
+        ros.on('close', function() {
+            document.getElementById('status').innerHTML = 'Network: closed';
+        });
     </script>
 </body>
 </html>
