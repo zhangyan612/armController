@@ -5,9 +5,6 @@
     <script src="https://static.robotwebtools.org/roslibjs/current/roslib.min.js"></script>
 </head>
 <body>
-    <button id="forward">Move Forward</button>
-    <button id="backward">Move Backward</button>
-
     <script type="text/javascript">
         var ros = new ROSLIB.Ros({
             url : 'ws://192.168.0.177:9090'
@@ -19,37 +16,58 @@
             messageType : 'geometry_msgs/Twist'
         });
 
-        document.getElementById('forward').addEventListener('click', function() {
-            var twist = new ROSLIB.Message({
-                linear : {
-                    x : 1.0,
-                    y : 0.0,
-                    z : 0.0
-                },
-                angular : {
-                    x : 0.0,
-                    y : 0.0,
-                    z : 0.0
-                }
-            });
-            cmdVelTopic.publish(twist);
+        var target = { linear: 0, angular: 0 };
+        var control = { linear: 0, angular: 0 };
+
+        // Map keys to actions
+        var moveBindings = {
+            'i': { linear: 1.0, angular: 0.0 },
+            'o': { linear: 1.0, angular: -1.0 },
+            'j': { linear: 0.0, angular: 1.0 },
+            'l': { linear: 0.0, angular: -1.0 },
+            'u': { linear: 1.0, angular: 1.0 },
+            ',': { linear: -1.0, angular: 0.0 },
+            '.': { linear: -1.0, angular: 1.0 },
+            'm': { linear: -1.0, angular: -1.0 },
+        };
+
+        // Handle keydown event
+        window.addEventListener('keydown', function(event) {
+            var key = event.key;
+            if (key in moveBindings) {
+                target.linear = moveBindings[key].linear;
+                target.angular = moveBindings[key].angular;
+            }
         });
 
-        document.getElementById('backward').addEventListener('click', function() {
+        // Smooth control
+        setInterval(function() {
+            if (target.linear > control.linear) {
+                control.linear = Math.min(target.linear, control.linear + 0.1);
+            } else if (target.linear < control.linear) {
+                control.linear = Math.max(target.linear, control.linear - 0.1);
+            }
+
+            if (target.angular > control.angular) {
+                control.angular = Math.min(target.angular, control.angular + 0.5);
+            } else if (target.angular < control.angular) {
+                control.angular = Math.max(target.angular, control.angular - 0.5);
+            }
+
             var twist = new ROSLIB.Message({
                 linear : {
-                    x : -1.0,
+                    x : control.linear,
                     y : 0.0,
                     z : 0.0
                 },
                 angular : {
                     x : 0.0,
                     y : 0.0,
-                    z : 0.0
+                    z : control.angular
                 }
             });
             cmdVelTopic.publish(twist);
-        });
+        }, 100);  // Run every 100ms
     </script>
 </body>
 </html>
