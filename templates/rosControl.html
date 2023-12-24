@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <script src="https://static.robotwebtools.org/EventEmitter2/current/eventemitter2.min.js"></script>
+    <script src="https://static.robotwebtools.org/roslibjs/current/roslib.min.js"></script>
+</head>
+<body>
+    <button id="forward">Move Forward</button>
+    <button id="backward">Move Backward</button>
+
+    <script type="text/javascript">
+        var ros = new ROSLIB.Ros({
+            url : 'ws://192.168.0.177:9090'
+        });
+
+        var cmdVelTopic = new ROSLIB.Topic({
+            ros : ros,
+            name : '/cmd_vel',
+            messageType : 'geometry_msgs/Twist'
+        });
+
+        document.getElementById('forward').addEventListener('click', function() {
+            var twist = new ROSLIB.Message({
+                linear : {
+                    x : 1.0,
+                    y : 0.0,
+                    z : 0.0
+                },
+                angular : {
+                    x : 0.0,
+                    y : 0.0,
+                    z : 0.0
+                }
+            });
+            cmdVelTopic.publish(twist);
+        });
+
+        document.getElementById('backward').addEventListener('click', function() {
+            var twist = new ROSLIB.Message({
+                linear : {
+                    x : -1.0,
+                    y : 0.0,
+                    z : 0.0
+                },
+                angular : {
+                    x : 0.0,
+                    y : 0.0,
+                    z : 0.0
+                }
+            });
+            cmdVelTopic.publish(twist);
+        });
+    </script>
+</body>
+</html>

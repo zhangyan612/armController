@@ -46,3 +46,24 @@ Rewrite URL: ws://127.0.0.1:7890/{R:0}
 Append query string: Checked
 This rule will redirect WebSocket requests from yourdomain.com to your Python WebSocket server running on 127.0.0.1:8765.
 
+
+
+
+ROS Update, remote server control
+
+1. Install rosbridge
+sudo apt-get install ros-melodic-rosbridge-server
+
+echo $ROS_MASTER_URI
+echo $ROS_HOSTNAME
+ifconfig
+
+export ROS_HOSTNAME=192.168.0.202
+
+#to make it permanent, add the line to this file
+source ~/.basrhc
+
+roslaunch turn_on_wheeltec_robot turn_on_wheeltec_robot.launch
+roslaunch rosbridge_server rosbridge_websocket.launch
+
+gedit .bashrc
