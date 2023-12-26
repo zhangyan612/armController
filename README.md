@@ -58,12 +58,20 @@ echo $ROS_MASTER_URI
 echo $ROS_HOSTNAME
 ifconfig
 
-export ROS_HOSTNAME=192.168.0.202
+export ROS_HOSTNAME=192.168.0.177
 
+gedit .bashrc
 #to make it permanent, add the line to this file
 source ~/.basrhc
 
 roslaunch turn_on_wheeltec_robot turn_on_wheeltec_robot.launch
+
 roslaunch rosbridge_server rosbridge_websocket.launch
 
-gedit .bashrc
+rostopic list
+rostopic echo /topic_name
+rostopic echo /PowerVoltage
+rostopic type /PowerVoltage
+
+rostopic echo /odom
+rostopic echo /imu
