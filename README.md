@@ -75,3 +75,12 @@ rostopic type /PowerVoltage
 
 rostopic echo /odom
 rostopic echo /imu
+
+13.WEB浏览器显示摄像头
+主机：roslaunch usb_cam usb_cam-test.launch
+          rosrun web_video_server web_video_server
+主机网页查看：http://localhost:8080/ (发出热点的为主机)
+客户机网页查看：http://192.168.0.100:8080 (连接热点的为客户机)
+
+新版启动相机命令为以下
+roslaunch turn_on_wheeltec_robot wheeltec_camera.launch
