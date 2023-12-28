@@ -23,6 +23,11 @@
         .user-input {
             margin-top: 5px;
         }
+        .user-input {
+            max-width: 80px; 
+            text-align: center;
+        }
+
     </style>
 </head>
 <body>
@@ -52,36 +57,60 @@
             <div class="col">
                 <label for="range1">Joint 1</label>
 				<div class="user-input">0</div>
-                <input type="range" class="form-control range-input" id="range1" min="0" max="360" value="0">
+                <div class="input-group">
+                    <input type="range" class="form-control range-input" id="range1" min="0" max="360" value="0">
+                    <input type="number" class="form-control user-input" id="number1" value="0" size="3">
+                </div>
             </div>
             <div class="col">
                 <label for="range2">Joint 2</label>
 				<div class="user-input">0</div>
-                <input type="range" class="form-control range-input" id="range2" min="0" max="200" value="0">
+                <div class="input-group">
+                    <input type="range" class="form-control range-input" id="range2" min="0" max="200" value="0">
+                    <input type="number" class="form-control user-input" id="number2" value="0" size="3">
+                </div>
             </div>
         </div>
         <div class="row">
             <div class="col">
                 <label for="range3">Joint 3</label>
 				<div class="user-input">0</div>
-                <input type="range" class="form-control range-input" id="range3" min="0" max="200" value="0">
+                <div class="input-group">
+                    <input type="range" class="form-control range-input" id="range3" min="0" max="200" value="0">
+                    <input type="number" class="form-control user-input" id="number3" value="0" size="3">
+                </div>
+
             </div>
             <div class="col">
                 <label for="range4">Joint 4</label>
 				<div class="user-input">0</div>
-                <input type="range" class="form-control range-input" id="range4" min="0" max="360" value="0">
+                <div class="input-group">
+                    <input type="range" class="form-control range-input" id="range4" min="0" max="360" value="0">
+                    <input type="number" class="form-control user-input" id="number4" value="0" size="3">
+                </div>
+
             </div>
         </div>
         <div class="row">
             <div class="col">
                 <label for="range5">Joint 5</label>
 				<div class="user-input">0</div>
-                <input type="range" class="form-control range-input" id="range5" min="0" max="200" value="0">
+                <div class="input-group">
+
+                    <input type="range" class="form-control range-input" id="range5" min="0" max="200" value="0">
+                    <input type="number" class="form-control user-input" id="number5" value="0" size="3">
+                </div>
+
             </div>
             <div class="col">
                 <label for="range6">Joint 6</label>
 				<div class="user-input">0</div>
-                <input type="range" class="form-control range-input" id="range6" min="0" max="360" value="0">
+                <div class="input-group">
+
+                    <input type="range" class="form-control range-input" id="range6" min="0" max="360" value="0">
+                    <input type="number" class="form-control user-input" id="number6" value="0" size="3">
+                </div>
+
             </div>
         </div>
 
@@ -113,6 +142,23 @@
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
 
     <script>
+
+        // Update range value when number input changes
+        document.querySelectorAll(".user-input").forEach(function(element) {
+        element.addEventListener("change", function() {
+            const rangeId = element.id.replace("number", "range"); 
+            document.getElementById(rangeId).value = element.value;
+        }); 
+        });
+
+        // Update number input when range changes 
+        document.querySelectorAll(".range-input").forEach(function(element) {
+        element.addEventListener("input", function() {
+            const numberId = element.id.replace("range", "number");
+            document.getElementById(numberId).value = element.value;
+        });
+        });  
+
         // Function to get the values of all range inputs
         function getRangeValues() {
             return [

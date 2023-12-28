@@ -84,3 +84,17 @@ rostopic echo /imu
 
 新版启动相机命令为以下
 roslaunch turn_on_wheeltec_robot wheeltec_camera.launch
+
+
+
+# helpful
+ROS开发教程
+ROS 系统里面的参数类似于单片机开发中的全局变量，由ROS Master 管理，其通信机制较为简单，不涉及 TCP/UDP 通信。我们可以使用“rosparam”命令去查看或者设置机器人的参数
+rosparam list 
+rosparam get /wheeltec_robot/serial_baud_rate
+rosparam set /wheeltec_robot/serial_baud_rate 9600 -- 修改参数 临时
+如果我们需要永久修改某一个参数，需要通过修改源码，也就是launch或者 yaml 等文件里面的参数
+
+查看机器人的 tf 树， 坐标变换关系
+rosrun rqt_tf_tree rqt_tf_tree
+base_link 与机器人中心重合

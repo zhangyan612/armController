@@ -121,7 +121,7 @@ function connectTopics(fpvValue) {
     // Publish to /cmd_vel_mux/input/safety_controller to move robot
     TOPICS[0] = new ROSLIB.Topic({
         ros: ROS,
-        name: '/cmd_vel_mux/input/safety_controller',
+        name: '/cmd_vel',
         messageType: 'geometry_msgs/Twist'
     });
     // Publish to /move_base_simple/goal to set new goal
@@ -175,12 +175,12 @@ function connectTopics(fpvValue) {
     // Subscribe to /joystick/diagnostics to receive diagnostics
     TOPICS[6] = new ROSLIB.Topic({
         ros: ROS,
-        name: '/joystick/diagnostics',
-        messageType: 'std_msgs/String'
+        name: '/PowerVoltage',
+        messageType: 'std_msgs/Float32'
     });
     // Receive command
     TOPICS[6].subscribe(function (msg) {
-        document.getElementById('status').innerHTML = 'Goal: ' + msg.data;
+        document.getElementById('voltage').innerHTML = 'Voltage: ' + parseFloat(msg.data).toFixed(2);
     });
     // Subscribe to /visp_auto_tracker/code_message to receive commands
     TOPICS[7] = new ROSLIB.Topic({
