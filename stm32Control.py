@@ -19,13 +19,13 @@ else:
 # Write data to the serial port
 
 
-ser.write(b'\x01')  # '1' in hexadecimal, forward
+# ser.write(b'\x01')  # '1' in hexadecimal, forward
 # time.sleep(1)
 
 # ser.write(b'\x02')  # '2' in hexadecimal, backward
-time.sleep(1)
+# time.sleep(1)
 
-# ser.write(b'\x00')  # '0' in hexadecimal, stop
+ser.write(b'\x00')  # '0' in hexadecimal, stop
 
 # print("data sent")
 
