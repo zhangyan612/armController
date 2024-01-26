@@ -1,0 +1,39 @@
+sudo apt-get install ros-melodic-rosbridge-server
+
+echo $ROS_MASTER_URI
+echo $ROS_HOSTNAME
+ifconfig
+
+export ROS_HOSTNAME=192.168.0.202
+
+#to make it permanent, add the line to this file
+source ~/.basrhc
+
+roslaunch rosbridge_server rosbridge_websocket.launch
+
+
+whisper streaming install 
+
+install conda 
+
+mkdir -p ~/miniconda3
+wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O ~/miniconda3/miniconda.sh
+bash ~/miniconda3/miniconda.sh -b -u -p ~/miniconda3
+rm -rf ~/miniconda3/miniconda.sh
+
+
+conda create -n whisper python=3.10
+pip install librosa
+pip install faster-whisper
+pip install opus-fast-mosestokenizer
+
+python3 whisper_online.py file.wav --language en --model base.en --backend faster-whisper --min-chunk-size 1 > out.txt
+
+if gpu does not work, change to cpu
+In FasterWhisperASR, uncomment run on CPU with INT8
+
+
+server:
+python3 whisper_online_server.py --language en --model base.en --backend faster-whisper --min-chunk-size 1 > out.txt
+
+recorder: arecord -f S16_LE -c1 -r 16000 -t raw -D default | nc localhost 43001
