@@ -1,0 +1,47 @@
+【librealsense-master】是环境安装包，需要最新的请到该网址下载
+https://github.com/IntelRealSense/librealsense/blob/master/doc/distribution_linux.md
+
+【ddynamic_reconfigure-kinetic-devel】为ROS环境依赖包
+https://github.com/pal-robotics/ddynamic_reconfigure/tree/kinetic-devel
+【realsense-ros-development】ROS功能包
+https://github.com/IntelRealSense/realsense-ros/blob/development/README.md#installation-instructions
+
+
+官方安装教程首页
+https://dev.intelrealsense.com/docs/compiling-librealsense-for-linux-ubuntu-guide
+
+
+一、首先安装环境
+1.可能需要安装的一些功能包
+sudo apt-get install git libssl-dev libusb-1.0-0-dev pkg-config libgtk-3-dev
+sudo apt-get install libglfw3-dev libgl1-mesa-dev libglu1-mesa-dev
+
+复制编译包【librealsense-master】到任意位置
+2.给所有文件可执行权限
+sudo chmod -R 777 librealsense-master
+
+3.适配一些环境变量
+cd librealsense-master
+sudo ./scripts/setup_udev_rules.sh
+echo 'hid_sensor_custom' | sudo tee -a /etc/modules
+export PATH=/usr/local/cuda/bin:$PATH
+export LD_LIBRARY_PATH=/usr/local/cuda/lib64:$LD_LIBRARY_PATH
+
+4.编译安装环境
+cd librealsense-master
+mkdir build
+cd build
+sudo cmake ..
+sudo make
+sudo make install
+
+期间会下载一些文件，如果下载失败可以通过迅雷手动下载然后复制进去即可，以下是记录下来的一些文件链接
+https://kernel.ubuntu.com/~kernel-ppa/mainline/v5.0.21/linux-headers-5.0.21-050021_5.0.21-050021.201906040731_all.deb
+https://kernel.ubuntu.com/~kernel-ppa/mainline/v5.0.21/linux-headers-5.0.21-050021-generic_5.0.21-050021.201906040731_arm64.deb
+https://kernel.ubuntu.com/~kernel-ppa/mainline/v5.0.21/linux-image-unsigned-5.0.21-050021-generic_5.0.21-050021.201906040731_arm64.deb
+https://kernel.ubuntu.com/~kernel-ppa/mainline/v5.0.21/linux-modules-5.0.21-050021-generic_5.0.21-050021.201906040731_arm64.deb
+
+
+二、拷贝功能包到工作空间并编译
+功能包【ddynamic_reconfigure-kinetic-devel】
+功能包【realsense-ros-development】

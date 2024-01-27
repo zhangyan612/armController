@@ -22,7 +22,12 @@ int start_to_record_denoised_sound()
 
 
 
-whisper streaming install 
+
+sudo nano .bashrc
+source .bashrc
+
+
+# whisper streaming install 
 
 install conda 
 

@@ -12,9 +12,9 @@ ser = serial.Serial(
 
 # Check if the serial port is open
 if ser.isOpen():
-    print("Serial port is open")
+    print("Head Serial port is open")
 else:
-    print("Failed to open serial port")
+    print("Failed to open head serial port")
 
 # Write data to the serial port
 
