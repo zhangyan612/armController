@@ -12,6 +12,16 @@ source ~/.basrhc
 roslaunch rosbridge_server rosbridge_websocket.launch
 
 
+麦克风阵列
+
+完成之后，将麦克风阵列通过 usb 口插到主机上，然后在主机上打开终端，运行如下命令，查看是否检测到设备：
+$ lsusb
+若检测到 VID：PID 为 10d6：b003 的设备，则设备读取成功。可以运行案例以熟悉麦克风阵列的使用过程。
+
+int start_to_record_denoised_sound()
+
+
+
 whisper streaming install 
 
 install conda 

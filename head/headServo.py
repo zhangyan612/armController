@@ -37,12 +37,11 @@ else:
 #     recv_data = ser.read(count)  # 读取接收到的数据
 #     print(recv_data)
 
-
-def moveServo(id, angle, duration):
+def moveHeadServo(id, angle, duration):
     moveCommand = f"#{id}P{angle:04}T{duration:04}!" #'#002P1500T0316!'
     ser.write(moveCommand.encode())
 
-def readPosition(id):
+def readHeadPosition(id):
     command = f'#{id}PRAD!'
     ser.write(command.encode())
     time.sleep(0.005)  # 稍作延时，等待接收完毕 重要
@@ -56,9 +55,9 @@ def resetServo(id):
     moveCommand = f"#{id}PSCK!" #'#002P1500T0316!'
     ser.write(moveCommand.encode())
 
-moveServo('002', 1500, 100)
+moveHeadServo('002', 1500, 100)
 
 time.sleep(1)
 
-position = readPosition('002')
+position = readHeadPosition('002')
 print(position)
