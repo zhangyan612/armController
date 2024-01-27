@@ -1,6 +1,17 @@
 import time
 import serial
 
+
+def getServoPort():
+        ports = serial.tools.list_ports.comports()
+        for port, desc, hwid in sorted(ports):
+                if 'USB-SERIAL CH340' in desc:
+                        return port
+        print('Error: Servo is not connected to any port')
+        return None
+
+port = getServoPort()
+
 # Create a serial object
 ser = serial.Serial(
     port='COM6',  # replace with your port

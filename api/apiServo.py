@@ -4,12 +4,18 @@ from flask_cors import CORS
 import sys
 import json
 import config
+import serial
 
 
 app = Flask(__name__)
 CORS(app)
 
-# api for hand and head servo
+# Check if the serial port is open
+if ser.isOpen():
+    print("Head Serial port is open")
+else:
+    print("Failed to open head serial port")
+
 
 @app.route('/')
 def index():

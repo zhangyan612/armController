@@ -47,7 +47,7 @@ Append query string: Checked
 This rule will redirect WebSocket requests from yourdomain.com to your Python WebSocket server running on 127.0.0.1:8765.
 
 
-
+# rosbridge for moving control
 
 ROS Update, remote server control
 
