@@ -8,6 +8,7 @@ import logging
 logging.basicConfig(level = logging.INFO)
 
 from websockets.sync.server import serve
+from vad import VoiceActivityDetection
 
 import torch
 import numpy as np
@@ -86,6 +87,10 @@ class TranscriptionServer:
             Exception: If there is an error during the audio frame processing.
         """
         logging.info("[Whisper INFO:] New client connected")
+        
+        self.vad_model = VoiceActivityDetection()
+        self.vad_threshold = 0.5
+
         options = websocket.recv()
         options = json.loads(options)
 
@@ -123,11 +128,31 @@ class TranscriptionServer:
 
         self.clients[websocket] = client
         self.clients_start_time[websocket] = time.time()
+        no_voice_activity_chunks = 0
 
         while True:
             try:
                 frame_data = websocket.recv()
                 frame_np = np.frombuffer(frame_data, dtype=np.float32)
+
+                # VAD
+                try:
+                    speech_prob = self.vad_model(torch.from_numpy(frame_np.copy()), self.RATE).item()
+                    if speech_prob < self.vad_threshold:
+                        no_voice_activity_chunks += 1
+                        if no_voice_activity_chunks > 3:
+                            if not self.clients[websocket].eos:
+                                self.clients[websocket].set_eos(True)
+                            time.sleep(0.1)    # EOS stop receiving frames for a 100ms(to send output to LLM.)
+                        continue
+                    no_voice_activity_chunks = 0
+                    self.clients[websocket].set_eos(False)
+
+                except Exception as e:
+                    logging.error(e)
+                    return
+                
+                # ERROR:root:[ERROR]: 'WhisperModel' object has no attribute 'model'
 
                 self.clients[websocket].add_frames(frame_np)
 
