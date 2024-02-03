@@ -254,7 +254,9 @@ class ServeClient:
 
         self.exit = False
         self.transcript = []
-        
+        self.prompt = None
+        self.segment_inference_time = []
+
         self.text = []
         self.current_out = ''
         self.prev_out = ''
@@ -396,12 +398,13 @@ class ServeClient:
             samples_take = max(0, (self.timestamp_offset - self.frames_offset)*self.RATE)
             input_bytes = self.frames_np[int(samples_take):].copy()
             duration = input_bytes.shape[0] / self.RATE
-            if duration <0.4:
+
+            if duration<0.4:
                 time.sleep(0.01)    # 5ms sleep to wait for some voice active audio to arrive
                 continue
             try:
                 input_sample = input_bytes.copy()
-                # start = time.time()
+                start = time.time()
 
                 # whisper transcribe with prompt
                 result, info = self.transcriber.transcribe(
@@ -413,19 +416,19 @@ class ServeClient:
                     vad_parameters={"threshold": 0.5}
                 )
 
-                # infer_time = time.time() - start
-                # self.segment_inference_time.append(infer_time)
+                infer_time = time.time() - start
+                self.segment_inference_time.append(infer_time)
 
-                if self.language is None:
-                    if info.language_probability > 0.5:
-                        self.language = info.language
-                        logging.info(f"Detected language {self.language} with probability {info.language_probability}")
-                        self.websocket.send(json.dumps(
-                            {"uid": self.client_uid, "language": self.language, "language_prob": info.language_probability}))
-                    else:
-                        # detect language again
-                        logging.info("language_probability low, detect again")
-                        continue
+                # if self.language is None:
+                #     if info.language_probability > 0.5:
+                #         self.language = info.language
+                #         logging.info(f"Detected language {self.language} with probability {info.language_probability}")
+                #         self.websocket.send(json.dumps(
+                #             {"uid": self.client_uid, "language": self.language, "language_prob": info.language_probability}))
+                #     else:
+                #         # detect language again
+                #         logging.info("language_probability low, detect again")
+                #         continue
 
                 if len(result):
                     self.t_start = None
@@ -456,7 +459,8 @@ class ServeClient:
                         json.dumps({
                             "uid": self.client_uid,
                             "segments": segments,
-                            # "latency": infer_time
+                            "eos": self.eos,
+                            "latency": infer_time
                         })
                     )
                 except Exception as e:
