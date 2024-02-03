@@ -14,6 +14,7 @@ import numpy as np
 import time
 from transcriber import WhisperModel
 import os
+import functools
 
 os.environ["KMP_DUPLICATE_LIB_OK"]="TRUE"
 
@@ -43,6 +44,7 @@ class TranscriptionServer:
         self.clients_start_time = {}
         self.max_clients = 4
         self.max_connection_time = 600
+        self.transcriber = None
 
     def get_wait_time(self):
         """
@@ -61,7 +63,7 @@ class TranscriptionServer:
 
         return wait_time / 60
 
-    def recv_audio(self, websocket):
+    def recv_audio(self, websocket, transcription_queue=None, llm_queue=None, whisper_tensorrt_path=None):
         """
         Receive audio chunks from a client in an infinite loop.
         
@@ -82,7 +84,7 @@ class TranscriptionServer:
         Raises:
             Exception: If there is an error during the audio frame processing.
         """
-        logging.info("New client connected")
+        logging.info("[Whisper INFO:] New client connected")
         options = websocket.recv()
         options = json.loads(options)
 
@@ -98,13 +100,24 @@ class TranscriptionServer:
             websocket.close()
             del websocket
             return
-
+        
+        if self.transcriber is None:
+            self.transcriber = WhisperModel(
+            "base.en", 
+            device='cpu',
+            compute_type="int8", 
+            local_files_only=False,
+        )
+            
         client = ServeClient(
             websocket,
             multilingual=options["multilingual"],
             language=options["language"],
             task=options["task"],
-            client_uid=options["uid"]
+            client_uid=options["uid"],
+            transcription_queue=transcription_queue,
+            llm_queue=llm_queue,
+            transcriber=self.transcriber
         )
 
         self.clients[websocket] = client
@@ -138,7 +151,7 @@ class TranscriptionServer:
                 del websocket
                 break
 
-    def run(self, host, port=9090):
+    def run(self, host, port=9090, transcription_queue=None, llm_queue=None):
         """
         Run the transcription server.
 
@@ -146,8 +159,19 @@ class TranscriptionServer:
             host (str): The host address to bind the server.
             port (int): The port number to bind the server.
         """
-        with serve(self.recv_audio, host, port) as server:
+        with serve(
+            functools.partial(
+                self.recv_audio,
+                transcription_queue=transcription_queue,
+                llm_queue=llm_queue,
+            ),
+            host,
+            port
+        ) as server:
             server.serve_forever()
+
+        # with serve(self.recv_audio, host, port) as server:
+        #     server.serve_forever()
 
 
 class ServeClient:
@@ -183,7 +207,18 @@ class ServeClient:
     SERVER_READY = "SERVER_READY"
     DISCONNECT = "DISCONNECT"
 
-    def __init__(self, websocket, task="transcribe", device=None, multilingual=False, language=None, client_uid=None):
+    def __init__(
+            self, 
+            websocket, 
+            task="transcribe", 
+            device=None, 
+            multilingual=False, 
+            language=None, 
+            client_uid=None,
+            transcription_queue=None,
+            llm_queue=None,
+            transcriber=None
+        ):
         """
         Initialize a ServeClient instance.
         The Whisper model is initialized based on the client's language and device availability.
@@ -199,32 +234,35 @@ class ServeClient:
             client_uid (str, optional): A unique identifier for the client. Defaults to None.
 
         """
+        if transcriber is None:
+            raise ValueError("Transcriber is None.")
+        self.transcriber = transcriber
         self.client_uid = client_uid
+        self.transcription_queue = transcription_queue
+        self.llm_queue = llm_queue
         self.data = b""
         self.frames = b""
         self.language = language if multilingual else "en"
         self.task = task
-        # device = "cuda" if torch.cuda.is_available() else "cpu"
-        device = "cpu"
-        self.transcriber = WhisperModel(
-            "small" if multilingual else "base.en", 
-            device=device,
-            compute_type="int8" if device=="cpu" else "float16", 
-            local_files_only=False,
-        )
+        self.last_prompt = None
+        
         
         self.timestamp_offset = 0.0
         self.frames_np = None
         self.frames_offset = 0.0
+
+        self.exit = False
+        self.transcript = []
+        
         self.text = []
         self.current_out = ''
         self.prev_out = ''
         self.t_start=None
-        self.exit = False
+
         self.same_output_threshold = 0
         self.show_prev_out_thresh = 5   # if pause(no output from whisper) show previous output for 5 seconds
         self.add_pause_thresh = 3       # add a blank to segment list as a pause(no speech) for 3 seconds
-        self.transcript = []
+
         self.send_last_n_segments = 10
 
         # text formatting

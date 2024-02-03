@@ -9,10 +9,13 @@ import multiprocessing
 from multiprocessing import Manager, Queue
 
 
-from transcription_server import TranscriptionServer
-
+# from transcription_server import TranscriptionServer
+# from trt_server import TranscriptionServer
+from transcription_server_update import TranscriptionServer
 from llm_api_empty import EmptyLLM
 from tts_service import WhisperSpeechTTS
+# import logging
+# logging.basicConfig(level=logging.DEBUG)
 
 
 if __name__ == "__main__":
@@ -35,9 +38,8 @@ if __name__ == "__main__":
         args=(
             "0.0.0.0",
             6006,
-            # transcription_queue,
-            # llm_queue,
-            # args.whisper_tensorrt_path
+            transcription_queue,
+            llm_queue,
         )
     )
     whisper_process.start()
@@ -63,3 +65,7 @@ if __name__ == "__main__":
     llm_process.join()
     whisper_process.join()
     tts_process.join()
+
+
+# sequence item 0: expected str instance, dict found
+# object of type 'NoneType' has no len()

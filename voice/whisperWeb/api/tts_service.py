@@ -18,6 +18,7 @@ class WhisperSpeechTTS:
         # initialize and warmup model
         self.initialize_model()
         for i in range(3): self.pipe.generate("Hello, I am warming up.")
+        logging.info("running TTS.")
 
         with serve(
             functools.partial(self.start_whisperspeech_tts, audio_queue=audio_queue), 
@@ -33,7 +34,7 @@ class WhisperSpeechTTS:
             llm_response = audio_queue.get()
             if audio_queue.qsize() != 0:
                 continue
-            print(llm_response)
+            logging.info("LLM Response:" + llm_response)
             # check if this websocket exists
             try:
                 websocket.ping()

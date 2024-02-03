@@ -5,11 +5,13 @@ logging.basicConfig(level = logging.INFO)
 import multiprocessing
 import time
 from multiprocessing import Manager, Queue
+from faster_whisper.utils import get_logger
 
 
 class EmptyLLM:
     def __init__(self):
         print('llm init')
+        self.logger = get_logger()
 
 
     def format_prompt_qa(self, prompt, conversation_history):
@@ -47,7 +49,7 @@ class EmptyLLM:
         streaming_interval=4,
         debug=False,
     ):        
-        logging.info("[LLM INFO:] Loaded LLM.")
+        self.logger.info("[LLM INFO:] Loaded LLM.")
 
         conversation_history = {}
 
