@@ -17,7 +17,7 @@ class WhisperSpeechTTS:
     def run(self, host, port, audio_queue=None):
         # initialize and warmup model
         self.initialize_model()
-        for i in range(3): self.pipe.generate("Hello, I am warming up.")
+        # for i in range(3): self.pipe.generate("Hello, I am warming up.")
         logging.info("running TTS.")
 
         with serve(
@@ -34,7 +34,7 @@ class WhisperSpeechTTS:
             llm_response = audio_queue.get()
             if audio_queue.qsize() != 0:
                 continue
-            logging.info("LLM Response:" + llm_response)
+            logging.info("LLM Response received from tts service:" + llm_response)
             # check if this websocket exists
             try:
                 websocket.ping()
@@ -55,7 +55,7 @@ class WhisperSpeechTTS:
                     start = time.time()
                     audio = self.pipe.generate(llm_output.strip(), step_callback=should_abort)
                     inference_time = time.time() - start
-                    logging.info(f"[WhisperSpeech INFO:] TTS inference done in {inference_time} ms.\n\n")
+                    logging.info(f"[TTS INFO:] TTS inference done in {inference_time} ms.\n\n")
                     self.output_audio = audio.cpu().numpy()
                     self.last_llm_response = llm_output.strip()
                 except TimeoutError:
@@ -65,5 +65,5 @@ class WhisperSpeechTTS:
                 try:
                     websocket.send(self.output_audio.tobytes())
                 except Exception as e:
-                    logging.error(f"[WhisperSpeech ERROR:] Audio error: {e}")
+                    logging.error(f"[TTS ERROR:] Audio error: {e}")
 

@@ -455,6 +455,8 @@ class ServeClient:
                             self.text.append('')
 
                 try:
+                    self.prompt = ' '.join(segment['text'] for segment in segments)
+
                     self.websocket.send(
                         json.dumps({
                             "uid": self.client_uid,
@@ -463,6 +465,14 @@ class ServeClient:
                             "latency": infer_time
                         })
                     )
+                    self.transcription_queue.put({"uid": self.client_uid, "prompt": self.prompt, "eos": self.eos})
+                    if self.eos:
+                            self.timestamp_offset += duration
+                            logging.info(f"[Whisper INFO]: {self.prompt}, eos: {self.eos}")
+                            logging.info(
+                                f"[Whisper INFO]: Average inference time {sum(self.segment_inference_time) / len(self.segment_inference_time)}\n\n")
+                            self.segment_inference_time = []
+                            
                 except Exception as e:
                     logging.error(f"[ERROR]: {e}")
 

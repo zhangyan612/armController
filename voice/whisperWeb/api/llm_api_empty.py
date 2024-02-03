@@ -12,6 +12,9 @@ class EmptyLLM:
     def __init__(self):
         print('llm init')
         self.logger = get_logger()
+        self.prompt_template = None
+        self.last_prompt = None
+        self.last_output = None
 
 
     def format_prompt_qa(self, prompt, conversation_history):
@@ -64,7 +67,7 @@ class EmptyLLM:
                 conversation_history[transcription_output["uid"]] = []
 
             prompt = transcription_output['prompt'].strip()
-            print(prompt)          
+            logging.info(prompt)          
             # if prompt is same but EOS is True, we need that to send outputs to websockets
             if self.last_prompt == prompt:
                 if self.last_output is not None and transcription_output["eos"]:
@@ -137,27 +140,27 @@ def clean_llm_output(output):
 
 
 
-if __name__ == "__main__":
-    multiprocessing.set_start_method('spawn')
+# if __name__ == "__main__":
+#     multiprocessing.set_start_method('spawn')
     
-    lock = multiprocessing.Lock()
+#     lock = multiprocessing.Lock()
     
-    manager = Manager()
-    shared_output = manager.list()
+#     manager = Manager()
+#     shared_output = manager.list()
 
-    transcription_queue = Queue()
-    llm_queue = Queue()
-    audio_queue = Queue()
+#     transcription_queue = Queue()
+#     llm_queue = Queue()
+#     audio_queue = Queue()
 
 
-    llm_provider = EmptyLLM()
-    llm_process = multiprocessing.Process(
-        target=llm_provider.run,
-        args=(
-            transcription_queue,
-            llm_queue,
-            audio_queue,
-        )
-    )
+#     llm_provider = EmptyLLM()
+#     llm_process = multiprocessing.Process(
+#         target=llm_provider.run,
+#         args=(
+#             transcription_queue,
+#             llm_queue,
+#             audio_queue,
+#         )
+#     )
 
-    llm_process.start()
+#     llm_process.start()
