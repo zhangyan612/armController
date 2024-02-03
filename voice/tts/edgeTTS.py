@@ -51,7 +51,7 @@ async def generate_voice(text="Hello this is a test run", voice="en-US-SteffanNe
 
     # Get the current working directory
     cwd = os.getcwd()
-    output_file = os.path.join(cwd, f"files/voice/{timestamp}.mp3")
+    output_file = os.path.join(cwd, f"{timestamp}.mp3")
     print(output_file)
     communicate = edge_tts.Communicate(text, voice)
     with open(output_file, "wb") as file:
