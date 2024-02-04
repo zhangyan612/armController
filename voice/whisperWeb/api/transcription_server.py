@@ -207,7 +207,7 @@ class ServeClient:
         # device = "cuda" if torch.cuda.is_available() else "cpu"
         device = "cpu"
         self.transcriber = WhisperModel(
-            "small" if multilingual else "base.en", 
+            model_size_or_path="small" if multilingual else "base.en", 
             device=device,
             compute_type="int8" if device=="cpu" else "float16", 
             local_files_only=False,

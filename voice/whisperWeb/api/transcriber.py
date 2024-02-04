@@ -918,7 +918,8 @@ class WhisperModel:
         ]
     
     def destroy(self):
-        del self.model
+        if self.model:
+            del self.model
 
 
 def restore_speech_timestamps(

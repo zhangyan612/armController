@@ -17,6 +17,7 @@ from transcriber import WhisperModel
 import os
 import functools
 import queue
+import platform
 
 os.environ["KMP_DUPLICATE_LIB_OK"]="TRUE"
 
@@ -86,7 +87,7 @@ class TranscriptionServer:
         Raises:
             Exception: If there is an error during the audio frame processing.
         """
-        logging.info("[Whisper INFO:] New client connected")
+        logging.info("[Transcription:] New client connected")
         
         self.vad_model = VoiceActivityDetection()
         self.vad_threshold = 0.5
@@ -107,13 +108,21 @@ class TranscriptionServer:
             del websocket
             return
         
+
+
         if self.transcriber is None:
+            device = "cpu"
+            compute = "int8"
+            if torch.cuda.is_available() and 'ubuntu' in platform.platform().lower():
+                device = "cuda"
+                compute = "float16"
+
             self.transcriber = WhisperModel(
-            "base.en", 
-            device='cpu',
-            compute_type="int8", 
-            local_files_only=False,
-        )
+                model_size_or_path="base.en", 
+                device=device,
+                compute_type=compute,
+                local_files_only=False,
+            )
             
         client = ServeClient(
             websocket,
@@ -152,8 +161,6 @@ class TranscriptionServer:
                     logging.error(e)
                     return
                 
-                # ERROR:root:[ERROR]: 'WhisperModel' object has no attribute 'model'
-
                 self.clients[websocket].add_frames(frame_np)
 
                 elapsed_time = time.time() - self.clients_start_time[websocket]
@@ -402,12 +409,13 @@ class ServeClient:
                     if llm_response:
                         eos = llm_response["eos"]
                         if eos:
+                            logging.info(f"[Transcription]: Sending LLM response to web socket")
                             self.websocket.send(json.dumps(llm_response))
             except queue.Empty:
                 pass
 
             if self.exit:
-                logging.info("[Whisper INFO:] Exiting speech to text thread")
+                logging.info("[Transcription]: Exiting speech to text thread")
                 break
             
             if self.frames_np is None: 
@@ -482,6 +490,7 @@ class ServeClient:
                 try:
                     self.prompt = ' '.join(segment['text'] for segment in segments)
 
+                    logging.info(f"[Transcription]: Send segments to web socket")
                     self.websocket.send(
                         json.dumps({
                             "uid": self.client_uid,
@@ -491,18 +500,19 @@ class ServeClient:
                         })
                     )
                     self.transcription_queue.put({"uid": self.client_uid, "prompt": self.prompt, "eos": self.eos})
+                    logging.info(f"[Transcription]: Send message to transcription queue {self.prompt}")
                     if self.eos:
                             self.timestamp_offset += duration
-                            logging.info(f"[Whisper INFO]: {self.prompt}, eos: {self.eos}")
+                            logging.info(f"[Transcription]: EOS: {self.eos} Prompt: {self.prompt}")
                             logging.info(
-                                f"[Whisper INFO]: Average inference time {sum(self.segment_inference_time) / len(self.segment_inference_time)}\n\n")
+                                f"[Transcription]: Average inference time {sum(self.segment_inference_time) / len(self.segment_inference_time)}\n")
                             self.segment_inference_time = []
                             
                 except Exception as e:
-                    logging.error(f"[ERROR]: {e}")
+                    logging.error(f"[Transcription ERROR]: {e}")
 
             except Exception as e:
-                logging.error(f"[ERROR]: {e}")
+                logging.error(f"[Transcription ERROR]: {e}")
                 time.sleep(0.01)
     
     def update_segments(self, segments, duration):
@@ -610,4 +620,6 @@ class ServeClient:
         """
         logging.info("Cleaning up.")
         self.exit = True
-        self.transcriber.destroy()
+        # ERROR:root:[ERROR]: 'WhisperModel' object has no attribute 'model'
+        # possible error so remove this
+        # self.transcriber.destroy()

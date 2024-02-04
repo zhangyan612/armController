@@ -18,7 +18,7 @@ class WhisperSpeechTTS:
         # initialize and warmup model
         self.initialize_model()
         # for i in range(3): self.pipe.generate("Hello, I am warming up.")
-        logging.info("running TTS.")
+        logging.info("[TTS Service]: Started")
 
         with serve(
             functools.partial(self.start_whisperspeech_tts, audio_queue=audio_queue), 
@@ -36,13 +36,14 @@ class WhisperSpeechTTS:
                 continue
             
             if isinstance(llm_response, str):
-                logging.info("LLM Response received from tts service:" + llm_response)
+                logging.info("[TTS Service]: LLM Response received from tts service:" + llm_response)
             # check if this websocket exists
             try:
                 websocket.ping()
             except Exception as e:
                 del websocket
                 audio_queue.put(llm_response)
+                logging.error(f"[TTS ERROR]: put llm response to audio queue")
                 break
             
             llm_output = llm_response["llm_output"]
@@ -57,7 +58,7 @@ class WhisperSpeechTTS:
                     start = time.time()
                     audio = self.pipe.generate(llm_output.strip(), step_callback=should_abort)
                     inference_time = time.time() - start
-                    logging.info(f"[TTS INFO:] TTS inference done in {inference_time} ms.\n\n")
+                    logging.info(f"[TTS Service]: TTS inference done in {inference_time} ms.")
                     self.output_audio = audio.cpu().numpy()
                     self.last_llm_response = llm_output.strip()
                 except TimeoutError:
@@ -66,6 +67,7 @@ class WhisperSpeechTTS:
             if self.eos and self.output_audio is not None:
                 try:
                     websocket.send(self.output_audio.tobytes())
+                    logging.info(f"[TTS Service]: Sent audio to websocket")
                 except Exception as e:
-                    logging.error(f"[TTS ERROR:] Audio error: {e}")
+                    logging.error(f"[TTS ERROR]: Audio error: {e}")
 

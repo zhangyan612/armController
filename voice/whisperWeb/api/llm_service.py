@@ -50,7 +50,7 @@ class LLMService:
         streaming_interval=4,
         debug=False,
     ):        
-        self.logger.info("[LLM INFO:] Loaded LLM.")
+        self.logger.info("[LLM Service]: Loaded LLM.")
 
         conversation_history = {}
 
@@ -65,21 +65,25 @@ class LLMService:
                 conversation_history[transcription_output["uid"]] = []
 
             prompt = transcription_output['prompt'].strip()
-            logging.info(prompt)          
+
+            logging.info(f'[LLM Service]: Prompt: {prompt}')
+
             # if prompt is same but EOS is True, we need that to send outputs to websockets
             if self.last_prompt == prompt:
                 if self.last_output is not None and transcription_output["eos"]:
                     self.eos = transcription_output["eos"]
-                    llm_queue.put({
-                        "uid": transcription_output["uid"],
-                        "llm_output": self.last_output,
-                        "eos": self.eos,
-                        "latency": self.infer_time
-                    })
-                    audio_queue.put({"llm_output": self.last_output, "eos": self.eos})
-                    conversation_history[transcription_output["uid"]].append(
-                        (transcription_output['prompt'].strip(), self.last_output[0].strip())
-                    )
+                    logging.info('[LLM Service]:assign eos, not sending')          
+
+                    # llm_queue.put({
+                    #     "uid": transcription_output["uid"],
+                    #     "llm_output": self.last_output,
+                    #     "eos": self.eos,
+                    #     "latency": self.infer_time
+                    # })
+                    # audio_queue.put({"llm_output": self.last_output, "eos": self.eos})
+                    # conversation_history[transcription_output["uid"]].append(
+                    #     (transcription_output['prompt'].strip(), self.last_output[0].strip())
+                    # )
                     continue
 
             # input_text=[self.format_prompt_qa(prompt, conversation_history[transcription_output["uid"]])]
@@ -88,39 +92,41 @@ class LLMService:
             
             self.eos = transcription_output["eos"]
 
-            logging.info(f"[LLM INFO:] Running LLM with WhisperLive prompt: {prompt}, eos: {self.eos}")
-
-            start = time.time()
-
-            messageList = [
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": prompt},
-            ]
-
-            output = leptonLLM.llm_request(messageList)
-
-            self.infer_time = time.time() - start
-            
-            # if self.eos:
-            if output is not None:
-                output = clean_llm_output(output)
-                self.last_output = output
-                self.last_prompt = prompt
-                llm_queue.put({
-                    "uid": transcription_output["uid"],
-                    "llm_output": output,
-                    "eos": self.eos,
-                    "latency": self.infer_time
-                })
-                audio_queue.put({"llm_output": output, "eos": self.eos})
-                logging.info(f"[LLM INFO:] Output: {output}\nLLM inference done in {self.infer_time} ms\n\n")
-            
             if self.eos:
-                conversation_history[transcription_output["uid"]].append(
-                    (transcription_output['prompt'].strip(), output.strip())
-                )
-                self.last_prompt = None
-                self.last_output = None
+                logging.info(f"[LLM Service]: LLM generate prompt: {prompt}, eos: {self.eos}")
+
+                start = time.time()
+
+                messageList = [
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": prompt},
+                ]
+
+                output = leptonLLM.llm_request(messageList)
+
+                self.infer_time = time.time() - start
+                
+                # if self.eos:
+                if output is not None:
+                    output = clean_llm_output(output)
+
+                    self.last_output = output
+                    self.last_prompt = prompt
+                    llm_queue.put({
+                        "uid": transcription_output["uid"],
+                        "llm_output": output,
+                        "eos": self.eos,
+                        "latency": self.infer_time
+                    })
+                    audio_queue.put({"llm_output": output, "eos": self.eos})
+                    logging.info(f"[LLM Service]: Output sent to llm_queue: {output}, inference done in {self.infer_time} ms\n")
+
+                    conversation_history[transcription_output["uid"]].append(
+                        (transcription_output['prompt'].strip(), output.strip())
+                    )
+                    self.last_prompt = None
+                    self.last_output = None
+
 
 def clean_llm_output(output):
     output = output.replace("\n\nDolphin\n\n", "")

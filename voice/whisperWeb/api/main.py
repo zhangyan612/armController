@@ -57,3 +57,9 @@ if __name__ == "__main__":
     llm_process.join()
     whisper_process.join()
     tts_process.join()
+
+
+# INFO:faster_whisper:Processing audio with duration 00:01.280
+# INFO:faster_whisper:VAD filter removed 00:00.000 of audio
+# DEBUG:faster_whisper:VAD filter kept the following audio segments: [00:00.000 -> 00:01.280]
+# ERROR:root:[ERROR]: 'WhisperModel' object has no attribute 'model'

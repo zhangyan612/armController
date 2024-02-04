@@ -9,6 +9,9 @@ import configparser
 config = configparser.ConfigParser()
 config.read('.env')
 
+counter = 1
+
+
 LEPTON_WORKSPACE_TOKEN = config.get('LEPTON', 'token')
 
 stop_words = [
@@ -23,7 +26,11 @@ stop_words = [
 def llm_request(messageList, model='mixtral-8x7b'):
     import time
     time.sleep(10)
-    return 'This is output from AI'
+    global counter
+    print(messageList)
+    text = f'This is output {str(counter)} from AI'
+    counter= counter+1
+    return text
     # client = openai.OpenAI(
     #         base_url=f"https://{model}.lepton.run/api/v1/",
     #         api_key=LEPTON_WORKSPACE_TOKEN,
