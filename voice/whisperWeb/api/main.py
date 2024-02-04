@@ -1,25 +1,17 @@
 import multiprocessing
-# import argparse
-# import threading
-# import ssl
-# import time
-# import sys
-# import functools
-
 from multiprocessing import Manager, Queue
-
 
 # from transcription_server import TranscriptionServer
 # from trt_server import TranscriptionServer
 from transcription_server_update import TranscriptionServer
 from llm_api_empty import EmptyLLM
 from tts_service import WhisperSpeechTTS
+
 # import logging
 # logging.basicConfig(level=logging.DEBUG)
 
 
 if __name__ == "__main__":
-    # In general works 
     multiprocessing.set_start_method('spawn')
     
     lock = multiprocessing.Lock()
@@ -65,7 +57,3 @@ if __name__ == "__main__":
     llm_process.join()
     whisper_process.join()
     tts_process.join()
-
-
-# sequence item 0: expected str instance, dict found
-# object of type 'NoneType' has no len()

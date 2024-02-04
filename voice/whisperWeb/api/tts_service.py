@@ -34,7 +34,9 @@ class WhisperSpeechTTS:
             llm_response = audio_queue.get()
             if audio_queue.qsize() != 0:
                 continue
-            logging.info("LLM Response received from tts service:" + llm_response)
+            
+            if isinstance(llm_response, str):
+                logging.info("LLM Response received from tts service:" + llm_response)
             # check if this websocket exists
             try:
                 websocket.ping()
@@ -43,7 +45,7 @@ class WhisperSpeechTTS:
                 audio_queue.put(llm_response)
                 break
             
-            llm_output = llm_response["llm_output"][0]
+            llm_output = llm_response["llm_output"]
             self.eos = llm_response["eos"]
 
             def should_abort():
