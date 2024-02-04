@@ -4,7 +4,7 @@ from multiprocessing import Manager, Queue
 # from transcription_server import TranscriptionServer
 # from trt_server import TranscriptionServer
 from transcription_server_update import TranscriptionServer
-from llm_api_empty import EmptyLLM
+from llm_service import LLMService
 from tts_service import WhisperSpeechTTS
 
 # import logging
@@ -36,7 +36,7 @@ if __name__ == "__main__":
     )
     whisper_process.start()
 
-    llm_provider = EmptyLLM()
+    llm_provider = LLMService()
 
     llm_process = multiprocessing.Process(
         target=llm_provider.run,

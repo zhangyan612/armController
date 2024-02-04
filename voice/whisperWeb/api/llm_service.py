@@ -2,13 +2,11 @@
 import time
 import logging
 logging.basicConfig(level = logging.INFO)
-import multiprocessing
 import time
-from multiprocessing import Manager, Queue
 from faster_whisper.utils import get_logger
+import leptonLLM
 
-
-class EmptyLLM:
+class LLMService:
     def __init__(self):
         print('llm init')
         self.logger = get_logger()
@@ -85,14 +83,21 @@ class EmptyLLM:
                     continue
 
             # input_text=[self.format_prompt_qa(prompt, conversation_history[transcription_output["uid"]])]
-            input_text=[self.format_prompt_chatml(prompt, conversation_history[transcription_output["uid"]], system_prompt="You are Robot, a helpful AI assistant")]
+            system_prompt = "You are a Robot, a helpful AI assistant"
+            input_text=[self.format_prompt_chatml(prompt, conversation_history[transcription_output["uid"]], system_prompt=system_prompt)]
             
             self.eos = transcription_output["eos"]
 
             logging.info(f"[LLM INFO:] Running LLM with WhisperLive prompt: {prompt}, eos: {self.eos}")
+
             start = time.time()
 
-            output = prompt
+            messageList = [
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": prompt},
+            ]
+
+            output = leptonLLM.llm_request(messageList)
 
             self.infer_time = time.time() - start
             

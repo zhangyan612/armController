@@ -52,3 +52,12 @@ server:
 python3 whisper_online_server.py --language en --model base.en --backend faster-whisper --min-chunk-size 1 > out.txt
 
 recorder: arecord -f S16_LE -c1 -r 16000 -t raw -D default | nc localhost 43001
+
+
+whisper fusion
+
+pyaudio
+whisper-live
+pynvml>=11.5.0
+chardet
+openai
