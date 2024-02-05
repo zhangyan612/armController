@@ -5,7 +5,9 @@ from multiprocessing import Manager, Queue
 # from trt_server import TranscriptionServer
 from transcription_server_update import TranscriptionServer
 from llm_service import LLMService
-from tts_service import WhisperSpeechTTS
+# from tts_service import WhisperSpeechTTS
+from tts_service_file import WhisperSpeechTTS
+
 # from edge_tts_service import EdgeTTSService
 
 # import logging
