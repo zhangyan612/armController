@@ -8,7 +8,6 @@ import leptonLLM
 
 class LLMService:
     def __init__(self):
-        print('llm init')
         self.logger = get_logger()
         self.prompt_template = None
         self.last_prompt = None
@@ -50,7 +49,7 @@ class LLMService:
         streaming_interval=4,
         debug=False,
     ):        
-        self.logger.info("[LLM Service]: Loaded LLM.")
+        self.logger.info("[LLM Service]: Started")
 
         conversation_history = {}
 
@@ -91,6 +90,7 @@ class LLMService:
             input_text=[self.format_prompt_chatml(prompt, conversation_history[transcription_output["uid"]], system_prompt=system_prompt)]
             
             self.eos = transcription_output["eos"]
+            logging.info(conversation_history)
 
             if self.eos:
                 logging.info(f"[LLM Service]: LLM generate prompt: {prompt}, eos: {self.eos}")

@@ -15,9 +15,7 @@ class WhisperSpeechTTS:
         self.last_llm_response = None
 
     def run(self, host, port, audio_queue=None):
-        # initialize and warmup model
         self.initialize_model()
-        # for i in range(3): self.pipe.generate("Hello, I am warming up.")
         logging.info("[TTS Service]: Started")
 
         with serve(
@@ -37,7 +35,6 @@ class WhisperSpeechTTS:
             
             if isinstance(llm_response, str):
                 logging.info("[TTS Service]: LLM Response received from tts service:" + llm_response)
-            # check if this websocket exists
             try:
                 websocket.ping()
             except Exception as e:
@@ -70,4 +67,3 @@ class WhisperSpeechTTS:
                     logging.info(f"[TTS Service]: Sent audio to websocket")
                 except Exception as e:
                     logging.error(f"[TTS ERROR]: Audio error: {e}")
-

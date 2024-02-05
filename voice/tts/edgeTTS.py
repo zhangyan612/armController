@@ -6,18 +6,18 @@ Fastest TTS engine
 import asyncio
 import time
 import os
-import vlc
+# import vlc
 import edge_tts
 
 
 # refer to tts_make.launch   roslaunch tts tts_make.launch
 
-def playSound(file):
-    p = vlc.MediaPlayer(file)
-    p.play()
-    time.sleep(1)
-    while p.is_playing():
-        time.sleep(1)
+# def playSound(file):
+#     p = vlc.MediaPlayer(file)
+#     p.play()
+#     time.sleep(1)
+#     while p.is_playing():
+#         time.sleep(1)
 
 def split_text_by_sentence(text):
     result = []  # List to store sentences
@@ -51,7 +51,7 @@ async def generate_voice(text="Hello this is a test run", voice="en-US-SteffanNe
 
     # Get the current working directory
     cwd = os.getcwd()
-    output_file = os.path.join(cwd, f"{timestamp}.mp3")
+    output_file = os.path.join(cwd, f"{timestamp}.wav")
     print(output_file)
     communicate = edge_tts.Communicate(text, voice)
     with open(output_file, "wb") as file:
@@ -62,15 +62,14 @@ async def generate_voice(text="Hello this is a test run", voice="en-US-SteffanNe
                 print(f"WordBoundary: {chunk}")
 
     # Play the generated audio file
-    playSound(output_file)
+    # playSound(output_file)
 
 
 if __name__ == "__main__":
     loop = asyncio.get_event_loop_policy().get_event_loop()
     try:
-        loop.run_until_complete(generate_voice('This is a test run on generating voice. This is a long text that should be split into multiple files. Each file will be played seperately.'))
+        loop.run_until_complete(generate_voice('This is a test run on generating voice.'))
     finally:
         loop.close()
 
-    # playSound('D:\Robot\SuperAGI/files/voice/20240124-220540.mp3')
 
