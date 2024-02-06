@@ -6,9 +6,9 @@ from multiprocessing import Manager, Queue
 from transcription_server_update import TranscriptionServer
 from llm_service import LLMService
 # from tts_service import WhisperSpeechTTS
-from tts_service_file import WhisperSpeechTTS
+# from tts_service_file import WhisperSpeechTTS
 
-# from edge_tts_service import EdgeTTSService
+from edge_tts_service import EdgeTTSService
 
 # import logging
 # logging.basicConfig(level=logging.DEBUG)
@@ -53,7 +53,7 @@ if __name__ == "__main__":
     llm_process.start()
 
     # audio process
-    tts_runner = WhisperSpeechTTS()
+    tts_runner = EdgeTTSService()
     tts_process = multiprocessing.Process(target=tts_runner.run, args=("0.0.0.0", 8888, audio_queue))
     tts_process.start()
 
