@@ -4,6 +4,7 @@ import logging
 import asyncio
 import os
 import edge_tts
+import vlc 
 
 logging.basicConfig(level = logging.INFO)
 from websockets.sync.server import serve
@@ -83,6 +84,12 @@ class EdgeTTSService:
     #                 logging.info(f"[TTS Service]: Sent audio to websocket")
     #             except Exception as e:
     #                 logging.error(f"[TTS ERROR]: Audio error: {e}")
+    def playSound(self, file):
+        p = vlc.MediaPlayer(file)
+        p.play()
+        time.sleep(1)
+        while p.is_playing():
+            time.sleep(1)
 
     def start_edge_tts(self, websocket, audio_queue=None):
         self.eos = False
@@ -125,10 +132,16 @@ class EdgeTTSService:
                 
             if self.eos and self.output_audio is not None:
                 try:
-                    with open(audio_file_path, 'rb') as f:
-                        self.output_audio = f.read()
-                    websocket.send(self.output_audio)
-                    logging.info(f"[TTS Service]: Sent audio to websocket")
+                    # with open(audio_file_path, 'rb') as f:
+                    #     self.output_audio = f.read()
+                    # websocket.send(self.output_audio)
+
+                    self.playSound(self.output_audio)
+                    logging.info(f"[TTS Service]: playing audio file")
+                    if os.path.isfile(self.output_audio):
+                        os.remove(self.output_audio)
+                        self.output_audio = None
+
                 except Exception as e:
                     logging.error(f"[TTS ERROR]: Audio error: {e}")
 
@@ -136,7 +149,7 @@ class EdgeTTSService:
         timestamp = time.strftime("%Y%m%d-%H%M%S")
         cwd = os.getcwd()
         output_file = os.path.join(cwd, f"{timestamp}.wav")
-        print(output_file)
+        # print(output_file)
         communicate = edge_tts.Communicate(text, voice)
         with open(output_file, "wb") as file:
             async for chunk in communicate.stream():
