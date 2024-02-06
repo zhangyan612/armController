@@ -66,35 +66,12 @@ class TranscriptionServer:
 
         return wait_time / 60
 
-    def recv_audio(self, websocket, transcription_queue=None, llm_queue=None, whisper_tensorrt_path=None):
-        """
-        Receive audio chunks from a client in an infinite loop.
-        
-        Continuously receives audio frames from a connected client
-        over a WebSocket connection. It processes the audio frames using a
-        voice activity detection (VAD) model to determine if they contain speech
-        or not. If the audio frame contains speech, it is added to the client's
-        audio data for ASR.
-        If the maximum number of clients is reached, the method sends a
-        "WAIT" status to the client, indicating that they should wait
-        until a slot is available.
-        If a client's connection exceeds the maximum allowed time, it will
-        be disconnected, and the client's resources will be cleaned up.
-
-        Args:
-            websocket (WebSocket): The WebSocket connection for the client.
-        
-        Raises:
-            Exception: If there is an error during the audio frame processing.
-        """
-        logging.info("[Transcription:] New client connected")
-        
-        self.vad_model = VoiceActivityDetection()
-        self.vad_threshold = 0.5
-
+    def options_processing(self, websocket):
         options = websocket.recv()
         options = json.loads(options)
+        return options
 
+    def handle_client_queue(self, websocket, options):
         if len(self.clients) >= self.max_clients:
             logging.warning("Client Queue Full. Asking client to wait ...")
             wait_time = self.get_wait_time()
@@ -107,9 +84,8 @@ class TranscriptionServer:
             websocket.close()
             del websocket
             return
-        
 
-
+    def handle_transcriber(self):
         if self.transcriber is None:
             device = "cpu"
             compute = "int8"
@@ -118,12 +94,15 @@ class TranscriptionServer:
                 compute = "float16"
 
             self.transcriber = WhisperModel(
-                model_size_or_path="base.en", 
+                model_size_or_path="base.en",
                 device=device,
                 compute_type=compute,
                 local_files_only=False,
             )
-            
+        return device, compute
+
+
+    def assign_client(self, websocket, options, transcription_queue=None, llm_queue=None):
         client = ServeClient(
             websocket,
             multilingual=options["multilingual"],
@@ -137,52 +116,206 @@ class TranscriptionServer:
 
         self.clients[websocket] = client
         self.clients_start_time[websocket] = time.time()
+        return client
+
+    def frame_processing(self, websocket, client):
+        try:
+            frame_data = websocket.recv()
+            frame_np = np.frombuffer(frame_data, dtype=np.float32)
+            return frame_data, frame_np
+        except Exception as e:
+            logging.error(e)
+            del websocket
+            return
+
+
+    def voice_activity_detection(self, frame_np, no_voice_activity_chunks, websocket):
+        """Detects voice activity in an audio frame.
+    
+        Uses a pretrained Voice Activity Detection (VAD) model to determine if an audio 
+        frame contains speech. Keeps track of consecutive silent frames and sets end-of-speech
+        flag on client if threshold is exceeded. Returns number of silent frames and a 
+        flag indicating if frame contains speech.
+        
+        Args:
+            frame_np: Numpy array containing audio frame data.
+            no_voice_activity_chunks: Tracker for number of consecutive silent frames.
+            websocket: Websocket connection to client.
+        
+        Returns:
+            no_voice_activity_chunks: Updated count of consecutive silent frames.
+            continue_processing: Flag indicating if frame contains speech.
+        """
+        try:
+            speech_prob = self.vad_model(torch.from_numpy(frame_np.copy()), self.RATE).item()
+            if speech_prob < self.vad_threshold:
+                no_voice_activity_chunks += 1
+                if no_voice_activity_chunks > 3:
+                    if not self.clients[websocket].eos:
+                        self.clients[websocket].set_eos(True)
+                    time.sleep(0.1)
+                return no_voice_activity_chunks, False
+            no_voice_activity_chunks = 0
+            self.clients[websocket].set_eos(False)
+            return no_voice_activity_chunks, True
+
+        except Exception as e:
+            logging.error(e)
+            return no_voice_activity_chunks, False
+
+
+    def disconnect_client(self, websocket):
+        self.clients[websocket].disconnect()
+        logging.warning(f"{self.clients[websocket]} Client disconnected due to overtime.")
+        self.clients[websocket].cleanup()
+        self.clients.pop(websocket)
+        self.clients_start_time.pop(websocket)
+        websocket.close()
+        del websocket
+
+
+    def recv_audio(self, websocket, transcription_queue=None, llm_queue=None, whisper_tensorrt_path=None):
+        logging.info("[Transcription:] New client connected")
+
+        self.vad_model = VoiceActivityDetection()
+        self.vad_threshold = 0.5
+
+        options = self.options_processing(websocket)
+        self.handle_client_queue(websocket, options)
+
+        device, compute = self.handle_transcriber()
+
+        client = self.assign_client(websocket, options, transcription_queue, llm_queue)
+
         no_voice_activity_chunks = 0
 
         while True:
-            try:
-                frame_data = websocket.recv()
-                frame_np = np.frombuffer(frame_data, dtype=np.float32)
+            frame_data, frame_np = self.frame_processing(websocket, client)
+            no_voice_activity_chunks, continue_processing = self.voice_activity_detection(frame_np, no_voice_activity_chunks, websocket)
+            if not continue_processing:
+                continue
+            self.clients[websocket].add_frames(frame_np)
 
-                # VAD
-                try:
-                    speech_prob = self.vad_model(torch.from_numpy(frame_np.copy()), self.RATE).item()
-                    if speech_prob < self.vad_threshold:
-                        no_voice_activity_chunks += 1
-                        if no_voice_activity_chunks > 3:
-                            if not self.clients[websocket].eos:
-                                self.clients[websocket].set_eos(True)
-                            time.sleep(0.1)    # EOS stop receiving frames for a 100ms(to send output to LLM.)
-                        continue
-                    no_voice_activity_chunks = 0
-                    self.clients[websocket].set_eos(False)
-
-                except Exception as e:
-                    logging.error(e)
-                    return
-                
-                self.clients[websocket].add_frames(frame_np)
-
-                elapsed_time = time.time() - self.clients_start_time[websocket]
-                if elapsed_time >= self.max_connection_time:
-                    self.clients[websocket].disconnect()
-                    logging.warning(f"{self.clients[websocket]} Client disconnected due to overtime.")
-                    self.clients[websocket].cleanup()
-                    self.clients.pop(websocket)
-                    self.clients_start_time.pop(websocket)
-                    websocket.close()
-                    del websocket
-                    break
-
-            except Exception as e:
-                logging.error(e)
-                self.clients[websocket].cleanup()
-                self.clients.pop(websocket)
-                self.clients_start_time.pop(websocket)
-                logging.info("Connection Closed.")
-                logging.info(self.clients)
-                del websocket
+            elapsed_time = time.time() - self.clients_start_time[websocket]
+            if elapsed_time >= self.max_connection_time:
+                self.disconnect_client(websocket)
                 break
+    # def recv_audio(self, websocket, transcription_queue=None, llm_queue=None, whisper_tensorrt_path=None):
+    #     """
+    #     Receive audio chunks from a client in an infinite loop.
+        
+    #     Continuously receives audio frames from a connected client
+    #     over a WebSocket connection. It processes the audio frames using a
+    #     voice activity detection (VAD) model to determine if they contain speech
+    #     or not. If the audio frame contains speech, it is added to the client's
+    #     audio data for ASR.
+    #     If the maximum number of clients is reached, the method sends a
+    #     "WAIT" status to the client, indicating that they should wait
+    #     until a slot is available.
+    #     If a client's connection exceeds the maximum allowed time, it will
+    #     be disconnected, and the client's resources will be cleaned up.
+
+    #     Args:
+    #         websocket (WebSocket): The WebSocket connection for the client.
+        
+    #     Raises:
+    #         Exception: If there is an error during the audio frame processing.
+    #     """
+    #     logging.info("[Transcription:] New client connected")
+        
+    #     self.vad_model = VoiceActivityDetection()
+    #     self.vad_threshold = 0.5
+
+    #     options = websocket.recv()
+    #     options = json.loads(options)
+
+    #     if len(self.clients) >= self.max_clients:
+    #         logging.warning("Client Queue Full. Asking client to wait ...")
+    #         wait_time = self.get_wait_time()
+    #         response = {
+    #             "uid": options["uid"],
+    #             "status": "WAIT",
+    #             "message": wait_time,
+    #         }
+    #         websocket.send(json.dumps(response))
+    #         websocket.close()
+    #         del websocket
+    #         return
+        
+
+    #     if self.transcriber is None:
+    #         device = "cpu"
+    #         compute = "int8"
+    #         if torch.cuda.is_available() and 'ubuntu' in platform.platform().lower():
+    #             device = "cuda"
+    #             compute = "float16"
+
+    #         self.transcriber = WhisperModel(
+    #             model_size_or_path="base.en", 
+    #             device=device,
+    #             compute_type=compute,
+    #             local_files_only=False,
+    #         )
+            
+    #     client = ServeClient(
+    #         websocket,
+    #         multilingual=options["multilingual"],
+    #         language=options["language"],
+    #         task=options["task"],
+    #         client_uid=options["uid"],
+    #         transcription_queue=transcription_queue,
+    #         llm_queue=llm_queue,
+    #         transcriber=self.transcriber
+    #     )
+
+    #     self.clients[websocket] = client
+    #     self.clients_start_time[websocket] = time.time()
+    #     no_voice_activity_chunks = 0
+
+    #     while True:
+    #         try:
+    #             frame_data = websocket.recv()
+    #             frame_np = np.frombuffer(frame_data, dtype=np.float32)
+
+    #             # VAD
+    #             try:
+    #                 speech_prob = self.vad_model(torch.from_numpy(frame_np.copy()), self.RATE).item()
+    #                 if speech_prob < self.vad_threshold:
+    #                     no_voice_activity_chunks += 1
+    #                     if no_voice_activity_chunks > 3:
+    #                         if not self.clients[websocket].eos:
+    #                             self.clients[websocket].set_eos(True)
+    #                         time.sleep(0.1)    # EOS stop receiving frames for a 100ms(to send output to LLM.)
+    #                     continue
+    #                 no_voice_activity_chunks = 0
+    #                 self.clients[websocket].set_eos(False)
+
+    #             except Exception as e:
+    #                 logging.error(e)
+    #                 return
+                
+    #             self.clients[websocket].add_frames(frame_np)
+
+    #             elapsed_time = time.time() - self.clients_start_time[websocket]
+    #             if elapsed_time >= self.max_connection_time:
+    #                 self.clients[websocket].disconnect()
+    #                 logging.warning(f"{self.clients[websocket]} Client disconnected due to overtime.")
+    #                 self.clients[websocket].cleanup()
+    #                 self.clients.pop(websocket)
+    #                 self.clients_start_time.pop(websocket)
+    #                 websocket.close()
+    #                 del websocket
+    #                 break
+
+    #         except Exception as e:
+    #             logging.error(e)
+    #             self.clients[websocket].cleanup()
+    #             self.clients.pop(websocket)
+    #             self.clients_start_time.pop(websocket)
+    #             logging.info("Connection Closed.")
+    #             logging.info(self.clients)
+    #             del websocket
+    #             break
 
     def run(self, host, port=9090, transcription_queue=None, llm_queue=None):
         """

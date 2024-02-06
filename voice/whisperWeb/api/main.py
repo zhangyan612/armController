@@ -13,7 +13,6 @@ from edge_tts_service import EdgeTTSService
 # import logging
 # logging.basicConfig(level=logging.DEBUG)
 
-
 if __name__ == "__main__":
     multiprocessing.set_start_method('spawn')
     
