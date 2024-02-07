@@ -28,7 +28,7 @@ def llm_request(messageList, model='mixtral-8x7b'):
     # time.sleep(10)
     # global counter
     # print(messageList)
-    # text = f'This is output {str(counter)} from AI'
+    # text = f'This is output {str(counter)} from AI, and it should be a long text that could block transcriber service'
     # counter= counter+1
     # return text
     client = openai.OpenAI(
