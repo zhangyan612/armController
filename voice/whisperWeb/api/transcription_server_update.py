@@ -315,8 +315,8 @@ class ServeClient:
 
         self.same_output_threshold = 0
         self.show_prev_out_thresh = 5   # if pause(no output from whisper) show previous output for 5 seconds
-        self.add_pause_thresh = 3       # add a blank to segment list as a pause(no speech) for 3 seconds
-
+        self.add_pause_thresh = 4       # add a blank to segment list as a pause(no speech) for 3 seconds
+        self.sleep_duration = 0.4
         self.send_last_n_segments = 10
 
         # text formatting
@@ -511,7 +511,7 @@ class ServeClient:
             input_bytes = self.frames_np[int(samples_take):].copy()
             duration = input_bytes.shape[0] / self.RATE
 
-            if duration<0.4:
+            if duration < self.sleep_duration:
                 time.sleep(0.01)    # 5ms sleep to wait for some voice active audio to arrive
                 continue
             try:
@@ -528,11 +528,16 @@ class ServeClient:
                     vad_parameters={"threshold": 0.5}
                 )
 
+                # last_segment = self.update_segments(result, duration)
+
                 infer_time = time.time() - start
                 self.segment_inference_time.append(infer_time)
                 # check_language(info)
                 
                 segments = self.update_prompt_and_segments(result, duration)
+                # segments = []
+                # if len(last_segment):
+                #     segments.append({"text": last_segment})
 
                 self.update_ui_and_queue(segments, infer_time, duration)
 
