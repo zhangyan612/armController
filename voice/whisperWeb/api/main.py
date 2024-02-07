@@ -1,5 +1,5 @@
 import multiprocessing
-from multiprocessing import Manager, Queue
+from multiprocessing import Manager, Queue, Event
 
 # from transcription_server import TranscriptionServer
 # from trt_server import TranscriptionServer
@@ -25,15 +25,18 @@ if __name__ == "__main__":
     llm_queue = Queue()
     audio_queue = Queue()
 
+    # Event to control transcription service listening
+    tts_playing_event = Event()
 
     whisper_server = TranscriptionServer()
-    whisper_process = multiprocessing.Process(
+    whisper_process = multiprocessing.Process(  
         target=whisper_server.run,
         args=(
             "0.0.0.0",
             6006,
             transcription_queue,
             llm_queue,
+            tts_playing_event
         )
     )
     whisper_process.start()
@@ -53,7 +56,15 @@ if __name__ == "__main__":
 
     # audio process
     tts_runner = EdgeTTSService()
-    tts_process = multiprocessing.Process(target=tts_runner.run, args=("0.0.0.0", 8888, audio_queue))
+    tts_process = multiprocessing.Process(
+        target=tts_runner.run, 
+        args=(
+            "0.0.0.0", 
+            8888, 
+            audio_queue,
+            tts_playing_event
+        )
+    )
     tts_process.start()
 
     llm_process.join()

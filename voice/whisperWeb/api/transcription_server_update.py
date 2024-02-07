@@ -179,7 +179,7 @@ class TranscriptionServer:
     with Whisper, and sends transcription results back to the client. Handles connecting 
     and disconnecting clients.
     """
-    def recv_audio(self, websocket, transcription_queue=None, llm_queue=None, whisper_tensorrt_path=None):
+    def recv_audio(self, websocket, transcription_queue=None, llm_queue=None, tts_playing_event=None):
         logging.info("[Transcription:] New client connected")
 
         self.vad_model = VoiceActivityDetection()
@@ -195,18 +195,19 @@ class TranscriptionServer:
         no_voice_activity_chunks = 0
 
         while True:
-            frame_data, frame_np = self.frame_processing(websocket, client)
-            no_voice_activity_chunks, continue_processing = self.voice_activity_detection(frame_np, no_voice_activity_chunks, websocket)
-            if not continue_processing:
-                continue
-            self.clients[websocket].add_frames(frame_np)
+            if not tts_playing_event.is_set():
+                frame_data, frame_np = self.frame_processing(websocket, client)
+                no_voice_activity_chunks, continue_processing = self.voice_activity_detection(frame_np, no_voice_activity_chunks, websocket)
+                if not continue_processing:
+                    continue
+                self.clients[websocket].add_frames(frame_np)
 
-            elapsed_time = time.time() - self.clients_start_time[websocket]
-            if elapsed_time >= self.max_connection_time:
-                self.disconnect_client(websocket)
-                break
+                elapsed_time = time.time() - self.clients_start_time[websocket]
+                if elapsed_time >= self.max_connection_time:
+                    self.disconnect_client(websocket)
+                    break
 
-    def run(self, host, port=9090, transcription_queue=None, llm_queue=None):
+    def run(self, host, port=9090, transcription_queue=None, llm_queue=None, tts_playing_event=None):
         """
         Run the transcription server.
 
@@ -219,6 +220,7 @@ class TranscriptionServer:
                 self.recv_audio,
                 transcription_queue=transcription_queue,
                 llm_queue=llm_queue,
+                tts_playing_event=tts_playing_event
             ),
             host,
             port

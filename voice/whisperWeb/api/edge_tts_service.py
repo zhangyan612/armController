@@ -16,12 +16,12 @@ class EdgeTTSService:
     def initialize_model(self):
         self.last_llm_response = None
 
-    def run(self, host, port, audio_queue=None):
+    def run(self, host, port, audio_queue=None, tts_playing_event=None):
         self.initialize_model()
         logging.info("[TTS Service]: Started")
 
         with serve(
-            functools.partial(self.start_edge_tts, audio_queue=audio_queue), 
+            functools.partial(self.start_edge_tts, audio_queue=audio_queue, tts_playing_event=tts_playing_event), 
             host, port
             ) as server:
             server.serve_forever()
@@ -91,7 +91,7 @@ class EdgeTTSService:
         while p.is_playing():
             time.sleep(1)
 
-    def start_edge_tts(self, websocket, audio_queue=None):
+    def start_edge_tts(self, websocket, audio_queue=None, tts_playing_event=None):
         self.eos = False
         self.output_audio = None
 
@@ -100,21 +100,21 @@ class EdgeTTSService:
             if audio_queue.qsize() != 0:
                 continue
             
-            if isinstance(llm_response, str):
-                logging.info("[TTS Service]: LLM Response received from tts service:" + llm_response)
-            try:
-                websocket.ping()
-            except Exception as e:
-                del websocket
-                audio_queue.put(llm_response)
-                logging.error(f"[TTS ERROR]: put llm response to audio queue")
-                break
+            # if isinstance(llm_response, str):
+            #     logging.info("[TTS Service]: LLM Response received from tts service:" + llm_response)
+            # try:
+            #     websocket.ping()
+            # except Exception as e:
+            #     del websocket
+            #     audio_queue.put(llm_response)
+            #     logging.error(f"[TTS ERROR]: put llm response to audio queue")
+            #     break
             
             llm_output = llm_response["llm_output"]
             self.eos = llm_response["eos"]
 
-            def should_abort():
-                if not audio_queue.empty(): raise TimeoutError()
+            # def should_abort():
+            #     if not audio_queue.empty(): raise TimeoutError()
 
             # only process if the output updated
             if self.last_llm_response != llm_output.strip():
@@ -135,12 +135,15 @@ class EdgeTTSService:
                     # with open(audio_file_path, 'rb') as f:
                     #     self.output_audio = f.read()
                     # websocket.send(self.output_audio)
+                    tts_playing_event.set()
 
                     self.playSound(self.output_audio)
                     logging.info(f"[TTS Service]: playing audio file")
                     if os.path.isfile(self.output_audio):
                         os.remove(self.output_audio)
                         self.output_audio = None
+
+                    tts_playing_event.clear()
 
                 except Exception as e:
                     logging.error(f"[TTS ERROR]: Audio error: {e}")
