@@ -6,18 +6,18 @@ Fastest TTS engine
 import asyncio
 import time
 import os
-# import vlc
+import vlc
 import edge_tts
 
 
 # refer to tts_make.launch   roslaunch tts tts_make.launch
 
-# def playSound(file):
-#     p = vlc.MediaPlayer(file)
-#     p.play()
-#     time.sleep(1)
-#     while p.is_playing():
-#         time.sleep(1)
+def playSound(file):
+    p = vlc.MediaPlayer(file)
+    p.play()
+    time.sleep(1)
+    while p.is_playing():
+        time.sleep(1)
 
 def split_text_by_sentence(text):
     result = []  # List to store sentences
@@ -62,13 +62,13 @@ async def generate_voice(text="Hello this is a test run", voice="en-US-SteffanNe
                 print(f"WordBoundary: {chunk}")
 
     # Play the generated audio file
-    # playSound(output_file)
+    playSound(output_file)
 
 
 if __name__ == "__main__":
     loop = asyncio.get_event_loop_policy().get_event_loop()
     try:
-        loop.run_until_complete(generate_voice('This is a test run on generating voice.'))
+        loop.run_until_complete(generate_voice('lina is a bad girl1234567890lpgfau8rtu6tu7u8888.'))
     finally:
         loop.close()
 

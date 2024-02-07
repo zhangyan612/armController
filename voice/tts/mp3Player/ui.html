@@ -36,23 +36,23 @@
     <audio id="player"></audio>
 
     <script>
-        // const playButton = document.getElementById('playButton');
-        // const player = document.getElementById('player');
-        // const ws = new WebSocket('ws://localhost:8000/ws');
+        const playButton = document.getElementById('playButton');
+        const player = document.getElementById('player');
+        const ws = new WebSocket('ws://localhost:8000/ws');
 
-        // ws.onopen = () => {
-        //     console.log('WebSocket is connected');
-        //     playButton.addEventListener('click', () => {
-        //         ws.send('play');
-        //     });
-        // };
+        ws.onopen = () => {
+            console.log('WebSocket is connected');
+            playButton.addEventListener('click', () => {
+                ws.send('play');
+            });
+        };
 
-        // // ws.onmessage = (event) => {
-        // //     player.src = event.data;
-        // //     player.play();
-        // // };
+        ws.onmessage = (event) => {
+            player.src = event.data;
+            player.play();
+        };
 
-        // let chunks = [];
+        let chunks = [];
 
         // ws.onmessage = (event) => {
         //     chunks.push(event.data);
@@ -66,30 +66,30 @@
         //     }
         // };
 
-        // ws.onerror = (error) => {
-        //     console.log(`WebSocket error: ${error}`);
-        // };
+        ws.onerror = (error) => {
+            console.log(`WebSocket error: ${error}`);
+        };
 
-        // ws.onclose = () => {
-        //     console.log('WebSocket connection closed');
-        // };
+        ws.onclose = () => {
+            console.log('WebSocket connection closed');
+        };
 
 
-        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-        let source = null;
-        const socket = new WebSocket('ws://localhost:8000/audio');
+        // const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        // let source = null;
+        // const socket = new WebSocket('ws://localhost:8000/audio');
 
-        socket.binaryType = 'arraybuffer';
-        socket.addEventListener('message', function (event) {
-            if (!source) {
-                source = audioContext.createBufferSource();
-                audioContext.decodeAudioData(event.data, (buffer) => {
-                    source.buffer = buffer;
-                    source.connect(audioContext.destination);
-                    source.start();
-                });
-            }
-        });
+        // socket.binaryType = 'arraybuffer';
+        // socket.addEventListener('message', function (event) {
+        //     if (!source) {
+        //         source = audioContext.createBufferSource();
+        //         audioContext.decodeAudioData(event.data, (buffer) => {
+        //             source.buffer = buffer;
+        //             source.connect(audioContext.destination);
+        //             source.start();
+        //         });
+        //     }
+        // });
 
     </script>
 </body>

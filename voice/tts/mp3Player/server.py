@@ -5,6 +5,8 @@ import uvicorn
 from starlette.responses import FileResponse
 import asyncio
 import edge_tts
+import time
+import os
 
 app = FastAPI()
 
@@ -15,20 +17,40 @@ app.add_middleware(
     allow_headers=["*"]
 )
 
-# @app.get("/mp3")
-# async def read_mp3():
-#     file_path = 'D:\Robot/armController/20240204-235950.wav'
-#     return FileResponse(file_path, media_type="audio/mpeg")
+async def generate_voice(text="Hello this is a test run", voice="en-US-SteffanNeural"):
+    # Generate a timestamp for the output file name
+    timestamp = time.strftime("%Y%m%d-%H%M%S")
 
-# @app.websocket("/ws")
-# async def websocket_endpoint(websocket: WebSocket):
-#     await websocket.accept()
-#     while True:
-#         data = await websocket.receive_text()
-#         if data == "play":
-#             await websocket.send_text("http://localhost:8000/mp3")
+    # Get the current working directory
+    cwd = os.getcwd()
+    output_file = os.path.join(cwd, f"{timestamp}.wav")
+    print(output_file)
+    communicate = edge_tts.Communicate(text, voice)
+    with open(output_file, "wb") as file:
+        async for chunk in communicate.stream():
+            if chunk["type"] == "audio":
+                file.write(chunk["data"])
+            elif chunk["type"] == "WordBoundary":
+                print(f"WordBoundary: {chunk}")
 
 
+@app.get("/mp3")
+async def read_mp3():
+    file_path = 'D:\Robot/armController/20240206-191541.wav'
+    return FileResponse(file_path, media_type="audio/mpeg")
+
+@app.websocket("/ws")
+async def websocket_endpoint(websocket: WebSocket):
+    await websocket.accept()
+    while True:
+        data = await websocket.receive_text()
+        if data == "play":
+            await websocket.send_text("http://localhost:8000/mp3")
+
+
+if __name__ == "__main__":
+    uvicorn.run(app, host="0.0.0.0", port=8000)
+    
 # @app.websocket("/ws")
 # async def websocket_endpoint(websocket: WebSocket):
 #     await websocket.accept()
@@ -50,22 +72,9 @@ app.add_middleware(
 #         data = await get_next_audio_chunk()  # You need to implement this
 #         await websocket.send_bytes(data)
 
-async def generate_voice(text="Hello this is a test run", voice="en-US-SteffanNeural"):
-    communicate = edge_tts.Communicate(text, voice)
-    audio_data = b""
-    async for chunk in communicate.stream():
-        if chunk["type"] == "audio":
-            yield chunk["data"]
-        elif chunk["type"] == "WordBoundary":
-            print(f"WordBoundary: {chunk}")
+# @app.websocket("/audio")
+# async def audio_stream(websocket: WebSocket):
+#     await websocket.accept()
+#     async for audio_chunk in generate_voice():
+#         await websocket.send_bytes(audio_chunk)
 
-@app.websocket("/audio")
-async def audio_stream(websocket: WebSocket):
-    await websocket.accept()
-    async for audio_chunk in generate_voice():
-        await websocket.send_bytes(audio_chunk)
-
-
-
-if __name__ == "__main__":
-    uvicorn.run(app, host="0.0.0.0", port=8000)

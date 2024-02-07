@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>MP3 Player</title>
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        #playButton {
+            width: 100%;
+        }
+        .fixed-bottom {
+            position: fixed;
+            bottom: 0;
+            width: 100%;
+        }
+        .chat {
+            list-style: none;
+            margin: 0;
+            padding: 0;
+        }
+        .chat li {
+            margin-bottom: 10px;
+            padding-bottom: 5px;
+            border-bottom: 1px dotted #B3A9A9;
+        }
+        .chat li .chat-body p {
+            margin: 0;
+            color: #777777;
+        }
+        .panel-body {
+            overflow-y: scroll;
+            height: 350px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="row">
+            <div class="col-12">
+                <div class="panel panel-default">
+                    <div class="panel-body">
+                        <ul class="chat" id="chat">
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="container fixed-bottom">
+        <div class="row justify-content-center">
+            <div class="col-12">
+                <div class="form-group">
+                    <label for="userInput"></label>
+                    <textarea class="form-control" id="userInput" rows="3"></textarea>
+                </div>
+                <div class="form-group">
+                    <button class="btn btn-primary" id="playButton" disabled>Play</button>
+                </div>
+                <audio id="player"></audio>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const userInput = document.getElementById('userInput');
+        const playButton = document.getElementById('playButton');
+        const player = document.getElementById('player');
+        const chat = document.getElementById('chat');
+        const ws = new WebSocket('ws://localhost:8000/ws');
+
+        ws.onopen = () => {
+            console.log('WebSocket is connected');
+            playButton.disabled = false;
+            playButton.innerHTML = 'Play';
+            playButton.addEventListener('click', () => {
+                ws.send('play:' + userInput.value);
+                chat.innerHTML += '<li class="right clearfix"><div class="chat-body clearfix"><div class="header"><strong class="pull-right primary-font">User</strong></div><p>' + userInput.value + '</p></div></li>';
+                playButton.disabled = true;
+                playButton.innerHTML = 'Loading...';
+            });
+        };
+
+        ws.onmessage = (event) => {
+            player.src = event.data;
+            player.play();
+            chat.innerHTML += '<li class="left clearfix"><div class="chat-body clearfix"><div class="header"><strong class="pull-left primary-font">Robot</strong></div><p>Playing audio...</p></div></li>';
+            playButton.disabled = false;
+            playButton.innerHTML = 'Play';
+        };
+
+        player.onended = () => {
+            fetch('http://localhost:8000/delete', { // replace with your API endpoint
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ file: player.src }) // replace with the appropriate data
+            }).then(response => response.json())
+            .then(data => console.log(data))
+            .catch((error) => {
+                console.error('Error:', error);
+            });
+        };
+
+
+        let chunks = [];
+
+        ws.onerror = (error) => {
+            console.log(`WebSocket error: ${error}`);
+        };
+
+        ws.onclose = () => {
+            console.log('WebSocket connection closed');
+        };
+    </script>
+</body>
+</html>

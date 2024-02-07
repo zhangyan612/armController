@@ -12,27 +12,18 @@ class LLMService:
         self.prompt_template = None
         self.last_prompt = None
         self.last_output = None
-
-
-    def format_prompt_qa(self, prompt, conversation_history):
-        formatted_prompt = ""
-        for user_prompt, llm_response in conversation_history:
-            formatted_prompt += f"Instruct: {user_prompt}\nOutput:{llm_response}\n"
-        return f"{formatted_prompt}Instruct: {prompt}\nOutput:"
     
-    def format_prompt_chat(self, prompt, conversation_history):
-        formatted_prompt = ""
-        for user_prompt, llm_response in conversation_history:
-            formatted_prompt += f"Alice: {user_prompt}\nBob:{llm_response}\n"
-        return f"{formatted_prompt}Alice: {prompt}\nBob:"
-
-    def format_prompt_chatml(self, prompt, conversation_history, system_prompt=""):
-        formatted_prompt = ("<|im_start|>system\n" + system_prompt + "<|im_end|>\n")
-        for user_prompt, llm_response in conversation_history:
-            formatted_prompt += f"<|im_start|>user\n{user_prompt}<|im_end|>\n"
-            formatted_prompt += f"<|im_start|>assistant\n{llm_response}<|im_end|>\n"
-        formatted_prompt += f"<|im_start|>user\n{prompt}<|im_end|>\n"
-        return formatted_prompt
+    def format_prompt_llm_api(self, prompt, conversation_history, system_prompt=""):
+        messageList = []
+        if conversation_history:
+            messageList = conversation_history
+            messageList.append({"role": "user", "content": prompt})
+        else:
+            messageList = [
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": prompt},
+            ]
+        return messageList
 
     def run(
         self,
@@ -68,10 +59,10 @@ class LLMService:
             logging.info(f'[LLM Service]: Prompt: {prompt}')
 
             # if prompt is same but EOS is True, we need that to send outputs to websockets
-            if self.last_prompt == prompt:
-                if self.last_output is not None and transcription_output["eos"]:
-                    self.eos = transcription_output["eos"]
-                    logging.info('[LLM Service]:assign eos, not sending')          
+            # if self.last_prompt == prompt:
+            #     if self.last_output is not None and transcription_output["eos"]:
+            #         self.eos = transcription_output["eos"]
+            #         logging.info('[LLM Service]:assign eos, not sending')          
 
                     # llm_queue.put({
                     #     "uid": transcription_output["uid"],
@@ -83,49 +74,49 @@ class LLMService:
                     # conversation_history[transcription_output["uid"]].append(
                     #     (transcription_output['prompt'].strip(), self.last_output[0].strip())
                     # )
-                    continue
+                    # continue
 
-            # input_text=[self.format_prompt_qa(prompt, conversation_history[transcription_output["uid"]])]
-            system_prompt = "You are a Robot, a helpful AI assistant"
-            input_text=[self.format_prompt_chatml(prompt, conversation_history[transcription_output["uid"]], system_prompt=system_prompt)]
+            system_prompt = "You are a Robot, a helpful AI assistant, here is a list of conversation history, you will generate answer based on the history"
+
+            input_prompt = self.format_prompt_llm_api(prompt, conversation_history[transcription_output["uid"]], system_prompt=system_prompt)
             
             self.eos = transcription_output["eos"]
-            logging.info(conversation_history)
+            logging.info(input_prompt)
 
-            if self.eos:
-                logging.info(f"[LLM Service]: LLM generate prompt: {prompt}, eos: {self.eos}")
+            if self.eos and not prompt == '':
+                should_ask_llm = False
+                weakup_words = ['hi robot', 'hey robot']
+                for word in weakup_words:
+                    if word in prompt.lower():
+                        should_ask_llm = True
 
-                start = time.time()
+                if should_ask_llm:
+                    logging.info(f"[LLM Service]: Send to LLM prompt: {prompt}, eos: {self.eos}")
 
-                messageList = [
-                    {"role": "system", "content": system_prompt},
-                    {"role": "user", "content": prompt},
-                ]
+                    start = time.time()
+                    output = leptonLLM.llm_request(input_prompt)
+                    self.infer_time = time.time() - start
+                    
+                    # if self.eos:
+                    if output is not None:
+                        output = clean_llm_output(output)
 
-                output = leptonLLM.llm_request(messageList)
+                        self.last_output = output
+                        self.last_prompt = prompt
+                        llm_queue.put({
+                            "uid": transcription_output["uid"],
+                            "llm_output": output,
+                            "eos": self.eos,
+                            "latency": self.infer_time
+                        })
+                        audio_queue.put({"llm_output": output, "eos": self.eos})
+                        logging.info(f"[LLM Service]: Output sent to llm_queue: {output}, inference done in {self.infer_time} ms\n")
 
-                self.infer_time = time.time() - start
-                
-                # if self.eos:
-                if output is not None:
-                    output = clean_llm_output(output)
-
-                    self.last_output = output
-                    self.last_prompt = prompt
-                    llm_queue.put({
-                        "uid": transcription_output["uid"],
-                        "llm_output": output,
-                        "eos": self.eos,
-                        "latency": self.infer_time
-                    })
-                    audio_queue.put({"llm_output": output, "eos": self.eos})
-                    logging.info(f"[LLM Service]: Output sent to llm_queue: {output}, inference done in {self.infer_time} ms\n")
-
-                    conversation_history[transcription_output["uid"]].append(
-                        (transcription_output['prompt'].strip(), output.strip())
-                    )
-                    self.last_prompt = None
-                    self.last_output = None
+                        conversation_history[transcription_output["uid"]].append(
+                            (transcription_output['prompt'].strip(), output.strip())
+                        )
+                        self.last_prompt = None
+                        self.last_output = None
 
 
 def clean_llm_output(output):
