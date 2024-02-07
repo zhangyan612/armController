@@ -42,7 +42,6 @@ def playSound(file):
 async def generate_voice(text="Hello this is a test run", voice="en-US-SteffanNeural"):
     # Generate a timestamp for the output file name
     timestamp = time.strftime("%Y%m%d-%H%M%S")
-
     # Get the current working directory
     cwd = os.getcwd()
     output_file = os.path.join(cwd, f"{timestamp}.wav")
@@ -52,8 +51,8 @@ async def generate_voice(text="Hello this is a test run", voice="en-US-SteffanNe
         async for chunk in communicate.stream():
             if chunk["type"] == "audio":
                 file.write(chunk["data"])
-            elif chunk["type"] == "WordBoundary":
-                print(f"WordBoundary: {chunk}")
+            # elif chunk["type"] == "WordBoundary":
+            #     print(f"WordBoundary: {chunk}")
     return output_file
 
 @app.get("/mp3/{file_path:path}")
@@ -75,14 +74,14 @@ async def websocket_endpoint(websocket: WebSocket):
             playSound(file_path)
             # await websocket.send_text(f"http://localhost:8000/mp3/{file_path}")
 
-@app.post("/delete")
-async def delete_file(file: File):
-    file_path = file.file.replace("http://localhost:8000/mp3/", "")
-    print(file_path)
-    if os.path.isfile(file_path):
-        os.remove(file_path)
+# @app.post("/delete")
+# async def delete_file(file: File):
+#     file_path = file.file.replace("http://localhost:8000/mp3/", "")
+#     print(file_path)
+#     if os.path.isfile(file_path):
+#         os.remove(file_path)
 
-    return {"message": "File deleted"}
+#     return {"message": "File deleted"}
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)

@@ -87,20 +87,19 @@
             playButton.innerHTML = 'Play';
         };
 
-        player.onended = () => {
-            fetch('/delete', { // replace with your API endpoint
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ file: player.src }) // replace with the appropriate data
-            }).then(response => response.json())
-            .then(data => console.log(data))
-            .catch((error) => {
-                console.error('Error:', error);
-            });
-        };
-
+        // player.onended = () => {
+        //     fetch('/delete', { // replace with your API endpoint
+        //         method: 'POST',
+        //         headers: {
+        //             'Content-Type': 'application/json'
+        //         },
+        //         body: JSON.stringify({ file: player.src }) // replace with the appropriate data
+        //     }).then(response => response.json())
+        //     .then(data => console.log(data))
+        //     .catch((error) => {
+        //         console.error('Error:', error);
+        //     });
+        // };
 
         let chunks = [];
 
