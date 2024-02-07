@@ -9,3 +9,4 @@ websockets
 opencv-python
 edge-tts
 faster-whisper==0.9.0
+python-vlc
