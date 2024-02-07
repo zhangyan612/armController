@@ -80,8 +80,8 @@
         };
 
         ws.onmessage = (event) => {
-            player.src = event.data;
-            player.play();
+            // player.src = event.data;
+            // player.play();
             chat.innerHTML += '<li class="left clearfix"><div class="chat-body clearfix"><div class="header"><strong class="pull-left primary-font">Robot</strong></div><p>Playing audio...</p></div></li>';
             playButton.disabled = false;
             playButton.innerHTML = 'Play';

@@ -1,5 +1,6 @@
 from fastapi import FastAPI, WebSocket
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 import uvicorn
 from starlette.responses import FileResponse
 import edge_tts
@@ -14,6 +15,8 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"]
 )
+
+app.mount("/", StaticFiles(directory="index.html", html=True), name="ui")
 
 async def generate_voice(text="Hello this is a test run", voice="en-US-SteffanNeural"):
     # Generate a timestamp for the output file name

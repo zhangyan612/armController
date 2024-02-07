@@ -8,6 +8,7 @@ import edge_tts
 import time
 import os
 from pydantic import BaseModel
+import vlc
 
 class File(BaseModel):
     file: str
@@ -29,6 +30,13 @@ app.mount("/ui", StaticFiles(directory=uiPath, html=True), name="ui")
 @app.get("/test")
 async def test():
     return {'test': 'test'}
+
+def playSound(file):
+    p = vlc.MediaPlayer(file)
+    p.play()
+    time.sleep(1)
+    while p.is_playing():
+        time.sleep(1)
 
 async def generate_voice(text="Hello this is a test run", voice="en-US-SteffanNeural"):
     # Generate a timestamp for the output file name
@@ -62,7 +70,10 @@ async def websocket_endpoint(websocket: WebSocket):
             # Wait for the file to be fully generated before sending the URL
             while not os.path.exists(file_path):
                 await asyncio.sleep(0.1)
-            await websocket.send_text(f"http://localhost:8000/mp3/{file_path}")
+
+            playSound(file_path)
+            # await websocket.send_text(f"http://localhost:8000/mp3/{file_path}")
+            await websocket.send_text(f"played")
 
 @app.post("/delete")
 async def delete_file(file: File):
