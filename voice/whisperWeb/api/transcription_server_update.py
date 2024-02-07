@@ -400,34 +400,19 @@ class ServeClient:
         self.lock.release()
 
     def check_llm_queue(self):
-        llm_response = None
-        if self.llm_queue is not None:
-            while not self.llm_queue.empty():
-                llm_response = self.llm_queue.get()
-            if llm_response:
-                eos = llm_response["eos"]
-                if eos:
-                    return llm_response
-        return None
-
-    def process_audio(self):
-        samples_take = max(0, (self.timestamp_offset - self.frames_offset) * self.RATE)
-        input_bytes = self.frames_np[int(samples_take):].copy()
-        duration = input_bytes.shape[0] / self.RATE
-        return input_bytes, duration
-
-    def whisper_transcribe(self, input_sample):
-        start = time.time()
-        result, info = self.transcriber.transcribe(
-            input_sample,
-            initial_prompt=None,
-            language=self.language,
-            task=self.task,
-            vad_filter=True,
-            vad_parameters={"threshold": 0.5}
-        )
-        infer_time = time.time() - start
-        return result, info, infer_time
+        try:
+            llm_response = None
+            if self.llm_queue is not None:
+                while not self.llm_queue.empty():
+                    llm_response = self.llm_queue.get()
+                
+                if llm_response:
+                    eos = llm_response["eos"]
+                    if eos:
+                        logging.info(f"[Transcription]: Sending LLM response to web socket")
+                        self.websocket.send(json.dumps(llm_response))
+        except queue.Empty:
+            pass
 
     def update_prompt_and_segments(self, result, duration):
         if len(result):
@@ -438,37 +423,60 @@ class ServeClient:
             else:
                 segments = self.transcript[-self.send_last_n_segments:]
             if last_segment is not None:
-                segments = segments + [last_segment]
-            return segments, last_segment
+                segments = segments + [last_segment]                    
         else:
+            # show previous output if there is pause i.e. no output from whisper
             segments = []
-            if self.t_start is None:
-                self.t_start = time.time()
+            if self.t_start is None: self.t_start = time.time()
             if time.time() - self.t_start < self.show_prev_out_thresh:
                 if len(self.transcript) < self.send_last_n_segments:
                     segments = self.transcript
                 else:
                     segments = self.transcript[-self.send_last_n_segments:]
-        return segments, None
+            
+            # add a blank if there is no speech for 3 seconds
+            if len(self.text) and self.text[-1] != '':
+                if time.time() - self.t_start > self.add_pause_thresh:
+                    self.text.append('')
+        return segments
 
-    def update_prompt_for_pause(self, segments):
-        if len(self.text) and self.text[-1] != '':
-            if time.time() - self.t_start > self.add_pause_thresh:
-                self.text.append('')
-        self.prompt = ' '.join(segment['text'] for segment in segments)
-        return self.prompt
+    def check_language(self, info):
+        if self.language is None:
+            if info.language_probability > 0.5:
+                self.language = info.language
+                logging.info(f"Detected language {self.language} with probability {info.language_probability}")
+                self.websocket.send(json.dumps(
+                    {"uid": self.client_uid, "language": self.language, "language_prob": info.language_probability}))
+            else:
+                # detect language again
+                logging.info("language_probability low, detect again")
+                # continue
 
+    def update_ui_and_queue(self, segments, infer_time, duration):
+        try:
+            self.prompt = ' '.join(segment['text'] for segment in segments)
 
-    def return_segments(self, segments, infer_time):
-        self.websocket.send(
-            json.dumps({
-                "uid": self.client_uid,
-                "segments": segments,
-                "eos": self.eos,
-                "latency": infer_time
-            })
-        )
-        self.transcription_queue.put({"uid": self.client_uid, "prompt": self.prompt, "eos": self.eos})
+            logging.info(f"[Transcription]: Send segments to web socket")
+            self.websocket.send(
+                json.dumps({
+                    "uid": self.client_uid,
+                    "segments": segments,
+                    "eos": self.eos,
+                    "latency": infer_time
+                })
+            )
+            self.transcription_queue.put({"uid": self.client_uid, "prompt": self.prompt, "eos": self.eos})
+            logging.info(f"[Transcription]: Send message to transcription queue {self.prompt}")
+            if self.eos:
+                    self.timestamp_offset += duration
+                    logging.info(f"[Transcription]: EOS: {self.eos} Prompt: {self.prompt}")
+                    logging.info(
+                        f"[Transcription]: Average inference time {sum(self.segment_inference_time) / len(self.segment_inference_time)}\n")
+                    self.segment_inference_time = []
+
+        except Exception as e:
+            logging.error(f"[Transcription socket ERROR]: {e}")
+
 
 
     def speech_to_text(self):
@@ -482,47 +490,55 @@ class ServeClient:
         to enable real-time streaming transcription.
         """
         while True:
-            llm_response = self.check_llm_queue()
-            if llm_response:
-                logging.info(f"[Transcription]: Sending LLM response to web socket")
-                self.websocket.send(json.dumps(llm_response))
+            # send the LLM outputs
+            self.check_llm_queue()
 
             if self.exit:
                 logging.info("[Transcription]: Exiting speech to text thread")
                 break
-
-            if self.frames_np is None:
-                time.sleep(0.02)
+            
+            if self.frames_np is None: 
+                time.sleep(0.02)    # wait for any audio to arrive
                 continue
 
+            # clip audio if the current chunk exceeds 30 seconds, this basically implies that
+            # no valid segment for the last 30 seconds from whisper
             if self.frames_np[int((self.timestamp_offset - self.frames_offset)*self.RATE):].shape[0] > 25 * self.RATE:
                 duration = self.frames_np.shape[0] / self.RATE
                 self.timestamp_offset = self.frames_offset + duration - 5
 
-            input_bytes, duration = self.process_audio()
-            if duration < 0.4:
-                time.sleep(0.01)
+            samples_take = max(0, (self.timestamp_offset - self.frames_offset)*self.RATE)
+            input_bytes = self.frames_np[int(samples_take):].copy()
+            duration = input_bytes.shape[0] / self.RATE
+
+            if duration<0.4:
+                time.sleep(0.01)    # 5ms sleep to wait for some voice active audio to arrive
                 continue
-            
-            result, info, infer_time = self.whisper_transcribe(input_bytes)
-
-            segments, last_segment = self.update_prompt_and_segments(result, duration)
-
-            self.prompt = self.update_prompt_for_pause(segments)
-
             try:
-                self.return_segments(segments, infer_time)
-                logging.info(f"[Transcription]: Send message to transcription queue {self.prompt}")
-                if self.eos:
-                    self.timestamp_offset += duration
-                    logging.info(f"[Transcription]: EOS: {self.eos} Prompt: {self.prompt}")
-                    logging.info(
-                        f"[Transcription]: Average inference time {sum(self.segment_inference_time) / len(self.segment_inference_time)}\n")
-                    self.segment_inference_time = []
+                input_sample = input_bytes.copy()
+                start = time.time()
+
+                # whisper transcribe with prompt
+                result, info = self.transcriber.transcribe(
+                    input_sample, 
+                    initial_prompt=None,
+                    language=self.language,
+                    task=self.task,
+                    vad_filter=True,
+                    vad_parameters={"threshold": 0.5}
+                )
+
+                infer_time = time.time() - start
+                self.segment_inference_time.append(infer_time)
+                # check_language(info)
+                
+                segments = self.update_prompt_and_segments(result, duration)
+
+                self.update_ui_and_queue(segments, infer_time, duration)
 
             except Exception as e:
                 logging.error(f"[Transcription ERROR]: {e}")
-
+                time.sleep(0.01)
     
     def update_segments(self, segments, duration):
         """
