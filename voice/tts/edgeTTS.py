@@ -68,7 +68,7 @@ async def generate_voice(text="Hello this is a test run", voice="en-US-SteffanNe
 if __name__ == "__main__":
     loop = asyncio.get_event_loop_policy().get_event_loop()
     try:
-        loop.run_until_complete(generate_voice('lina is a bad girl1234567890lpgfau8rtu6tu7u8888.'))
+        loop.run_until_complete(generate_voice('This is a test.'))
     finally:
         loop.close()
 
