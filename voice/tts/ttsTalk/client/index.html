@@ -65,7 +65,7 @@
         const playButton = document.getElementById('playButton');
         const player = document.getElementById('player');
         const chat = document.getElementById('chat');
-        const ws = new WebSocket('ws://localhost:8000/ws');
+        const ws = new WebSocket('ws://' + window.location.hostname + ':' + window.location.port + '/ws');
 
         ws.onopen = () => {
             console.log('WebSocket is connected');
@@ -88,7 +88,7 @@
         };
 
         player.onended = () => {
-            fetch('http://localhost:8000/delete', { // replace with your API endpoint
+            fetch('/delete', { // replace with your API endpoint
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'

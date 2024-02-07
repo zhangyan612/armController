@@ -1,5 +1,6 @@
-from fastapi import FastAPI, WebSocket, Depends, HTTPException
+from fastapi import FastAPI, WebSocket
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 import uvicorn
 from starlette.responses import FileResponse
 import asyncio
@@ -7,8 +8,6 @@ import edge_tts
 import time
 import os
 from pydantic import BaseModel
-
-app = FastAPI()
 
 class File(BaseModel):
     file: str
@@ -21,6 +20,15 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"]
 )
+
+uiPath = os.getcwd() + '/voice/tts/ttsTalk/client'
+print(uiPath)
+    
+app.mount("/ui", StaticFiles(directory=uiPath, html=True), name="ui")
+
+@app.get("/test")
+async def test():
+    return {'test': 'test'}
 
 async def generate_voice(text="Hello this is a test run", voice="en-US-SteffanNeural"):
     # Generate a timestamp for the output file name
@@ -64,7 +72,6 @@ async def delete_file(file: File):
         os.remove(file_path)
 
     return {"message": "File deleted"}
-
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)

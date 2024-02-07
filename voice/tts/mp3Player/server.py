@@ -1,9 +1,7 @@
 from fastapi import FastAPI, WebSocket
 from fastapi.middleware.cors import CORSMiddleware
-import base64
 import uvicorn
 from starlette.responses import FileResponse
-import asyncio
 import edge_tts
 import time
 import os
