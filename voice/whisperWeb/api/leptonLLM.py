@@ -11,7 +11,6 @@ config.read('.env')
 
 counter = 1
 
-
 LEPTON_WORKSPACE_TOKEN = config.get('LEPTON', 'token')
 
 stop_words = [

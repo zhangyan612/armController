@@ -86,6 +86,11 @@ rostopic echo /imu
 roslaunch turn_on_wheeltec_robot wheeltec_camera.launch
 
 
+# Whisper web
+
+ cd voice\whisperWeb\ui
+ python -m http.server
+
 
 # helpful
 ROS开发教程
