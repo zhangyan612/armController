@@ -1,4 +1,4 @@
-from whisper_live.client import TranscriptionClient
+from client import TranscriptionClient
 client = TranscriptionClient(
   "localhost",
   6006,
