@@ -289,6 +289,7 @@ class Client:
 
         """
         try:
+            print('send msg to server')
             self.client_socket.send(message, websocket.ABNF.OPCODE_BINARY)
         except Exception as e:
             print(e)
