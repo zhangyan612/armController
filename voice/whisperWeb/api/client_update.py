@@ -5,7 +5,7 @@ import numpy as np
 # import scipy
 # import ffmpeg
 import pyaudio
-# import threading
+import threading
 # import textwrap
 # import json
 # import websocket
@@ -87,7 +87,7 @@ class UpdatedClient:
 
         return raw_data.astype(np.float32) / 32768.0
 
-    def send_packet_to_server(self, n_audio_file, message):
+    def send_packet_to_server(self, message):
         """
         Send an audio packet to the server using WebSocket.
 
@@ -99,24 +99,42 @@ class UpdatedClient:
             print('send message to transcribe')
             # print(message)
             # frame_np = np.frombuffer(message, dtype=np.float32)
-            self.write_output_recording(n_audio_file, message)
+            # self.write_output_recording(n_audio_file, message)
 
-            # segments_all, info = self.model.transcribe(message, beam_size=5)
-            # for segment in segments_all:
-            #     print("[%.2fs -> %.2fs] %s" % (segment.start, segment.end, segment.text))
+            segments_all, info = self.model.transcribe(message, beam_size=5)
+            for segment in segments_all:
+                print("[%.2fs -> %.2fs] %s" % (segment.start, segment.end, segment.text))
 
 
             # self.client_socket.send(message, websocket.ABNF.OPCODE_BINARY)
         except Exception as e:
             print(e)
 
+    def write_audio_frames_to_file(self, frames, file_name, rate=None):
+        """
+        Write audio frames to a WAV file.
+
+        The WAV file is created or overwritten with the specified name. The audio frames should be 
+        in the correct format and match the specified channel, sample width, and sample rate.
+
+        Args:
+            frames (bytes): The audio frames to be written to the file.
+            file_name (str): The name of the WAV file to which the frames will be written.
+
+        """
+        with wave.open(file_name, "wb") as wavfile:
+            wavfile: wave.Wave_write
+            wavfile.setnchannels(self.channels)
+            wavfile.setsampwidth(2)
+            wavfile.setframerate(self.rate if rate is None else rate)
+            wavfile.writeframes(frames)
 
     def record(self):
 
         print('recording')
         n_audio_file = 0
-        # if not os.path.exists("chunks"):
-        #     os.makedirs("chunks", exist_ok=True)
+        if not os.path.exists("chunks"):
+            os.makedirs("chunks", exist_ok=True)
         try:
             while True:
                 # if not self.recording:
@@ -130,13 +148,22 @@ class UpdatedClient:
                 print(duration)
                 if duration < 1:
                     continue
-                self.send_packet_to_server(n_audio_file, audio_array)
+                # self.send_packet_to_server(audio_array)
+                print('save to file')
+                t = threading.Thread(
+                    target=self.write_audio_frames_to_file,
+                    args=(
+                        self.frames[:],
+                        f"chunks/{n_audio_file}.wav",
+                    ),
+                )
+                t.start()
 
                 # save frames if more than a minute
                 if len(self.frames) > 60 * self.rate:
                     n_audio_file += 1
                     self.frames = b""
-                    print('reset frame')
+
 
         except KeyboardInterrupt:
             if len(self.frames):
@@ -159,23 +186,28 @@ class UpdatedClient:
                 out_file (str): The name of the output WAV file to save the final recording.
 
             """
-            input_files = [
-                f"chunks/{i}.wav"
-                for i in range(n_audio_file)
-                if os.path.exists(f"chunks/{i}.wav")
-            ]
+            # input_files = [
+            #     f"chunks/{i}.wav"
+            #     for i in range(n_audio_file)
+            #     if os.path.exists(f"chunks/{i}.wav")
+            # ]
             with wave.open(out_file, "wb") as wavfile:
                 wavfile: wave.Wave_write
                 wavfile.setnchannels(self.channels)
                 wavfile.setsampwidth(2)
                 wavfile.setframerate(self.rate)
-                for in_file in input_files:
-                    with wave.open(in_file, "rb") as wav_in:
-                        while True:
-                            data = wav_in.readframes(frames)
-                            if data == b"":
-                                break
-                            wavfile.writeframes(data)
+                # data = wav_in.readframes(frames)
+                # if data == b"":
+                #     break
+                wavfile.writeframes(n_audio_file)
+
+                # for in_file in input_files:
+                #     with wave.open(in_file, "rb") as wav_in:
+                #         while True:
+                #             data = wav_in.readframes(frames)
+                #             if data == b"":
+                #                 break
+                #             wavfile.writeframes(data)
                     # remove this file
                     # os.remove(in_file)
             wavfile.close()
