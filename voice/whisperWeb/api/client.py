@@ -572,3 +572,14 @@ class TranscriptionClient:
             self.client.play_file(resampled_file)
         else:
             self.client.record()
+
+
+if __name__ == "__main__":
+    client = TranscriptionClient(
+    "localhost",
+    6006,
+    is_multilingual=False,
+    lang="en",
+    translate=False,
+    )
+    client()

@@ -316,6 +316,10 @@ class ServeClient:
                 )
 
                 # last_segment = self.update_segments(result, duration)
+                # TODO: Check speaker of the file
+                # I think the term is “speaker diarization”, and I see some guides online using “pyannote.audio” together with Whisper to achieve this - pyannote-whisper
+                # logging.info(result)
+                # logging.info(info)
 
                 infer_time = time.time() - start
                 self.segment_inference_time.append(infer_time)

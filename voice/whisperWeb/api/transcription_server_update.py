@@ -124,6 +124,8 @@ class TranscriptionServer:
             del websocket
             return
 
+    def frame_from_mic(self):
+        pass
 
     def voice_activity_detection(self, frame_np, no_voice_activity_chunks, websocket):
         """Detects voice activity in an audio frame.
@@ -222,3 +224,12 @@ class TranscriptionServer:
             port
         ) as server:
             server.serve_forever()
+
+
+
+
+if __name__ == "__main__":
+    from multiprocessing import Event
+    tts_playing_event = Event()
+    server = TranscriptionServer()
+    server.run("0.0.0.0", 6006, None, None, tts_playing_event)
