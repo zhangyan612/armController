@@ -87,9 +87,23 @@ roslaunch turn_on_wheeltec_robot wheeltec_camera.launch
 
 
 # Whisper web
+download vad model 
+cd ~/.cache/whisper-live/
+sudo wget -O silero_vad.onnx https://github.com/snakers4/silero-vad/raw/master/files/silero_vad.onnx
+
 
  cd voice\whisperWeb\ui
  python -m http.server
+
+
+arecord -d 10 -r 48000 -c 2 -f S16_LE test.wav
+
+arecord -f S16_LE -c1 -r 16000 -t raw -D default | nc localhost 6006
+
+pyaudio install
+sudo apt-get install libasound-dev portaudio19-dev libportaudio2 libportaudiocpp0
+sudo apt-get install ffmpeg libav-tools
+sudo pip install pyaudio
 
 
 # helpful
