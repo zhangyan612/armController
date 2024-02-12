@@ -25,7 +25,7 @@ class UpdatedClient:
         self, host=None, port=None, is_multilingual=False, lang=None, translate=False, model_size="base.en"
     ):
 
-        self.chunk = 1024 * 3
+        self.chunk = 1024 *3
         self.format = pyaudio.paInt16
         self.channels = 1
         self.rate = 16000
@@ -121,7 +121,7 @@ class UpdatedClient:
             # frame_np = np.frombuffer(message, dtype=np.float32)
             # self.write_output_recording(n_audio_file, message)
 
-            segments_all, info = self.model.transcribe(message, beam_size=5)
+            segments_all, info = self.transcriber.transcribe(message, beam_size=5)
             for segment in segments_all:
                 print("[%.2fs -> %.2fs] %s" % (segment.start, segment.end, segment.text))
 
@@ -197,24 +197,24 @@ class UpdatedClient:
             self.frames += data
 
             audio_array = UpdatedClient.bytes_to_float_array(self.frames)
-            # raw_data = np.frombuffer(buffer=self.frames, dtype=np.int16)
-            duration = audio_array.shape[0] / self.rate
+            frame_np = np.frombuffer(self.frames, dtype=np.float32)
+            duration = frame_np.shape[0] / self.rate
             print(duration)
             if duration < 1:
                 continue
-            # self.send_packet_to_server(audio_array)
-            print('save to file')
-            t = threading.Thread(
-                target=self.write_audio_frames_to_file,
-                args=(
-                    self.frames[:],
-                    f"chunks/{n_audio_file}.wav",
-                ),
-            )
-            t.start()
+            print(len(self.frames))
+            if len(self.frames) > 30000: # * self.rate:
+                print('save to file')
+                self.send_packet_to_server(frame_np)
 
-            # save frames if more than a minute
-            if len(self.frames) > 60 * self.rate:
+                t = threading.Thread(
+                    target=self.write_audio_frames_to_file,
+                    args=(
+                        self.frames,
+                        f"chunks/{n_audio_file}.wav",
+                    ),
+                )
+                t.start()
                 n_audio_file += 1
                 self.frames = b""
 
@@ -232,16 +232,18 @@ class UpdatedClient:
         while True:
 
             # frame_data = websocket.recv()  # change get data from local mic
-            data = self.stream.read(self.chunk)
-            self.frames += data
+            # data = self.stream.read(self.chunk)
+            # self.frames += data
+
+            frame_data = self.stream.read(self.chunk)
+            frame_np = np.frombuffer(frame_data, dtype=np.float32)
+
 
             # audio_array = UpdatedClient.bytes_to_float_array(self.frames)
-            audio_array = UpdatedClient.bytes_to_float_array(data)
-
-            # self.send_packet_to_server(audio_array.tobytes())
-            # frame_data = websocket.recv()  # change get data from local mic
-
-            frame_np = np.frombuffer(audio_array.tobytes(), dtype=np.float32)
+            # audio_array = UpdatedClient.bytes_to_float_array(data)
+            # # self.send_packet_to_server(audio_array.tobytes())
+            # # frame_data = websocket.recv()  # change get data from local mic
+            # frame_np = np.frombuffer(audio_array.tobytes(), dtype=np.float32)
 
             no_voice_activity_chunks, continue_processing = self.voice_activity_detection(frame_np, no_voice_activity_chunks)
             if not continue_processing:
@@ -309,7 +311,7 @@ class TranscriptionClient:
         print("[INFO]: Waiting for server ready ...")
 
         self.recording = True
-        self.client.record_client()
+        self.client.record()
 
 
 

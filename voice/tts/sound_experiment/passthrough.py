@@ -45,18 +45,20 @@ def callback(indata, outdata, frames, time, status):
     # outdata[:] = indata
 
     # # Process audio input
-    for sample in indata:
-        buffer[buffer_pointer] = sample[0]
-        buffer_pointer += 1
-        print(buffer_pointer)
-        print(chunk_size)
+    # for sample in indata:
+    #     buffer[buffer_pointer] = sample[0]
+    #     buffer_pointer += 1
+    #     print(buffer_pointer)
+    #     print(chunk_size)
 
-        # If buffer is full
-        if buffer_pointer >= chunk_size:
-            # Reset buffer pointer
-            buffer_pointer = 0
-            print('buffer full')
-            outdata[:] = indata
+    #     # If buffer is full
+    #     if buffer_pointer >= chunk_size:
+    #         # Reset buffer pointer
+    #         buffer_pointer = 0
+    #         print('buffer full')
+    #         outdata[:] = indata
+    # time.sleep(5)
+    outdata[:] = indata
 
     # no_voice_activity_chunks, continue_processing = voice_activity_detection(frame_np, no_voice_activity_chunks, eos)
     # if not continue_processing:

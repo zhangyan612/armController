@@ -18,10 +18,10 @@ from transcription_server_client import ServeClient
 import time
 import threading
 import textwrap
-
+import uuid
 import logging
 logging.basicConfig(level = logging.INFO)
-import queue
+import pyaudio
 
 os.environ["KMP_DUPLICATE_LIB_OK"]="TRUE"
 
@@ -51,6 +51,19 @@ class TranscriptionServer:
         self.max_clients = 4
         self.max_connection_time = 600
         self.transcriber = None
+        self.p = pyaudio.PyAudio()
+        self.chunk = 1024 * 3
+        self.format = pyaudio.paInt16
+        self.channels = 1
+        self.rate = 16000
+
+        self.stream = self.p.open(
+            format=self.format,
+            channels=self.channels,
+            rate=self.rate,
+            input=True,
+            frames_per_buffer=self.chunk,
+        )
 
     def get_wait_time(self):
         """
@@ -111,7 +124,7 @@ class TranscriptionServer:
             multilingual=False,
             language='en',
             # task=options["task"],
-            # client_uid=options["uid"],
+            client_uid=str(uuid.uuid4()),
             transcription_queue=transcription_queue,
             llm_queue=llm_queue,
             transcriber=self.transcriber
@@ -191,8 +204,8 @@ class TranscriptionServer:
             if not tts_playing_event.is_set():
 
                 try:
-                    frame_data = websocket.recv()  # change get data from local mic
-                    # data = self.stream.read(self.chunk)
+                    # frame_data = websocket.recv()  # change get data from local mic
+                    frame_data = self.stream.read(self.chunk)
                     # self.frame_data += data
                     # frame_data, frame_np = self.frame_processing(websocket, client)
                     frame_np = np.frombuffer(frame_data, dtype=np.float32)
@@ -342,6 +355,7 @@ class ServeClient:
         #         }
         #     )
         # )
+        
 
     def set_eos(self, eos):
         self.lock.acquire()
