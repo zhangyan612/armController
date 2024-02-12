@@ -9,13 +9,13 @@ CHUNK_SIZE = 1024 * 3
 frames = []
 n_audio_file = 0
 
-audio = pyaudio.PyAudio()
+# audio = pyaudio.PyAudio()
 
-stream = audio.open(format=pyaudio.paInt16,
-                    channels=1,
-                    rate=16000,
-                    output=True,
-                    frames_per_buffer=CHUNK_SIZE)
+# stream = audio.open(format=pyaudio.paInt16,
+#                     channels=1,
+#                     rate=16000,
+#                     output=True,
+#                     frames_per_buffer=CHUNK_SIZE)
 
 
 
@@ -50,7 +50,7 @@ async def websocket_handler(websocket, path):
             # audio_data = np.frombuffer(message, dtype=np.int16)
             # stream.write(audio_data.tobytes())
             #stream.write(message)
-            if len(frames) > 30000: # * self.rate:
+            if len(frames) > 50000: # * self.rate:
                 print('save to file')
 
                 t = threading.Thread(
@@ -65,9 +65,10 @@ async def websocket_handler(websocket, path):
                 frames = b""
 
     finally:
-        stream.stop_stream()
-        stream.close()
-        audio.terminate()
+        # stream.stop_stream()
+        # stream.close()
+        # audio.terminate()
+        print('ended')
 
 async def start_websocket_server():
     async with websockets.serve(websocket_handler, '', 8888):

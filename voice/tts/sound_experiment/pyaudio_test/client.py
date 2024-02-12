@@ -3,7 +3,6 @@ import asyncio
 import websockets
 
 
-
 def record_microphone(stream):
     CHUNK = 1024 *3
     while True:
