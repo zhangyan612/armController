@@ -69,24 +69,24 @@ class TranscriptionServer:
 
         return wait_time / 60
 
-    def options_processing(self, websocket):
-        options = websocket.recv()
-        options = json.loads(options)
-        return options
+    # def options_processing(self, websocket):
+    #     options = websocket.recv()
+    #     options = json.loads(options)
+    #     return options
 
-    def handle_client_queue(self, websocket, options):
-        if len(self.clients) >= self.max_clients:
-            logging.warning("Client Queue Full. Asking client to wait ...")
-            wait_time = self.get_wait_time()
-            response = {
-                "uid": options["uid"],
-                "status": "WAIT",
-                "message": wait_time,
-            }
-            websocket.send(json.dumps(response))
-            websocket.close()
-            del websocket
-            return
+    # def handle_client_queue(self, websocket, options):
+    #     if len(self.clients) >= self.max_clients:
+    #         logging.warning("Client Queue Full. Asking client to wait ...")
+    #         wait_time = self.get_wait_time()
+    #         response = {
+    #             "uid": options["uid"],
+    #             "status": "WAIT",
+    #             "message": wait_time,
+    #         }
+    #         websocket.send(json.dumps(response))
+    #         websocket.close()
+    #         del websocket
+    #         return
 
     def handle_transcriber(self):
         device = "cpu"
@@ -105,36 +105,24 @@ class TranscriptionServer:
         return device, compute
 
 
-    def assign_client(self, websocket, options, transcription_queue=None, llm_queue=None):
+    def assign_client(self, transcription_queue=None, llm_queue=None):
         client = ServeClient(
-            websocket,
-            multilingual=options["multilingual"],
-            language=options["language"],
-            task=options["task"],
-            client_uid=options["uid"],
+            # websocket,
+            multilingual=False,
+            language='en',
+            # task=options["task"],
+            # client_uid=options["uid"],
             transcription_queue=transcription_queue,
             llm_queue=llm_queue,
             transcriber=self.transcriber
         )
 
-        self.clients[websocket] = client
-        self.clients_start_time[websocket] = time.time()
+        self.clients = client
+        self.clients_start_time= time.time()
         return client
 
-    def frame_processing(self, websocket, client):
-        try:
-            frame_data = websocket.recv()
-            frame_np = np.frombuffer(frame_data, dtype=np.float32)
-            return frame_data, frame_np
-        except Exception as e:
-            logging.error(e)
-            del websocket
-            return
 
-    def frame_from_mic(self):
-        pass
-
-    def voice_activity_detection(self, frame_np, no_voice_activity_chunks, websocket):
+    def voice_activity_detection(self, frame_np, no_voice_activity_chunks):
         """Detects voice activity in an audio frame.
     
         Uses a pretrained Voice Activity Detection (VAD) model to determine if an audio 
@@ -156,12 +144,12 @@ class TranscriptionServer:
             if speech_prob < self.vad_threshold:
                 no_voice_activity_chunks += 1
                 if no_voice_activity_chunks > 3:
-                    if not self.clients[websocket].eos:
-                        self.clients[websocket].set_eos(True)
+                    if not self.clients.eos:
+                        self.clients.set_eos(True)
                     time.sleep(0.1)
                 return no_voice_activity_chunks, False
             no_voice_activity_chunks = 0
-            self.clients[websocket].set_eos(False)
+            self.clients.set_eos(False)
             return no_voice_activity_chunks, True
 
         except Exception as e:
@@ -169,14 +157,14 @@ class TranscriptionServer:
             return no_voice_activity_chunks, False
 
 
-    def disconnect_client(self, websocket):
-        self.clients[websocket].disconnect()
-        logging.warning(f"{self.clients[websocket]} Client disconnected due to overtime.")
-        self.clients[websocket].cleanup()
-        self.clients.pop(websocket)
-        self.clients_start_time.pop(websocket)
-        websocket.close()
-        del websocket
+    # def disconnect_client(self, websocket):
+    #     self.clients.disconnect()
+    #     logging.warning(f"{self.clients[websocket]} Client disconnected due to overtime.")
+    #     self.clients.cleanup()
+    #     self.clients.pop(websocket)
+    #     self.clients_start_time.pop(websocket)
+    #     websocket.close()
+    #     del websocket
 
     """Receives audio data from a websocket client.
     
@@ -190,26 +178,36 @@ class TranscriptionServer:
         self.vad_model = VoiceActivityDetection()
         self.vad_threshold = 0.5
 
-        options = self.options_processing(websocket)
-        self.handle_client_queue(websocket, options)
+        # options = self.options_processing(websocket)
+        # self.handle_client_queue(websocket, options)
 
         device, compute = self.handle_transcriber()
 
-        client = self.assign_client(websocket, options, transcription_queue, llm_queue)
+        client = self.assign_client(transcription_queue, llm_queue)
 
         no_voice_activity_chunks = 0
 
         while True:
             if not tts_playing_event.is_set():
-                frame_data, frame_np = self.frame_processing(websocket, client)
+
+                try:
+                    frame_data = websocket.recv()  # change get data from local mic
+                    # data = self.stream.read(self.chunk)
+                    # self.frame_data += data
+                    # frame_data, frame_np = self.frame_processing(websocket, client)
+                    frame_np = np.frombuffer(frame_data, dtype=np.float32)
+
+                except Exception as e:
+                    logging.error(e)
+
                 no_voice_activity_chunks, continue_processing = self.voice_activity_detection(frame_np, no_voice_activity_chunks, websocket)
                 if not continue_processing:
                     continue
-                self.clients[websocket].add_frames(frame_np)
+                self.clients.add_frames(frame_np)
 
                 elapsed_time = time.time() - self.clients_start_time[websocket]
                 if elapsed_time >= self.max_connection_time:
-                    self.disconnect_client(websocket)
+                    # self.disconnect_client(websocket)
                     break
 
     def run(self, host, port=9090, transcription_queue=None, llm_queue=None, tts_playing_event=None):
@@ -268,7 +266,7 @@ class ServeClient:
 
     def __init__(
         self,
-        websocket,
+        # websocket,
         task="transcribe",
         device=None,
         multilingual=False,
@@ -331,54 +329,25 @@ class ServeClient:
         self.pick_previous_segments = 2
 
         # threading
-        self.websocket = websocket
+        # self.websocket = websocket
         self.lock = threading.Lock()
         self.eos = False
         self.trans_thread = threading.Thread(target=self.speech_to_text)
         self.trans_thread.start()
-        self.websocket.send(
-            json.dumps(
-                {
-                    "uid": self.client_uid,
-                    "message": self.SERVER_READY
-                }
-            )
-        )
+        # self.websocket.send(
+        #     json.dumps(
+        #         {
+        #             "uid": self.client_uid,
+        #             "message": self.SERVER_READY
+        #         }
+        #     )
+        # )
 
     def set_eos(self, eos):
         self.lock.acquire()
         self.eos = eos
         self.lock.release()
 
-    def fill_output(self, output):
-        """
-        Format the current incomplete transcription output by combining it with previous complete segments.
-        The resulting transcription is wrapped into two lines, each containing a maximum of 50 characters.
-
-        It ensures that the combined transcription fits within two lines, with a maximum of 50 characters per line.
-        Segments are concatenated in the order they exist in the list of previous segments, with the most
-        recent complete segment first and older segments prepended as needed to maintain the character limit.
-        If a 3-second pause is detected in the previous segments, any text preceding it is discarded to ensure
-        the transcription starts with the most recent complete content. The resulting transcription is returned
-        as a single string.
-
-        Args:
-            output(str): The current incomplete transcription segment.
-        
-        Returns:
-            str: A formatted transcription wrapped in two lines.
-        """
-        text = ''
-        pick_prev = min(len(self.text), self.pick_previous_segments)
-        for seg in self.text[-pick_prev:]:
-            # discard everything before a 3 second pause
-            if seg == '':
-                text = ''
-            else:
-                text += seg
-        wrapped = "".join(text + output)
-        return wrapped
-    
     def add_frames(self, frame_np):
         """
         Add audio frames to the ongoing audio stream buffer.
@@ -406,20 +375,20 @@ class ServeClient:
             self.frames_np = np.concatenate((self.frames_np, frame_np), axis=0)
         self.lock.release()
 
-    def check_llm_queue(self):
-        try:
-            llm_response = None
-            if self.llm_queue is not None:
-                while not self.llm_queue.empty():
-                    llm_response = self.llm_queue.get()
+    # def check_llm_queue(self):
+    #     try:
+    #         llm_response = None
+    #         if self.llm_queue is not None:
+    #             while not self.llm_queue.empty():
+    #                 llm_response = self.llm_queue.get()
                 
-                if llm_response:
-                    eos = llm_response["eos"]
-                    if eos:
-                        logging.info(f"[Transcription]: Sending LLM response to web socket")
-                        self.websocket.send(json.dumps(llm_response))
-        except queue.Empty:
-            pass
+    #             if llm_response:
+    #                 eos = llm_response["eos"]
+    #                 if eos:
+    #                     logging.info(f"[Transcription]: Sending LLM response to web socket")
+    #                     # self.websocket.send(json.dumps(llm_response))
+    #     except queue.Empty:
+    #         pass
 
     def update_prompt_and_segments(self, result, duration):
         if len(result):
@@ -447,31 +416,31 @@ class ServeClient:
                     self.text.append('')
         return segments
 
-    def check_language(self, info):
-        if self.language is None:
-            if info.language_probability > 0.5:
-                self.language = info.language
-                logging.info(f"Detected language {self.language} with probability {info.language_probability}")
-                self.websocket.send(json.dumps(
-                    {"uid": self.client_uid, "language": self.language, "language_prob": info.language_probability}))
-            else:
-                # detect language again
-                logging.info("language_probability low, detect again")
-                # continue
+    # def check_language(self, info):
+    #     if self.language is None:
+    #         if info.language_probability > 0.5:
+    #             self.language = info.language
+    #             logging.info(f"Detected language {self.language} with probability {info.language_probability}")
+    #             self.websocket.send(json.dumps(
+    #                 {"uid": self.client_uid, "language": self.language, "language_prob": info.language_probability}))
+    #         else:
+    #             # detect language again
+    #             logging.info("language_probability low, detect again")
+    #             # continue
 
     def update_ui_and_queue(self, segments, infer_time, duration):
         try:
             self.prompt = ' '.join(segment['text'] for segment in segments)
 
             logging.info(f"[Transcription]: Send segments to web socket")
-            self.websocket.send(
-                json.dumps({
-                    "uid": self.client_uid,
-                    "segments": segments,
-                    "eos": self.eos,
-                    "latency": infer_time
-                })
-            )
+            # self.websocket.send(
+            #     json.dumps({
+            #         "uid": self.client_uid,
+            #         "segments": segments,
+            #         "eos": self.eos,
+            #         "latency": infer_time
+            #     })
+            # )
             self.transcription_queue.put({"uid": self.client_uid, "prompt": self.prompt, "eos": self.eos})
             logging.info(f"[Transcription]: Send message to transcription queue {self.prompt}")
             if self.eos:
@@ -498,7 +467,7 @@ class ServeClient:
         """
         while True:
             # send the LLM outputs
-            self.check_llm_queue()
+            # self.check_llm_queue()
 
             if self.exit:
                 logging.info("[Transcription]: Exiting speech to text thread")
@@ -632,24 +601,7 @@ class ServeClient:
             self.timestamp_offset += offset
 
         return last_segment
-    
-    def disconnect(self):
-        """
-        Notify the client of disconnection and send a disconnect message.
 
-        This method sends a disconnect message to the client via the WebSocket connection to notify them
-        that the transcription service is disconnecting gracefully.
-
-        """
-        self.websocket.send(
-            json.dumps(
-                {
-                    "uid": self.client_uid,
-                    "message": self.DISCONNECT
-                }
-            )
-        )
-    
     def cleanup(self):
         """
         Perform cleanup tasks before exiting the transcription service.
