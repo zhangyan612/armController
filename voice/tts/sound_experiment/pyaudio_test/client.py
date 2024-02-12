@@ -2,8 +2,10 @@ import pyaudio
 import asyncio
 import websockets
 
+
+
 def record_microphone(stream):
-    CHUNK = 1024
+    CHUNK = 1024 *3
     while True:
         data = stream.read(CHUNK)
         yield data
@@ -25,9 +27,9 @@ async def send_audio():
 
         stream = p.open(format=pyaudio.paInt16,
                         channels=1,
-                        rate=44100,
+                        rate=16000,
                         input=True,
-                        frames_per_buffer=1024,
+                        frames_per_buffer=1024 *3,
                         input_device_index=mic_device_index)
 
         for data in record_microphone(stream):
