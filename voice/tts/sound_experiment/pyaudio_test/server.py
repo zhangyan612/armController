@@ -1,4 +1,4 @@
-import pyaudio
+# import pyaudio
 import numpy as np
 import asyncio
 import websockets
@@ -16,7 +16,6 @@ n_audio_file = 0
 #                     rate=16000,
 #                     output=True,
 #                     frames_per_buffer=CHUNK_SIZE)
-
 
 
 def write_audio_frames_to_file(frames, file_name, rate=None):
