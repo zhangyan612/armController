@@ -326,6 +326,8 @@ class Client:
                         break
 
                     audio_array = self.bytes_to_float_array(data)
+                    # raw_data = np.frombuffer(buffer=data, dtype=np.int16)
+                    # audio_array = raw_data.astype(np.float32) / 32768.0
                     self.send_packet_to_server(audio_array.tobytes())
                     self.stream.write(data)
 
