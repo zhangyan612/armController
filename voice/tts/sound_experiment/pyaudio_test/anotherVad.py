@@ -1,0 +1,68 @@
+import pyaudio
+import webrtcvad
+import numpy as np
+import torch
+# from vad import VoiceActivityDetection
+
+# Set up WebRTC VAD
+webrtc_vad_model = webrtcvad.Vad()
+webrtc_vad_model.set_mode(1)  # set aggressiveness mode, in [0, 3]
+CHUNK = 1024
+RATE = 16000
+# vad_threshold = 0.8
+# vad_model = VoiceActivityDetection()
+
+# Set up PyAudio
+p = pyaudio.PyAudio()
+stream = p.open(format=pyaudio.paInt16,
+                channels=1,
+                rate=16000,
+                input=True,
+                frames_per_buffer=1024)
+
+
+def _is_webrtc_speech(data, all_frames_must_be_true=False):
+    """
+    Returns true if speech is detected in the provided audio data
+
+    Args:
+        data (bytes): raw bytes of audio data (1024 raw bytes with
+        16000 sample rate and 16 bits per sample)
+    """
+    sample_rate = RATE
+    # Number of audio frames per millisecond
+    frame_length = int(sample_rate * 0.01)  # for 10ms frame
+    num_frames = int(len(data) / (2 * frame_length))
+    speech_frames = 0
+
+    for i in range(num_frames):
+        start_byte = i * frame_length * 2
+        end_byte = start_byte + frame_length * 2
+        frame = data[start_byte:end_byte]
+        if webrtc_vad_model.is_speech(frame, sample_rate):
+            speech_frames += 1
+            if not all_frames_must_be_true:
+                return True
+    if all_frames_must_be_true:
+        return speech_frames == num_frames
+    else:
+        return False
+
+
+while True:
+    # Read chunk of audio data
+    data = stream.read(CHUNK)
+    frame_np = np.frombuffer(data, dtype=np.float32)
+    frame_ts = torch.from_numpy(frame_np.copy())
+    # speech_prob = vad_model(frame_ts, RATE).item()
+    # print(speech_prob)
+    # if speech_prob < vad_threshold:
+    #     print('no voice')
+    # else:
+    #     print("Voice detected!")
+    result = _is_webrtc_speech(data)
+
+    if result:
+        print("Voice detected!")
+    else:
+        print("No voice detected.")
