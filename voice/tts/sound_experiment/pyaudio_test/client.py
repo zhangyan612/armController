@@ -3,8 +3,9 @@ import asyncio
 import websockets
 import torch
 import time
-from vad import VoiceActivityDetection
+# from vad import VoiceActivityDetection
 import numpy as np
+import webrtcvad
 
 class micRecorder:
     def __init__(self) -> None:
@@ -13,6 +14,7 @@ class micRecorder:
         self.CHANNELS = 1
         self.RATE = 16000
         self.p = pyaudio.PyAudio()
+        self.vad_threshold = 0.5
 
         self.stream = self.p.open(format=self.FORMAT,
                         channels=self.CHANNELS,
@@ -21,44 +23,69 @@ class micRecorder:
                         frames_per_buffer=self.CHUNK)
         self.clients = {}
         self.eos = False
+        self.webrtc_vad_model = webrtcvad.Vad()
+        self.webrtc_vad_model.set_mode(1)  # set aggressiveness mode, in [0, 3]
 
-    def voice_activity_detection(self, frame_np, no_voice_activity_chunks):
-        try:
-            speech_prob = self.vad_model(torch.from_numpy(frame_np.copy()), self.RATE).item()
-            if speech_prob < self.vad_threshold:
-                no_voice_activity_chunks += 1
-                if no_voice_activity_chunks > 3:
-                    if not self.eos:
-                        self.eos = True
-                    time.sleep(0.1)
-                return no_voice_activity_chunks, False
-            no_voice_activity_chunks = 0
-            self.eos = False
-            return no_voice_activity_chunks, True
-        
-        except Exception as e:
-            print(e)
-            return no_voice_activity_chunks, False
+    def _is_webrtc_speech(self, data, all_frames_must_be_true=False):
+        """
+        Returns true if speech is detected in the provided audio data
+
+        Args:
+            data (bytes): raw bytes of audio data (1024 raw bytes with
+            16000 sample rate and 16 bits per sample)
+        """
+        sample_rate = self.RATE
+        # Number of audio frames per millisecond
+        frame_length = int(sample_rate * 0.01)  # for 10ms frame
+        num_frames = int(len(data) / (2 * frame_length))
+        speech_frames = 0
+
+        for i in range(num_frames):
+            start_byte = i * frame_length * 2
+            end_byte = start_byte + frame_length * 2
+            frame = data[start_byte:end_byte]
+            if self.webrtc_vad_model.is_speech(frame, sample_rate):
+                speech_frames += 1
+                if not all_frames_must_be_true:
+                    return True
+        if all_frames_must_be_true:
+            return speech_frames == num_frames
+        else:
+            return False
+
 
     def record_microphone(self, stream):
         while True:
             data = stream.read(self.CHUNK)
             yield data
 
-    async def send_audio(self):
-        self.vad_model = VoiceActivityDetection()
-        self.vad_threshold = 0.5
-        no_voice_activity_chunks = 0
+    def recording(self):
+        for data in self.record_microphone(self.stream):
+            voice_detected = self._is_webrtc_speech(data)
+            if voice_detected:
+                print("Voice detected!")
+            else:
+                print("No voice detected.")
 
+    def bytes_to_float_array(self, audio_bytes):
+        raw_data = np.frombuffer(buffer=audio_bytes, dtype=np.int16)
+        return raw_data.astype(np.float32) / 32768.0
+
+    async def send_audio(self):
         async with websockets.connect('ws://localhost:6006') as ws:
             for data in self.record_microphone(self.stream):
-                frame_np = np.frombuffer(data, dtype=np.float32)
-                no_voice_activity_chunks, continue_processing = self.voice_activity_detection(frame_np, no_voice_activity_chunks)
-                if not continue_processing:
-                    print('skip')
-                    continue
-                await ws.send(data)
+                voice_detected = self._is_webrtc_speech(data)
+                if voice_detected:
+                    print('Voice detected, send data')
+                    audio_array = self.bytes_to_float_array(data)
+                    await ws.send(audio_array.tobytes())
+                    # self.send_packet_to_server(audio_array.tobytes())
+                    # await ws.send(data)
+                else:
+                    print("No voice detected.")
+
 
 
 recorder = micRecorder()
+# recorder.recording()
 asyncio.get_event_loop().run_until_complete(recorder.send_audio())

@@ -54,6 +54,12 @@ class VadCheck:
         while True:
             # Read chunk of audio data
             data = self.stream.read(self.CHUNK)
+            voice_detected = self._is_webrtc_speech(data)
+            if voice_detected:
+                print("Voice detected!")
+            else:
+                print("No voice detected.")
+
             # frame_np = np.frombuffer(data, dtype=np.float32)
             # frame_ts = torch.from_numpy(frame_np.copy())
             # speech_prob = vad_model(frame_ts, RATE).item()
@@ -62,12 +68,6 @@ class VadCheck:
             #     print('no voice')
             # else:
             #     print("Voice detected!")
-            result = self._is_webrtc_speech(data)
-
-            if result:
-                print("Voice detected!")
-            else:
-                print("No voice detected.")
 
 
 if __name__ == "__main__":

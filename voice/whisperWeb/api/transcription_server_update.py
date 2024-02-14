@@ -192,6 +192,8 @@ class TranscriptionServer:
 
         while True:
             if not tts_playing_event.is_set():
+                # frame_data = websocket.recv()
+                # frame_np = np.frombuffer(frame_data, dtype=np.float32)
                 frame_data, frame_np = self.frame_processing(websocket, client)
                 no_voice_activity_chunks, continue_processing = self.voice_activity_detection(frame_np, no_voice_activity_chunks, websocket)
                 if not continue_processing:
@@ -230,4 +232,5 @@ if __name__ == "__main__":
     from multiprocessing import Event
     tts_playing_event = Event()
     server = TranscriptionServer()
+    # 'NoneType' object has no attribute 'put'  -- need transcription queue
     server.run("0.0.0.0", 6006, None, None, tts_playing_event)
