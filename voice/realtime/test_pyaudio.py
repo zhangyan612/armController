@@ -1,6 +1,8 @@
 import pyaudio
 # import pvporcupine
 
+
+# we can't have device index
 input_device_index = 0
 
 
@@ -25,7 +27,7 @@ stream = audio_interface.open(rate=sample_rate,
                                 channels=1,
                                 input=True,
                                 frames_per_buffer=buffer_size,
-                                input_device_index=input_device_index,
+                                # input_device_index=input_device_index,
                                 )
 
 file_number = 0

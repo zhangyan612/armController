@@ -644,7 +644,7 @@ class AudioToTextRecorder:
                                           channels=1,
                                           input=True,
                                           frames_per_buffer=buffer_size,
-                                          input_device_index=input_device_index,
+                                        #   input_device_index=input_device_index,
                                           )
 
         except Exception as e:
