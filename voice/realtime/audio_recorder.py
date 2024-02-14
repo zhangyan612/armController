@@ -90,7 +90,7 @@ class AudioToTextRecorder:
                  ensure_sentence_ends_with_period=True,
                  use_microphone=True,
                  spinner=True,
-                 level=logging.INFO,
+                 level=logging.DEBUG,
 
                  # Realtime transcription parameters
                  enable_realtime_transcription=True,
