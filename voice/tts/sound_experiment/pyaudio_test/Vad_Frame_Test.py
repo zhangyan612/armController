@@ -62,7 +62,10 @@ class VoiceRecorder:
             return False
 
     def transcribe(self, input_audio):
-        segments, info = self.model.transcribe(input_audio, beam_size=5, vad_filter=True, vad_parameters={"threshold": 0.5})
+        audio = np.frombuffer(buffer=input_audio, dtype=np.int16)
+        # Convert s16 back to f32.
+        audio = audio.astype(np.float32) / 32768.0
+        segments, info = self.model.transcribe(audio, beam_size=5, vad_filter=True, vad_parameters={"threshold": 0.5})
         print("Detected language '%s' with probability %f" % (info.language, info.language_probability))
         for segment in segments:
             print("[%.2fs -> %.2fs] %s" % (segment.start, segment.end, segment.text))
@@ -77,7 +80,7 @@ class VoiceRecorder:
 
     def transcribe_from_File(self, frames, file_name):
         self.write_audio_frames_to_file(frames, file_name)
-        self.transcribe(file_name)
+        self.transcribe(file_name) # need to remove conversion
 
     def recording(self):
         n_audio_file = 0
@@ -90,6 +93,7 @@ class VoiceRecorder:
                 print("Voice detected!")
                 # add data to frames
                 self.frames.append(data)
+
 
                 # raw_data = np.frombuffer(buffer=data, dtype=np.int16)
                 # raw_data = raw_data.astype(np.float32) / 32768.0
@@ -128,16 +132,24 @@ class VoiceRecorder:
                     # transcribe audio data
                     # self.transcribe(audio_data)
 
-                    # save to file
                     t = threading.Thread(
-                        target=self.transcribe_from_File,
+                        target=self.transcribe,
                         args=(
                             audio_data,
-                            f"chunks/{n_audio_file}.wav",
                         ),
                     )
                     t.start()
-                    n_audio_file += 1
+
+                    # save to file
+                    # t = threading.Thread(
+                    #     target=self.transcribe_from_File,
+                    #     args=(
+                    #         audio_data,
+                    #         f"chunks/{n_audio_file}.wav",
+                    #     ),
+                    # )
+                    # t.start()
+                    # n_audio_file += 1
 
 
                     # clear frames
