@@ -229,8 +229,25 @@ class TranscriptionServer:
 
 
 if __name__ == "__main__":
-    from multiprocessing import Event
+    import multiprocessing
+    from multiprocessing import Event, Queue
     tts_playing_event = Event()
-    server = TranscriptionServer()
-    # 'NoneType' object has no attribute 'put'  -- need transcription queue
-    server.run("0.0.0.0", 6006, None, None, tts_playing_event)
+    transcription_queue = Queue()
+    llm_queue = Queue()
+
+    # server = TranscriptionServer()
+    # # 'NoneType' object has no attribute 'put'  -- need transcription queue
+    # server.run("0.0.0.0", 6006, None, None, tts_playing_event)
+
+    whisper_server = TranscriptionServer()
+    whisper_process = multiprocessing.Process(  
+        target=whisper_server.run,
+        args=(
+            "0.0.0.0",
+            6006,
+            transcription_queue,
+            llm_queue,
+            tts_playing_event
+        )
+    )
+    whisper_process.start()

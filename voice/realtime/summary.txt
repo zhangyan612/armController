@@ -1,0 +1,14 @@
+Let's break down how this code converts audio into text step by step:
+Import Dependencies: The script starts by importing necessary libraries/modules. Notable ones include torch for machine learning operations, pvporcupine for wake word detection, webrtcvad for voice activity detection, pyaudio for audio input stream handling, and faster_whisper for the speech-to-text functionality.
+Setup: The AudioToTextRecorder class is defined with several initialization parameters, including model details, sensitivity settings, callbacks, and more.
+Logging: A logging mechanism is established to keep track of the system's activity and debug information.
+AudioToTextRecorder Initialization: Inside the __init__ method of AudioToTextRecorder, the transcription models are initialized. It also sets up wake word detection (if configured), voice activity detection using both webrtc and Silero models, and real-time transcription.
+Transcription Process: The _transcription_worker method initializes the faster_whisper model and performs continuous transcription of received audio data. The transcripts are then sent back through a multiprocessing pipe.
+Audio Data Process: The _audio_data_worker method sets up the audio input stream to capture audio from the microphone, reading audio data in chunks and placing them into a queue for processing.
+Recording Worker Thread: This thread monitors the audio input queue for voice activity. When it detects speech, based on the configured voice activity detectors, it either begins recording or continues waiting for voice activity.
+Real-time Transcription Worker Thread: If real-time transcription is enabled, this thread processes the ongoing recording, generates transcriptions, and provides real-time updates.
+Start and Stop Recording: The class methods start and stop control the beginning and ending of the audio recording process.
+Transcription: The method transcribe sends recorded audio to the transcription process and retrieves the transcription results. The text method manages the process by waiting for recording start/stop and handles transcription actions.
+Shut Down: The shutdown method safely terminates threads and processes, ensuring clean resource management.
+Main Loop: When running as the main program, the script creates an instance of AudioToTextRecorder with the specified configurations and enters a loop where it continuously calls the text method of the recorder to get transcribed text and prints the results.
+In summary, the code described above sets up an audio capture and transcription system that includes real-time voice activity detection, wake word detection, real-time transcription, and recording management. It handles audio input from the microphone, processes it to detect speech or wake words, records audio when speech is detected, transcribes it, and streams the transcription output.

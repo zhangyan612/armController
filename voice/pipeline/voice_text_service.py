@@ -5,10 +5,12 @@ import pyaudio
 import threading
 import time
 import os
+import multiprocessing
+from multiprocessing import Event
 
 os.environ["KMP_DUPLICATE_LIB_OK"]="TRUE"
 
-class VoiceRecorder:
+class VoiceToText:
     def __init__(self) -> None:
         # Set up WebRTC VAD
         self.webrtc_vad_model = webrtcvad.Vad()
@@ -68,11 +70,14 @@ class VoiceRecorder:
 
         print(f"Detection done in {infer_time} seconds")
 
-    def recording(self):
+    def run(self, llm_queue, tts_playing_event):
         silence_start_time = None
 
         while True:
             # Read chunk of audio data
+            while tts_playing_event.is_set():
+                time.sleep(0.1)
+
             data = self.stream.read(self.CHUNK)
             voice_detected = self._is_webrtc_speech(data)
             if voice_detected:
@@ -106,10 +111,22 @@ class VoiceRecorder:
                         if self.transcribedText:
                             print("%s seconds of silence detected. Send transcribed text." % (self.silence_threshold))
                             print(self.transcribedText)
+                            llm_queue.put(self.transcribedText)
                             self.transcribedText = ''  # reset the transcribed text
                         silence_start_time = time.time()  # reset the silence timer
 
 
 if __name__ == "__main__":
-    vad = VoiceRecorder()
-    vad.recording()
+    llm_queue = multiprocessing.Queue()
+    tts_playing_event = Event()
+
+    recorder_server = VoiceToText()
+    recorder_process = multiprocessing.Process(
+        target=recorder_server.run,
+        args=(
+            llm_queue,
+            tts_playing_event
+        )
+    )
+    recorder_process.start()
+
