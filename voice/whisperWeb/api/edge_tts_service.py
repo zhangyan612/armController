@@ -163,3 +163,16 @@ class EdgeTTSService:
 
         return output_file
 
+if __name__ == "__main__":
+    import multiprocessing
+    from multiprocessing import Queue, Event
+
+    audio_queue = Queue()
+    tts_playing_event = Event()
+
+    tts_runner = EdgeTTSService()
+    tts_thread = multiprocessing.Process(target=tts_runner.run, args=(audio_queue,tts_playing_event))
+    tts_thread.start()
+
+    audio_queue.put('test test')
+

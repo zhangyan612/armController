@@ -28,7 +28,6 @@ class EdgeTTS:
                     file.write(chunk["data"])
                 elif chunk["type"] == "WordBoundary":
                     print(f"WordBoundary: {chunk}")
-
         return output_file
 
     def run(self, audio_queue=None, tts_playing_event=None):
@@ -70,14 +69,14 @@ class EdgeTTS:
                     logging.error(f"[TTS ERROR]: Audio error: {e}")
 
 if __name__ == "__main__":
-    import threading
+    import multiprocessing
     from multiprocessing import Queue, Event
 
     audio_queue = Queue()
     tts_playing_event = Event()
 
     tts_runner = EdgeTTS()
-    tts_thread = threading.Thread(target=tts_runner.run, args=(audio_queue,tts_playing_event))
+    tts_thread = multiprocessing.Process(target=tts_runner.run, args=(audio_queue,tts_playing_event))
     tts_thread.start()
 
     audio_queue.put('test test')

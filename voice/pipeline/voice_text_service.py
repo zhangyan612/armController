@@ -121,7 +121,7 @@ if __name__ == "__main__":
     tts_playing_event = Event()
 
     recorder_server = VoiceToText()
-    recorder_process = multiprocessing.Process(
+    recorder_process = threading.Thread(
         target=recorder_server.run,
         args=(
             llm_queue,

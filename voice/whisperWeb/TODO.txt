@@ -1,0 +1,45 @@
+TODO: 
+send entire conversation history to api 
+increase wait time so it's not cutting off when I speak
+
+
+
+INFO:faster_whisper:Processing audio with duration 00:00.512
+INFO:faster_whisper:VAD filter removed 00:00.000 of audio
+DEBUG:faster_whisper:VAD filter kept the following audio segments: [00:00.000 -> 00:00.512]
+DEBUG:faster_whisper:Processing segment at 00:00.000
+DEBUG:faster_whisper:Log probability threshold is not met with temperature 0.0 (-1.080123 < -1.000000)
+DEBUG:faster_whisper:Log probability threshold is not met with temperature 0.2 (-1.080122 < -1.000000)
+DEBUG:faster_whisper:Log probability threshold is not met with temperature 0.4 (-1.080122 < -1.000000)
+DEBUG:faster_whisper:Log probability threshold is not met with temperature 0.6 (-1.080122 < -1.000000)
+DEBUG:faster_whisper:Log probability threshold is not met with temperature 0.8 (-1.287286 < -1.000000)
+DEBUG:faster_whisper:Log probability threshold is not met with temperature 1.0 (-2.061727 < -1.000000)
+INFO:root:[Transcription]: Send segments to web socket
+INFO:root:[Transcription]: Send message to transcription queue  best.
+INFO:root:[LLM Service]: Prompt: best.
+INFO:root:[LLM Service]: LLM generate prompt: best., eos: True
+INFO:root:[Transcription]: EOS: True Prompt:  best.
+INFO:root:[Transcription]: Average inference time 5.741191387176514
+
+INFO:faster_whisper:Processing audio with duration 00:01.792
+INFO:faster_whisper:VAD filter removed 00:00.000 of audio
+DEBUG:faster_whisper:VAD filter kept the following audio segments: [00:00.000 -> 00:01.792]
+DEBUG:faster_whisper:Processing segment at 00:00.000
+INFO:root:[Transcription]: Send segments to web socket
+INFO:root:[Transcription]: Send message to transcription queue  to see if this works.
+INFO:root:[Transcription]: EOS: True Prompt:  to see if this works.
+INFO:root:[Transcription]: Average inference time 1.8360238075256348
+
+[{'role': 'system', 'content': 'You are a Robot, a helpful AI assistant'}, {'role': 'user', 'content': 'best.'}]
+INFO:root:[LLM Service]: Output sent to llm_queue: This is output 1 from AI, inference done in 10.002899408340454 ms
+
+INFO:root:[LLM Service]: Prompt: to see if this works.
+INFO:root:[LLM Service]: LLM generate prompt: to see if this works., eos: True
+INFO:root:[Transcription]: Sending LLM response to web socket
+[{'role': 'system', 'content': 'You are a Robot, a helpful AI assistant'}, {'role': 'user', 'content': 'to see if this works.'}]0:00]
+INFO:root:[LLM Service]: Output sent to llm_queue: This is output 2 from AI, inference done in 10.011658668518066 ms
+INFO:root:[Transcription]: Sending LLM response to web socket
+INFO:root:[TTS Service]: TTS inference done in 10.207462787628174 ms.
+INFO:root:[TTS Service]: Sent audio to websocket
+INFO:root:[TTS Service]: TTS inference done in 9.473620414733887 ms.██████████████████████████████████| 100.00% [152/152 00:04<00:00]
+INFO:root:[TTS Service]: Sent audio to websocket
