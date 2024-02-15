@@ -7,6 +7,7 @@ from voice_text_service import VoiceToText
 from fake_LLM import leptonLLM
 from llm_memory import LLMMemory
 from edge_TTS import EdgeTTS
+import multiprocessing
 # class VoiceToText:
 #     def run(self, llm_queue, tts_playing_event):
 #         for i in range(100):
