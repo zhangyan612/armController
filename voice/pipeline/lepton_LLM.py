@@ -37,7 +37,7 @@ class leptonLLM:
             temperature=0.9,
         )
         return llm_response.choices[0].message.content
-
+        
 if __name__ == '__main__':
     userPrompt = 'Whats the SOTA text to speech model?'
     systemPrompt = ''

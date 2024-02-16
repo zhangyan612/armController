@@ -6,8 +6,11 @@ from voice_text_service import VoiceToText
 # from lepton_LLM import leptonLLM
 from fake_LLM import leptonLLM
 from llm_memory import LLMMemory
-from edge_TTS import EdgeTTS
-import multiprocessing
+# from edge_TTS_MuitiProcess import EdgeTTS
+# import json 
+import persistqueue
+q = persistqueue.SQLiteQueue('audio', auto_commit=True)
+
 # class VoiceToText:
 #     def run(self, llm_queue, tts_playing_event):
 #         for i in range(100):
@@ -16,6 +19,12 @@ import multiprocessing
 #             print(f"send text data to llm: {i}")
 #             llm_queue.put(f"data {i}")
 #             time.sleep(5)
+
+# file based state mgt
+# def updateState(key, value):
+#     with open('state.json', 'w') as f:
+#         json.dump({'time': time.ctime(), key: value}, f)
+
 
 class LLMService:
     def run(self, llm_queue, audio_queue):
@@ -29,7 +38,13 @@ class LLMService:
                 prompt = memory.add_message_history('user', data)
                 response = llm.llm_request(prompt)
                 memory.add_message_history('assistant', response)
-                audio_queue.put(response)
+                # audio_queue.put(response)
+                # write to a file instead of queue
+                # updateState('audio', response)
+                q.put(response)
+
+
+
 
 # class EdgeTTS:
 #     def run(self, audio_queue, tts_playing_event):
@@ -67,10 +82,10 @@ if __name__ == "__main__":
     )
     llm_thread.start()
 
-    tts_runner = EdgeTTS()
-    tts_thread = threading.Thread(target=tts_runner.run, args=(audio_queue,tts_playing_event))
-    tts_thread.start()
+    # tts_runner = EdgeTTS()
+    # tts_thread = threading.Thread(target=tts_runner.run, args=(audio_queue,tts_playing_event))
+    # tts_thread.start()
 
     recorder_thread.join()
     llm_thread.join()
-    tts_thread.join()
+    # tts_thread.join()
