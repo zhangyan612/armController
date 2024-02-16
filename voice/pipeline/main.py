@@ -8,6 +8,7 @@ from fake_LLM import leptonLLM
 from llm_memory import LLMMemory
 # from edge_TTS_MuitiProcess import EdgeTTS
 # import json 
+import nltk
 import persistqueue
 q = persistqueue.SQLiteQueue('audio', auto_commit=True)
 
@@ -26,6 +27,32 @@ q = persistqueue.SQLiteQueue('audio', auto_commit=True)
 #         json.dump({'time': time.ctime(), key: value}, f)
 
 
+def split_paragraph(paragraph):
+    # Ensure NLTK sentence tokenizer is downloaded
+    nltk.download('punkt', quiet=True)
+    
+    # Use NLTK's sent_tokenize function to split the paragraph
+    sentences = nltk.sent_tokenize(paragraph)
+    
+    # Split sentences further if they exceed 100 characters
+    final_sentences = []
+    for sentence in sentences:
+        if len(sentence) > 100:
+            # Split by comma
+            comma_splits = sentence.split(',')
+            temp_sentence = ''
+            for split in comma_splits:
+                if len(temp_sentence) + len(split) < 100:
+                    temp_sentence += split + ','
+                else:
+                    final_sentences.append(temp_sentence.strip(','))
+                    temp_sentence = split + ','
+            final_sentences.append(temp_sentence.strip(','))
+        else:
+            final_sentences.append(sentence)
+    
+    return final_sentences
+
 class LLMService:
     def run(self, llm_queue, audio_queue):
         memory = LLMMemory('You are a robot')
@@ -38,10 +65,13 @@ class LLMService:
                 prompt = memory.add_message_history('user', data)
                 response = llm.llm_request(prompt)
                 memory.add_message_history('assistant', response)
+                sentences = split_paragraph(response)
                 # audio_queue.put(response)
                 # write to a file instead of queue
                 # updateState('audio', response)
-                q.put(response)
+                # split setense to shorter if too long 
+                for s in sentences:
+                    q.put(s)
 
 
 

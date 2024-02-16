@@ -54,6 +54,12 @@ class VoiceToText:
         else:
             return False
 
+    def check_wake_words(self, sentence, wake_words=['hi robot', 'hey robot']):
+        for word in wake_words:
+            if word in sentence.lower():
+                return True
+        return False
+
     def transcribe(self, input_audio):
         # this works 
         audio = np.frombuffer(buffer=input_audio, dtype=np.int16)
@@ -111,7 +117,10 @@ class VoiceToText:
                         if self.transcribedText:
                             print("%s seconds of silence detected. Send transcribed text." % (self.silence_threshold))
                             print(self.transcribedText)
-                            llm_queue.put(self.transcribedText)
+                            # if wake words mentioned 
+                            wake = self.check_wake_words(self.transcribedText)
+                            if wake:
+                                llm_queue.put(self.transcribedText)
                             self.transcribedText = ''  # reset the transcribed text
                         silence_start_time = time.time()  # reset the silence timer
 
