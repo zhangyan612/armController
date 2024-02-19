@@ -4,6 +4,8 @@ def connect_robot():
     # Define the API endpoints
     ports_url = "http://localhost:8080/api/ports"
     connect_url = "http://localhost:8080/api/connect"
+    
+    # http://localhost:8080/api/connect?serialPort=COM8&baudRateSelection=0
 
     # Step 1: Get the available ports
     try:

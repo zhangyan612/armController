@@ -6,6 +6,10 @@ robot = STR400(host='localhost', port=8080)
 
 defaultAngles= [0, -90, 0, 0, 0, 0, 5]
 
+
+# connect to robot if not connected
+# armPortConnect 
+
 # Activating the robot
 robot.enable()
 print("Robot successfully activated.")

@@ -26,7 +26,7 @@ print("Instructing the robot to move forward along the X-axis for 2 seconds...")
 values = {"x": True, "y": None, "z": None,
           "roll": None, "pitch": None, "yaw": None}
 robot.real_time_position_control(values)
-time.sleep(2)
+time.sleep(5)
 
 # Command to halt the robot's movement for 2 seconds
 print("Halting robot movements for 2 seconds...")
