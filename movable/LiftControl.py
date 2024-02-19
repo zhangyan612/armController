@@ -59,6 +59,10 @@ if __name__ == '__main__':
     ctrl.goDown(5)
     ctrl.stop()
 
+    # config needed to get permission
+    # sudo usermod -a -G tty wheeltec
+    # sudo usermod -a -G dialout wheeltec
+
 # ser.flushInput()  # 清空接收缓存
 # portRead()  # 将单线串口配置为输入
 # time.sleep(0.005)  # 稍作延时，等待接收完毕 重要
