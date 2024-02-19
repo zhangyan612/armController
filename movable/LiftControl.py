@@ -1,15 +1,16 @@
 import time
 import serial
 from serial.tools import list_ports
+import platform 
 
 class LiftController:
     def __init__(self) -> None:
         self.port = self.getServoPort()
 
-        print(self.port)
+        # print(self.port)
         # Create a serial object
         self.ser = serial.Serial(
-            port=self.port,  # replace with your port
+            port=self.port,
             baudrate=115200,
             parity=serial.PARITY_NONE,
             stopbits=serial.STOPBITS_ONE,
@@ -17,40 +18,46 @@ class LiftController:
         )
         # Check if the serial port is open
         if self.ser.isOpen():
-            print("Serial port is open")
+            print("Lift serial port is open")
         else:
-            print("Failed to open serial port")
+            print("Failed to open Lift serial port")
+        time.sleep(2)  # Add a delay to aviod data missing 
 
-    
     def getServoPort(self):
-        ports = list_ports.comports()
-        for port, desc, hwid in sorted(ports):
-                if 'USB-SERIAL CH340' in desc:
-                        return port
-        print('Error: Servo is not connected to any port')
-        return None
+        p = platform.platform().lower()
+        if 'linux' in p:
+            port = '/dev/ttyUSB0'
+            return port
+        else:
+            ports = list_ports.comports()
+            for port, desc, hwid in sorted(ports):
+                    if 'USB-SERIAL CH340' in desc:
+                            return port
+            print('Error: Servo is not connected to any port')
+            return None
 
     # Write data to the serial port
     def send_command(self, command):
+        print('sending command:'+ command)
         self.ser.write((command + '\n').encode())  # Send the command to the Arduino
 
     def goUp(self, seconds):
-        self.send_command('f')  # Send the 'forward' command
+        self.send_command('f')  # forward
         time.sleep(seconds)
 
     def goDown(self, seconds):
-        self.send_command('b')  # Send the 'forward' command
+        self.send_command('b')  # backward
         time.sleep(seconds)
 
     def stop(self):
-        self.send_command('s')  # Send the 'forward' command
+        self.send_command('s')  # Stop
 
 
 if __name__ == '__main__':
-     ctrl = LiftController()
-     ctrl.goUp(5)
-     ctrl.goDown(5)
-     ctrl.stop()
+    ctrl = LiftController()
+    ctrl.goUp(5)
+    ctrl.goDown(5)
+    ctrl.stop()
 
 # ser.flushInput()  # 清空接收缓存
 # portRead()  # 将单线串口配置为输入
