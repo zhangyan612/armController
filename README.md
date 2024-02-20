@@ -46,6 +46,22 @@ Rewrite URL: ws://127.0.0.1:7890/{R:0}
 Append query string: Checked
 This rule will redirect WebSocket requests from yourdomain.com to your Python WebSocket server running on 127.0.0.1:8765.
 
+# base robot config on port
+ifconfig
+
+echo $ROS_MASTER_URI
+echo $ROS_HOSTNAME
+
+export ROS_HOSTNAME=192.168.0.177
+export ROS_HOSTNAME=192.168.1.184
+
+sudo nano .bashrc
+or
+gedit .bashrc
+
+
+
+
 
 # rosbridge for moving control
 
@@ -59,10 +75,15 @@ echo $ROS_HOSTNAME
 ifconfig
 
 export ROS_HOSTNAME=192.168.0.177
+export ROS_HOSTNAME=192.168.1.184
 
+sudo nano .bashrc
+or
 gedit .bashrc
+
+
 #to make it permanent, add the line to this file
-source ~/.basrhc
+source ~/.bashrc
 
 roslaunch turn_on_wheeltec_robot turn_on_wheeltec_robot.launch
 
@@ -117,3 +138,5 @@ rosparam set /wheeltec_robot/serial_baud_rate 9600 -- 修改参数 临时
 查看机器人的 tf 树， 坐标变换关系
 rosrun rqt_tf_tree rqt_tf_tree
 base_link 与机器人中心重合
+
+conda create -n robot python=3.9.18
