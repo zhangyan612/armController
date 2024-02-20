@@ -61,8 +61,6 @@ gedit .bashrc
 
 
 
-
-
 # rosbridge for moving control
 
 ROS Update, remote server control
@@ -139,4 +137,36 @@ rosparam set /wheeltec_robot/serial_baud_rate 9600 -- 修改参数 临时
 rosrun rqt_tf_tree rqt_tf_tree
 base_link 与机器人中心重合
 
-conda create -n robot python=3.9.18
+conda create -n robot python=3.9
+conda remove --name robot --all
+
+conda create -n vision python=3.7
+
+Add comment to EOF to disable conda or remove comment to enable it
+base robot only works when it's disabled 
+
+gedit .bashrc
+source ~/.bashrc
+
+:<<EOF
+source /home/wheeltec/catkin_workspace/install/setup.bash --extend
+export PYTHONPATH=/home/wheeltec/archiconda3/envs/wheeltec/bin:$PYTHONPATH
+# added by Archiconda3 0.2.3 installer
+# >>> conda init >>>
+# !! Contents within this block are managed by 'conda init' !!
+__conda_setup="$(CONDA_REPORT_ERRORS=false '/home/wheeltec/archiconda3/bin/conda' sh$
+if [ $? -eq 0 ]; then
+    \eval "$__conda_setup"
+else
+    if [ -f "/home/wheeltec/archiconda3/etc/profile.d/conda.sh" ]; then
+        . "/home/wheeltec/archiconda3/etc/profile.d/conda.sh"
+        CONDA_CHANGEPS1=false conda activate base
+    else
+        \export PATH="/home/wheeltec/archiconda3/bin:$PATH"
+    fi
+fi
+unset __conda_setup
+
+alias sudo='sudo env PATH=$PATH'
+# <<< conda init <<<
+EOF
