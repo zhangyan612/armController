@@ -1,16 +1,15 @@
 from faster_whisper import WhisperModel
 # import datetime
+import time
+import os
 
 model_size = "base.en"
-
-import os
 
 os.environ['KMP_DUPLICATE_LIB_OK']='True'
 
 # works on cpu
 # for gpu
 # Purfview's whisper-standalone-win provides the required NVIDIA libraries for Windows & Linux in a single archive. Decompress the archive and place the libraries in a directory included in the PATH.
-
 
 # print(datetime.datetime.now())
 
@@ -25,16 +24,24 @@ os.environ['KMP_DUPLICATE_LIB_OK']='True'
 
 # or run on GPU with INT8 - not working
 # model = WhisperModel(model_size, device="cuda", compute_type="int8_float16")
+start = time.time()
 
 # or run on CPU with INT8 - works on cpu - 1 min
 model = WhisperModel(model_size, device="cpu", compute_type="int8")
-wav_file_path = "D:\Download\sample1.flac"
+# wav_file_path = "D:\Download\sample1.flac"
+laptop_file_path = "D:\Robot/armController/20240204-234829.wav"
+jetson_path = '/home/wheeltec/armController/20240219-192946.wav'
 
-segments, info = model.transcribe(wav_file_path, beam_size=5)
+segments, info = model.transcribe(jetson_path, beam_size=5)
 
 print("Detected language '%s' with probability %f" % (info.language, info.language_probability))
 
 for segment in segments:
     print("[%.2fs -> %.2fs] %s" % (segment.start, segment.end, segment.text))
-    
-# print(datetime.datetime.now())
+
+infer_time = time.time() - start
+
+print(f"Whisper inference time {infer_time}\n")
+
+# laptop
+# Whisper inference time 4.273757696151733

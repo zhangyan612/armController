@@ -14,7 +14,7 @@ class VoiceToText:
     def __init__(self) -> None:
         # Set up WebRTC VAD
         self.webrtc_vad_model = webrtcvad.Vad()
-        self.webrtc_vad_model.set_mode(1)  # set aggressiveness mode, in [0, 3]
+        self.webrtc_vad_model.set_mode(3)  # set aggressiveness mode, in [0, 3]
         self.CHUNK = 1024 * 3
         self.RATE = 16000
         self.model_size = 'base.en'
@@ -139,3 +139,7 @@ if __name__ == "__main__":
     )
     recorder_process.start()
 
+    # error 
+    # The 'illegal instruction' could be due to an recent change in the getauxval(AT_HWCAP).
+    # nano ~/.bashrc
+    # export OPENBLAS_CORETYPE=ARMV8
