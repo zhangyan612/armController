@@ -67,7 +67,7 @@ class VoiceToText:
         audio = audio.astype(np.float32) / 32768.0
         
         start = time.time()
-        segments, info = self.model.transcribe(audio, beam_size=5, vad_filter=True, vad_parameters={"threshold": 0.5})
+        segments, info = self.model.transcribe(audio, beam_size=5)
         print("Detected language '%s' with probability %f" % (info.language, info.language_probability))
         for segment in segments:
             print("[%.2fs -> %.2fs] %s" % (segment.start, segment.end, segment.text))
