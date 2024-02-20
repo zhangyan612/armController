@@ -125,6 +125,17 @@ sudo apt-get install ffmpeg libav-tools
 sudo pip install pyaudio
 
 
+# vision cam installation 
+
+conda create -n robot python=3.9
+conda remove --name robot --all
+
+conda create -n vision python=3.7
+
+pip uninstall urllib3
+pip install urllib3==1.26.6
+
+
 # helpful
 ROS开发教程
 ROS 系统里面的参数类似于单片机开发中的全局变量，由ROS Master 管理，其通信机制较为简单，不涉及 TCP/UDP 通信。我们可以使用“rosparam”命令去查看或者设置机器人的参数
@@ -137,10 +148,8 @@ rosparam set /wheeltec_robot/serial_baud_rate 9600 -- 修改参数 临时
 rosrun rqt_tf_tree rqt_tf_tree
 base_link 与机器人中心重合
 
-conda create -n robot python=3.9
-conda remove --name robot --all
 
-conda create -n vision python=3.7
+
 
 Add comment to EOF to disable conda or remove comment to enable it
 base robot only works when it's disabled 
