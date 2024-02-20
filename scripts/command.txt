@@ -1,0 +1,3 @@
+Modify the file permissions and allow execution of the script by using the command below:
+
+chmod u+x base.sh
