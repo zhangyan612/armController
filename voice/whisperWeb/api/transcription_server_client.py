@@ -311,8 +311,8 @@ class ServeClient:
                     initial_prompt=None,
                     language=self.language,
                     task=self.task,
-                    vad_filter=True,
-                    vad_parameters={"threshold": 0.5}
+                    # vad_filter=True,
+                    # vad_parameters={"threshold": 0.5}
                 )
 
                 # last_segment = self.update_segments(result, duration)

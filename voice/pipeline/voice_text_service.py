@@ -54,7 +54,7 @@ class VoiceToText:
         else:
             return False
 
-    def check_wake_words(self, sentence, wake_words=['hi robot', 'hey robot']):
+    def check_wake_words(self, sentence, wake_words=['hi robot', 'hey robot', 'hi, robot', 'hey, robot']):
         for word in wake_words:
             if word in sentence.lower():
                 return True

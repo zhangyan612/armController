@@ -10,7 +10,6 @@ from llm_memory import LLMMemory
 # import json 
 import nltk
 import persistqueue
-q = persistqueue.SQLiteQueue('audio', auto_commit=True)
 
 # class VoiceToText:
 #     def run(self, llm_queue, tts_playing_event):
@@ -54,9 +53,15 @@ def split_paragraph(paragraph):
     return final_sentences
 
 class LLMService:
-    def run(self, llm_queue, audio_queue):
+    # def __init__(self) -> None:
+    #     import persistqueue
+    #     self.queue = persistqueue.SQLiteQueue('audio', auto_commit=True)
+
+    def run(self, llm_queue, audio_queue=None):
         memory = LLMMemory('You are a robot')
         llm = leptonLLM()
+        queue = persistqueue.SQLiteQueue('audio', auto_commit=True)
+
         while True:
             if not llm_queue.empty():
                 data = llm_queue.get()
@@ -71,9 +76,7 @@ class LLMService:
                 # updateState('audio', response)
                 # split setense to shorter if too long 
                 for s in sentences:
-                    q.put(s)
-
-
+                    queue.put(s)
 
 
 # class EdgeTTS:
@@ -88,7 +91,7 @@ class LLMService:
 
 if __name__ == "__main__":
     llm_queue = Queue()
-    audio_queue = Queue()
+    # audio_queue = Queue()
 
     tts_playing_event = Event()
 
@@ -107,7 +110,7 @@ if __name__ == "__main__":
         target=llm_provider.run,
         args=(
             llm_queue,
-            audio_queue,
+            # audio_queue,
         )
     )
     llm_thread.start()

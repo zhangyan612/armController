@@ -73,7 +73,9 @@ def runQueue():
 
 if __name__ == "__main__":
     runQueue()
-
+    # how to run queue
+    # python voice\pipeline\edge_TTS.py
+    
     # subscribe_to_change('audio')
     # loop = asyncio.get_event_loop_policy().get_event_loop()
     # try:
