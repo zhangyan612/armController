@@ -1,3 +1,10 @@
 Modify the file permissions and allow execution of the script by using the command below:
 
 chmod u+x base.sh
+bash base.sh
+
+chmod u+x runVoice.sh
+bash runVoice.sh
+
+chmod u+x runTTS.sh
+bash runTTS.sh
