@@ -8,3 +8,6 @@ bash runVoice.sh
 
 chmod u+x runTTS.sh
 bash runTTS.sh
+
+
+
