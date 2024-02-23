@@ -3,8 +3,8 @@ import time
 from threading import Event
 from multiprocessing import Queue
 from voice_text_service import VoiceToText
-# from lepton_LLM import leptonLLM
-from fake_LLM import leptonLLM
+from lepton_LLM import leptonLLM
+# from fake_LLM import leptonLLM
 from llm_memory import LLMMemory
 # from edge_TTS_MuitiProcess import EdgeTTS
 # import json 
