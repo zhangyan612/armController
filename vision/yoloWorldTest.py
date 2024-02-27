@@ -10,7 +10,11 @@ model = YOLOWorld('yolov8s-world.pt')  # or select yolov8m/l-world.pt for differ
 
 # Define custom classes
 # this allows tracking only specific class of objects 
-# model.set_classes(["person", "mouse", "keyboard"])
+# objectsToTrack = ["person", "mouse", "keyboard"]
+
+objectsToTrack = ["robot gripper"]
+
+model.set_classes(objectsToTrack)
 
 
 pipeline = rs.pipeline()
@@ -53,9 +57,9 @@ while True:
             dist = cv2.mean(depth)[0]
 
             # Add depth info to the bounding box
-            cv2.putText(color_image, f"Depth: {dist:.2f} m", (int(b[0]), int(b[1])-10), cv2.FONT_HERSHEY_PLAIN, 1.0, (0,0,0), 1)
-            annotator.box_label(b, model.names[int(c)] + f" Depth: {dist:.2f} m")
-
+            cv2.putText(color_image, f"Depth: {dist:.2f} m, Location: ({int(b[0])}, {int(b[1])})", (int(b[0]), int(b[1])-10), cv2.FONT_HERSHEY_PLAIN, 1.0, (0,0,0), 1)
+            annotator.box_label(b, model.names[int(c)] + f" Depth: {dist:.2f} m, Location: ({int(b[0])}, {int(b[1])})")
+            print(f"Depth: {dist:.2f} m, Location: ({int(b[0])}, {int(b[1])})", (int(b[0]), int(b[1])-10), cv2.FONT_HERSHEY_PLAIN, 1.0, (0,0,0), 1)
     # Show the images
     color_image = annotator.result()
     cv2.imshow('YOLO V8 Detection', color_image)

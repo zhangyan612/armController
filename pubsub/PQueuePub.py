@@ -1,4 +1,5 @@
 import persistqueue
+
 q = persistqueue.SQLiteQueue('audio', auto_commit=True)
 
 q.put('test new audio')
