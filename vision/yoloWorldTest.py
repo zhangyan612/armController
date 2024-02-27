@@ -12,7 +12,7 @@ model = YOLOWorld('yolov8s-world.pt')  # or select yolov8m/l-world.pt for differ
 # this allows tracking only specific class of objects 
 # objectsToTrack = ["person", "mouse", "keyboard"]
 
-objectsToTrack = ["robot gripper"]
+objectsToTrack = ["mouse"]
 
 model.set_classes(objectsToTrack)
 
