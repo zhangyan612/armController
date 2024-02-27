@@ -4,6 +4,8 @@ import numpy as np
 
 # print(cv2.__version__)
 
+# marker with pose detection
+
 matrix_coefficients = np.array(((933.15867, 0, 657.59), (0, 933.1586, 400.36993), (0, 0, 1)))
 distortion_coefficients = np.array((-0.43948, 0.18514, 0, 0))
 
@@ -42,12 +44,13 @@ def main():
                 for i in range(0, len(ids)):  # Iterate in markers
                     objPoints = np.array([[0., 0., 0.], [1., 0., 0.], [1., 1., 0.], [0., 1., 0.]])
 
-                    
+
                     valid, rvec, tvec = cv2.solvePnP(objPoints, corners[i], matrix_coefficients, distortion_coefficients)
 
                     # Estimate pose of each marker and return the values rvec and tvec---different from camera coefficients
-                    # rvec, tvec, markerPoints = detector.estimatePoseSingleMarkers(corners[i], 0.02, matrix_coefficients,
-                    #                                                         distortion_coefficients)
+                    # pip install opencv-contrib-python
+                    rvec, tvec, markerPoints = cv2.aruco.estimatePoseSingleMarkers(corners[i], 0.02, matrix_coefficients,
+                                                                            distortion_coefficients)
                     (rvec - tvec).any()  # get rid of that nasty numpy value array error
                     cv2.aruco.drawDetectedMarkers(frame, corners)  # Draw A square around the markers
                     cv2.drawFrameAxes(frame, matrix_coefficients, distortion_coefficients, rvec, tvec, 0.01)  # Draw Axis
