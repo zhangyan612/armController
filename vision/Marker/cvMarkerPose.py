@@ -14,8 +14,6 @@ def main():
     pipeline = rs.pipeline()
     config = rs.config()
     config.enable_stream(rs.stream.color, 1280, 720, rs.format.bgr8, 30)
-
-    # Start the pipeline
     pipeline.start(config)
 
     # Load the ArUco dictionary (you can choose a different one if needed)
@@ -37,20 +35,17 @@ def main():
 
             # Detect ArUco markers
             detector = cv2.aruco.ArucoDetector(aruco_dict, aruco_params)
-
             corners, ids, rejectedCandidates = detector.detectMarkers(frame)
 
             if np.all(ids is not None):  # If there are markers found by detector
                 for i in range(0, len(ids)):  # Iterate in markers
                     objPoints = np.array([[0., 0., 0.], [1., 0., 0.], [1., 1., 0.], [0., 1., 0.]])
 
-
                     valid, rvec, tvec = cv2.solvePnP(objPoints, corners[i], matrix_coefficients, distortion_coefficients)
 
                     # Estimate pose of each marker and return the values rvec and tvec---different from camera coefficients
                     # pip install opencv-contrib-python
-                    rvec, tvec, markerPoints = cv2.aruco.estimatePoseSingleMarkers(corners[i], 0.02, matrix_coefficients,
-                                                                            distortion_coefficients)
+                    rvec, tvec, markerPoints = cv2.aruco.estimatePoseSingleMarkers(corners[i], 0.02, matrix_coefficients, distortion_coefficients)
                     (rvec - tvec).any()  # get rid of that nasty numpy value array error
                     cv2.aruco.drawDetectedMarkers(frame, corners)  # Draw A square around the markers
                     cv2.drawFrameAxes(frame, matrix_coefficients, distortion_coefficients, rvec, tvec, 0.01)  # Draw Axis
