@@ -77,22 +77,40 @@ if __name__ == "__main__":
     robot.MoveToDefault()
     time.sleep(1)
 
-    leftBottom = [-292, 146, 53, -95, 10, -161, 10]
-    robot.MoveC(leftBottom)
+
+    # Move J examples
+
+    leftBottom = [85, -90, 0, -90, 90, 0, 5]
+    robot.MoveToAngle(leftBottom)
     time.sleep(5)
 
-    LeftLow = [-370, 173, 18, 172, -53, -175, 10]
-    robot.MoveC(LeftLow)
+    leftTop = [85, -110, 0, -90, 90, -30, 5]
+    robot.MoveToAngle(leftTop)
     time.sleep(5)
 
-    # midBottom = [-378, 113, 95, 168, -36, 167, 10]
-    # robot.MoveC(midBottom)
+    TopMiddle = [105, -115, 0, -90, 75, -30, 5]
+    robot.MoveToAngle(TopMiddle)
+    time.sleep(5)
+
+    # # Move C examples
+    # leftBottom = [-292, 146, 53, -95, 10, -161, 10]
+    # robot.MoveC(leftBottom)
     # time.sleep(5)
+
+    # # LeftLow = [-370, 173, 18, 172, -53, -175, 10]
+    # # robot.MoveC(LeftLow)
+    # # time.sleep(5)
+
+    # # midBottom = [-378, 113, 95, 168, -36, 167, 10]
+    # # robot.MoveC(midBottom)
+    # # time.sleep(5)
+
+    # # unreachable move c 82,-125,0,-89,87,-46,2
 
     # midBottom = [-267, 247, 27, -85, 4, -159, 10]
     # robot.MoveC(midBottom)
     # time.sleep(5)
 
-    robot.MoveToDefault()
 
+    robot.MoveToDefault()
     robot.Disable()
