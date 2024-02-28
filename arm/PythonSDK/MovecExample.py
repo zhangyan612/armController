@@ -33,16 +33,19 @@ while True:
     time.sleep(0.2)
 
 # Pause to ensure full completion of the operation
-time.sleep(5)
+time.sleep(1)
 
 # Commanding the robot to move to a specified Cartesian pose using MoveC
 # CartesianPose = [-190, -400, 200, 90, -30, -90, 10]
 # robot.movec(CartesianPose)
 # time.sleep(0.5)
 
-CartesianPose = [-325, -125, 130, 98, -5, 25, 10]
+# CartesianPose = [-325, -125, 130, 98, -5, 25, 10]
+CartesianPose = [-344, 119, 83, -93, -8, -164, 10]
+
+
 robot.movec(CartesianPose)
-time.sleep(0.5)
+time.sleep(5)
 
 # angles = [45, -85, 0, 0, 0, 0, 10]
 # robot.movej(angles)
@@ -63,6 +66,7 @@ time.sleep(5)
 print(
     "Initiating MoveJ back to initial angles [0, 0, 0, 0, 0, 0] with a duration of 6 seconds...")
 angles = defaultAngles
+
 robot.movej(angles)
 
 # Brief pause to allow processing of the MoveJ command

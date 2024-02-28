@@ -53,6 +53,9 @@ class STR400:
     def stop(self):
         self.send_request("Stop")
 
+    def reset(self):
+        self.send_request("ResetError")
+
     def back_to_zero(self):
         payload = {"type": "BackToZeroTask"}
         self.send_request("SetTask", payload)
