@@ -79,6 +79,7 @@ if __name__ == "__main__":
 
 
     # Move J examples
+    # this example in general works
 
     leftBottom = [85, -90, 0, -90, 90, 0, 5]
     robot.MoveToAngle(leftBottom)
