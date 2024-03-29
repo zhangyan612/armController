@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Robot Control</title>
+    <!-- Include Bootstrap CSS -->
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+</head>
+<body ng-app="robotApp" ng-controller="RobotController">
+    <div class="container mt-5">
+        <div class="col-md-6">
+            <div class="row">
+                <div class="col-md-12 ">
+                    <button class="btn btn-success mr-2" ng-click="startRobot()">Start Robot</button>
+                    <button class="btn btn-info mr-2" ng-click="startRealTimePositionControl()">Real Time Control</button>
+
+                    <button class="btn btn-danger" ng-click="stopRobot()">Stop Robot</button>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-6">
+                    <h3>X</h3>
+                    <button class="btn btn-primary" ng-mousedown="startAction('x', '+')" ng-mouseup="stopAction('x')">+</button>
+                    <button class="btn btn-primary" ng-mousedown="startAction('x', '-')" ng-mouseup="stopAction('x')">-</button>
+                </div>
+                <div class="col-md-6">
+                    <h3>Roll</h3>
+                    <button class="btn btn-primary" ng-mousedown="startAction('roll', '+')" ng-mouseup="stopAction('roll')">+</button>
+                    <button class="btn btn-primary" ng-mousedown="startAction('roll', '-')" ng-mouseup="stopAction('roll')">-</button>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-6">
+                    <h3>Y</h3>
+                    <button class="btn btn-primary" ng-mousedown="startAction('y', '+')" ng-mouseup="stopAction('y')">+</button>
+                    <button class="btn btn-primary" ng-mousedown="startAction('y', '-')" ng-mouseup="stopAction('y')">-</button>
+                </div>
+                <div class="col-md-6">
+                    <h3>Pitch</h3>
+                    <button class="btn btn-primary" ng-mousedown="startAction('pitch', '+')" ng-mouseup="stopAction('pitch')">+</button>
+                    <button class="btn btn-primary" ng-mousedown="startAction('pitch', '-')" ng-mouseup="stopAction('pitch')">-</button>
+
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-6">
+                    <h3>Z</h3>
+                    <button class="btn btn-primary" ng-mousedown="startAction('z', '+')" ng-mouseup="stopAction('z')">+</button>
+                    <button class="btn btn-primary" ng-mousedown="startAction('z', '-')" ng-mouseup="stopAction('z')">-</button>
+
+                </div>
+                <div class="col-md-6">
+                    <h3>Yaw</h3>
+                    <button class="btn btn-primary" ng-mousedown="startAction('yaw', '+')" ng-mouseup="stopAction('yaw')">+</button>
+                    <button class="btn btn-primary" ng-mousedown="startAction('yaw', '-')" ng-mouseup="stopAction('yaw')">-</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Include AngularJS -->
+    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.8.2/angular.min.js"></script>
+    <script>
+        angular.module('robotApp', [])
+            .controller('RobotController', function ($scope) {
+                $scope.activeActions = {};
+                // Create a WebSocket connection
+                const ws = new WebSocket('ws://localhost:8080/api/ws');
+
+                // Function to send requests
+                $scope.sendRequest = function(action, payload = null) {
+                    const data = {
+                        action: action,
+                        payload: payload
+                    };
+                    ws.send(JSON.stringify(data));
+                }                
+                
+                // Real-time control
+                $scope.startRealTimePositionControl = function() {
+                    payload = {"type": "RealTimePositionControlTask", "args": {"x": null, "y": null, "z": null,
+                                                                   "roll": null, "pitch": null, "yaw": null}}
+                    $scope.sendRequest('SetTask', payload);
+                }
+
+                // Start Robot
+                $scope.enable = function() {
+                    $scope.sendRequest('Enable');
+                    // Add any necessary delay (e.g., 1000 ms)
+                    setTimeout(() => {
+                        console.log('Robot started');
+                    }, 6000);
+
+                    // move to default
+                    angles = [0, 0, 90, 0, 90, 0, 6]
+                    payload = {"type": "MoveJTask", "args": angles}
+                    $scope.sendRequest("SetTask", payload)
+
+                    setTimeout(() => {
+                        console.log('Robot move to default');
+                    }, 6500);
+                }
+
+                // Stop Robot
+                $scope.disable = function() {
+                    $scope.sendRequest('Stop');
+                    setTimeout(() => {
+                        console.log('Robot started');
+                    }, 500);
+
+                    $scope.sendRequest("Disable");
+                    console.log('Robot stopped');
+                }
+
+                $scope.real_time_position_control = function(values){
+                    action = "RealTimePositionControl"
+                    console.log(values)
+
+                    $scope.sendRequest(action, values)
+                }
+
+                // Handle user commands
+                $scope.handleCommand = function(axis, direction) {
+                    // Initialize the dictionary with null values
+                    const values = {
+                        x: null,
+                        y: null,
+                        z: null,
+                        roll: null,
+                        pitch: null,
+                        yaw: null
+                    };
+
+                    // Set the value based on the direction
+                    if (direction === '+') {
+                        values[axis] = true;
+                    } else if (direction === '-') {
+                        values[axis] = false;
+                    }
+                    // Perform real-time control (adapt as needed)
+                    $scope.real_time_position_control(values);
+                }
+
+                $scope.stopCommand = function() {
+                    const values = {
+                        x: null,
+                        y: null,
+                        z: null,
+                        roll: null,
+                        pitch: null,
+                        yaw: null
+                    };
+                    $scope.real_time_position_control(values);
+                }
+
+                // WebSocket event listeners
+                ws.addEventListener('open', () => {
+                    console.log('WebSocket connection established');
+                });
+
+                // ws.addEventListener('message', (event) => {
+                //     const response = JSON.parse(event.data);
+                //     console.log('Received response:', response);
+                // });
+
+                ws.addEventListener('close', () => {
+                    console.log('WebSocket connection closed');
+                });
+
+                $scope.startAction = function (axis, direction) {
+                    // Print the action (e.g., "X-axis +")
+                    console.log(`${axis.toUpperCase()}-${direction}`);
+                    $scope.handleCommand(axis, direction)
+                    // Set the action as active
+                    $scope.activeActions[axis] = direction;
+                };
+
+                $scope.stopAction = function (axis) {
+                    // Print the action (e.g., "X-axis default")
+                    console.log(`${axis.toUpperCase()}-stop`);
+                    $scope.stopCommand();
+                    // Clear the active action
+                    delete $scope.activeActions[axis];
+                };
+
+                // Start Robot
+                $scope.startRobot = function () {
+                    console.log('Robot started');
+                    // Add your logic to start the robot here
+                    $scope.enable()
+                };
+
+                // Stop Robot
+                $scope.stopRobot = function () {
+                    console.log('Robot stopped');
+                    // Add your logic to stop the robot here
+                    $scope.disable()
+                };
+
+
+
+            });
+    </script>
+</body>
+</html>
