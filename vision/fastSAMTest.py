@@ -1,8 +1,10 @@
 from ultralytics import FastSAM
 from ultralytics.models.fastsam import FastSAMPrompt
 
+# working 
+
 # Define an inference source
-source = 'C:/Users/yanzh/Desktop/dog.png'
+source = 'C:/Users/yanzh/Desktop/test.png'
 
 # Create a FastSAM model
 model = FastSAM('FastSAM-s.pt')  # or FastSAM-x.pt
