@@ -357,10 +357,10 @@ while True:
         state.color ^= True
 
     if key == ord("s"):
-        cv2.imwrite('./out.png', out)
+        cv2.imwrite('pointcloud3.png', out)
 
     if key == ord("e"):
-        points.export_to_ply('./out.ply', mapped_frame)
+        points.export_to_ply('pointcloud3.ply', mapped_frame)
 
     if key in (27, ord("q")) or cv2.getWindowProperty(state.WIN_NAME, cv2.WND_PROP_AUTOSIZE) < 0:
         break
