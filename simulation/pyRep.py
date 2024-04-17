@@ -4,7 +4,7 @@ from pyrep.robots.end_effectors.panda_gripper import PandaGripper
 
 pr = PyRep()
 # Launch the application with a scene file that contains a robot
-pr.launch('scene_with_panda.ttt') 
+pr.launch('scene_with_panda.ttt')
 pr.start()  # Start the simulation
 
 arm = Panda()  # Get the panda from the scene

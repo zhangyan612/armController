@@ -2,6 +2,17 @@ import open3d as o3d
 import numpy as np
 import matplotlib.pyplot as plt
 
+dataset = o3d.data.LivingRoomPointClouds()
+pcds = []
+for pcd_path in dataset.paths:
+    pcds.append(o3d.io.read_point_cloud(pcd_path))
+print(pcds)
+
+dataset = o3d.data.DemoICPPointClouds()
+pcd0 = o3d.io.read_point_cloud(dataset.paths[0])
+pcd1 = o3d.io.read_point_cloud(dataset.paths[1])
+pcd2 = o3d.io.read_point_cloud(dataset.paths[2])
+
 # # point cloud
 # print("Load a ply point cloud, print it, and render it")
 # ply_point_cloud = o3d.data.PLYPointCloud()
