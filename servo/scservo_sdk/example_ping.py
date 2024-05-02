@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# *********     Gen Write Example      *********
+# *********     Ping Example      *********
 #
 #
 # Available SCServo model on this example : All models using Protocol SCS
@@ -14,7 +14,6 @@ if os.name == 'nt':
     import msvcrt
     def getch():
         return msvcrt.getch().decode()
-        
 else:
     import sys, tty, termios
     fd = sys.stdin.fileno()
@@ -28,13 +27,13 @@ else:
         return ch
 
 sys.path.append("..")
-from scservo_sdk import *                      # Uses SCServo SDK library
+from scservo_sdk import *                 # Uses SCServo SDK library
 
 # Default setting
-SCS_ID                      = 1                 # SCServo ID : 1
-BAUDRATE                    = 115200           # SCServo default baudrate : 1000000
-DEVICENAME                  = 'COM14'    # Check which port is being used on your controller
-                                                # ex) Windows: "COM1"   Linux: "/dev/ttyUSB0" Mac: "/dev/tty.usbserial-*"
+SCS_ID                  = 1                 # SCServo ID : 1
+BAUDRATE                = 115200           # SCServo default baudrate : 1000000
+DEVICENAME              = 'COM14'    # Check which port is being used on your controller
+                                            # ex) Windows: "COM1"   Linux: "/dev/ttyUSB0" Mac: "/dev/tty.usbserial-*"
 
 # Initialize PortHandler instance
 # Set the port path
@@ -44,7 +43,7 @@ portHandler = PortHandler(DEVICENAME)
 # Initialize PacketHandler instance
 # Get methods and members of Protocol
 packetHandler = scscl(portHandler)
-    
+
 # Open port
 if portHandler.openPort():
     print("Succeeded to open the port")
@@ -53,6 +52,7 @@ else:
     print("Press any key to terminate...")
     getch()
     quit()
+
 
 # Set port baudrate
 if portHandler.setBaudRate(BAUDRATE):
@@ -63,18 +63,17 @@ else:
     getch()
     quit()
 
-while 1:
-    print("Press any key to continue! (or press ESC to quit!)")
-    if getch() == chr(0x1b):
-        break
-    # Read SCServo present position
-    scs_present_position, scs_present_speed, scs_comm_result, scs_error = packetHandler.ReadPosSpeed(SCS_ID)
-    if scs_comm_result != COMM_SUCCESS:
-        print(packetHandler.getTxRxResult(scs_comm_result))
-    else:
-        print("[ID:%03d] PresPos:%d PresSpd:%d" % (SCS_ID, scs_present_position, scs_present_speed))
-    if scs_error != 0:
-        print(packetHandler.getRxPacketError(scs_error))
+# Try to ping the SCServo
+# Get SCServo model number
+scs_model_number, scs_comm_result, scs_error = packetHandler.ping(SCS_ID)
+if scs_comm_result != COMM_SUCCESS:
+    print("%s" % packetHandler.getTxRxResult(scs_comm_result))
+else:
+    print("[ID:%03d] ping Succeeded. SCServo model number : %d" % (SCS_ID, scs_model_number))
+    print(scs_comm_result)
+if scs_error != 0:
+    print("%s" % packetHandler.getRxPacketError(scs_error))
 
 # Close port
 portHandler.closePort()
+

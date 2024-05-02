@@ -28,19 +28,13 @@ else:
         return ch
 
 sys.path.append("..")
-from scservo_sdk import *                 # Uses SCServo SDK library
+from scservo_sdk import *                      # Uses SCServo SDK library
 
 # Default setting
 SCS_ID                      = 1                 # SCServo ID : 1
-BAUDRATE                    = 1000000           # SCServo default baudrate : 1000000
-DEVICENAME                  = '/dev/ttyUSB0'    # Check which port is being used on your controller
+BAUDRATE                    = 115200           # SCServo default baudrate : 1000000
+DEVICENAME                  = 'COM14'    # Check which port is being used on your controller
                                                 # ex) Windows: "COM1"   Linux: "/dev/ttyUSB0" Mac: "/dev/tty.usbserial-*"
-SCS_MINIMUM_POSITION_VALUE  = 10          # SCServo will rotate between this value
-SCS_MAXIMUM_POSITION_VALUE  = 1000
-SCS_MOVING_SPEED            = 2400        # SCServo moving speed
-
-index = 0
-scs_goal_position = [SCS_MINIMUM_POSITION_VALUE, SCS_MAXIMUM_POSITION_VALUE]         # Goal position
 
 # Initialize PortHandler instance
 # Set the port path
@@ -73,19 +67,16 @@ while 1:
     print("Press any key to continue! (or press ESC to quit!)")
     if getch() == chr(0x1b):
         break
-
-    # Write SCServo goal position/moving speed/moving acc
-    scs_comm_result, scs_error = packetHandler.WritePos(SCS_ID, scs_goal_position[index], 0, SCS_MOVING_SPEED)
+    # Read SCServo present position
+    scs_present_position, scs_present_speed, scs_comm_result, scs_error = packetHandler.ReadPosSpeed(SCS_ID)
     if scs_comm_result != COMM_SUCCESS:
-        print("%s" % packetHandler.getTxRxResult(scs_comm_result))
-    if scs_error != 0:
-        print("%s" % packetHandler.getRxPacketError(scs_error))
-
-    # Change goal position
-    if index == 0:
-        index = 1
+        print(packetHandler.getTxRxResult(scs_comm_result))
     else:
-        index = 0
+        print("[ID:%03d] PresPos:%d PresSpd:%d" % (SCS_ID, scs_present_position, scs_present_speed))
+        print(scs_comm_result)
+
+    if scs_error != 0:
+        print(packetHandler.getRxPacketError(scs_error))
 
 # Close port
 portHandler.closePort()
