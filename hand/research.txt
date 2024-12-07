@@ -1,0 +1,226 @@
+robot grasping strategy
+
+collection:
+https://github.com/GeorgeDu/vision-based-robotic-grasping?tab=readme-ov-file#3-2d-planar-grasp
+
+
+
+PointNetGPD
+https://github.com/lianghongzhuo/PointNetGPD/tree/master
+
+
+CaTGrasp: Learning Category-Level Task-Relevant Grasping in Clutter from Simulation
+https://github.com/wenbowen123/catgrasp
+
+
+Detect 6-DOF grasp poses in point clouds  -- old
+https://github.com/atenpas/gpd
+
+Multi-Viewpoint Picking (ICRA 2019)
+https://github.com/dougsm/mvp_grasp
+
+
+
+
+Deep Object Pose Estimation - ROS Inference
+https://github.com/NVlabs/Deep_Object_Pose
+
+
+CAD Models to 3D Scans
+https://github.com/alexeybokhovkin/CAD-Deform
+
+
+[ICRA] Multi-View Picking: Next-best-view Reaching for Improved Grasping in Clutter, [paper] [code]
+
+
+Robot grasping, point cloud, parallel gripper, 3D objects, grasp planning
+
+https://ieeexplore.ieee.org/document/9718097/references#references
+
+Optimal Grasping Strategy for Robots With a Parallel Gripper Based on Feature Sensing of 3D Object Model
+
+estimate the grasp pose
+
+The methods of 6Dof grasp can be roughly divided into methods based on partial point cloud and methods based on the complete shape, according to the different information used.
+
+2D
+
+https://techxplore.com/news/2024-02-elderly-robot-personal-seniors-quality.html
+file:///D:/Download/fnbot-18-1337608.pdf
+
+
+Multi-object Reasoning for 6D Pose Estimation from Volumetric Fusion
+
+Static Scene reconstrunction
+# using orb-slam2 for camera tracking
+Volumetric pose prediction that exploits volumetric reconstruction and CNN feature extraction from the image observation;
+https://github.com/wkentaro/morefusion.git
+
+2015:[ICRA] Real-time grasp detection using convolutional neural networks, [paper] [code] old
+https://github.com/tnikolla/robot-grasp-detection
+
+
+assembly to fit 
+https://github.com/kevinzakka/form2fit
+
+
+6DoF Grasp
+2021:
+
+[ICRA] Contact-GraspNet: Efficient 6-DoF Grasp Generation in Cluttered Scenes, [paper] [code]
+
+
+3d Segmentation
+PointNet: Deep Learning on Point Sets for 3D Classification and Segmentation
+https://github.com/charlesq34/pointnet
+
+6-DoF GraspNet
+https://github.com/NVlabs/6dof-graspnet
+
+
+
+
+Deep Learning Approach to Grasping the Invisible
+https://github.com/choicelab/grasping-invisible
+
+
+CaTGrasp: Learning Category-Level Task-Relevant Grasping in Clutter from Simulation.
+https://github.com/wenbowen123/catgrasp
+
+
+Geometry-based method for computing grasping points on 3D point clouds
+https://github.com/yayaneath/GeoGrasp
+
+
+Towards Practical Multi-object Manipulation using Relational Reinforcement Learning
+https://github.com/richardrl/rlkit-relational
+
+
+
+Learning Synergies between Pushing and Grasping with Self-supervised Deep Reinforcement Learning
+calibrate.py
+
+https://github.com/andyzeng/visual-pushing-grasping
+
+
+MOSAIC
+MOSAIC is a modular architecture that enables multiple robots to collaboratively cook with humans
+
+Visuomotor Skill: Produces a 3D grasp pose given image and language input, then outputs action conditioned on the grasp pose and predicted human motion.
+
+Embedding LLMs within a behavior tree. LLMs can handle users natural language input, but its output can be error-prone and unconstrained. MOSAIC overcomes this challenges by embedding LLMs within a behavior tree. 
+Each tree node partitions the LLM reasoning process, thereby reducing the complexity and potential error rate.
+
+
+At inference time, taking an image and natural language as input, 
+the visuomotor module uses Owl-ViT to output a bounding box around the object of interest. 
+
+This bounding box is passed into FastSAM, which segments out the object and back-projects it onto a point cloud to produce a 3D goal pose. 
+
+This 3D goal pose is used by the trained RL agent to produce the final actions.
+
+
+OK-Robot
+
+OK-Robot is a zero-shot modular framework that effectively combines the state-of-art navigation and manipulation models to perform pick and place tasks in real homes. 
+
+Open Vocabulary Mobile Manipulation, OVMM
+open-vocabulary visionlanguage models such as CLIP or OWL-ViT
+
+如何将视觉-语言模型（Vision-Language Models, VLMs）、导航和抓取原语（primitives）有效地结合起来，形成一个无需额外训练即可执行任务的机器人系统
+
+CLIP、Lang-SAM、AnyGrasp和OWL-ViT
+
+给定一个自然语言查询，系统会将查询转换为语义向量，并在VoxelMap中找到最匹配的物体位置。
+然后，使用导航原语（如A*算法）将机器人移动到目标物体附近，并使用AnyGrasp模型生成抓取姿势。最后，执行抓取动作并移动到放置目标位置。
+
+语义记忆模块（如VoxelMap、CLIP-Fields和USA-Net）
+多种抓取策略（如AnyGrasp、Open Graspness、Contact-GraspNet和Top-down grasp）的性能
+
+OWL-ViT object detector frame by frame  --> object memory module
+
+We supply a large set of object queries, derived from the
+original Scannet200 labels [29] and presented in Appendix B,
+to help the detector captures most common objects in the scene
+
+
+mongo query 
+
+db.arxiv_rss.find({
+  category: "cs.RO",
+  description: { $regex: /grasp/i }
+})
+
+
+# robot grasp 1578 past research 
+db.arxiv_archive.find({
+  categories: { $regex: /cs\.RO/ },
+  abstract: { $regex: /grasp/ }
+});
+
+
+http://arxiv.org/abs/2401.09939
+https://sites.google.com/view/texterity
+
+Cloth Manipulation
+https://arxiv.org/html/2401.10702v1
+
+Pick and Place Planning is Better than Pick Planning then Place Planning
+https://arxiv.org/pdf/2401.16585.pdf
+
+论文提出了一种基于运动感知的方法，仅通过感知执行器的位置和扭矩来识别物体。
+https://papers.cool/arxiv/2401.16802
+
+
+清理桌子（Clearing a Table）
+未知物体的双手抓取（Bimanual Grasping of Unknown Objects
+https://papers.cool/arxiv/2401.16899
+https://arxiv.org/pdf/2401.16899.pdf
+
+
+https://www.semanticscholar.org/paper/ARMAR-6%3A-A-Collaborative-Humanoid-Robot-for-Asfour-Kaul/37cd0c8168b9325401d9aa6e7335632a9aecfb84
+
+Closed-loop next-best view planning for grasp detection in clutter.
+https://github.com/ethz-asl/active_grasp
+
+
+LLM Approach
+
+VIMA
+saycanpay
+https://github.com/RishiHazra/saycanpay
+
+https://github.com/microsoft/ChatGPT-Robot-Manipulation-Prompts
+https://github.com/huangwl18/language-planner
+
+
+making pizza 
+Corrective Planning of Robot Actions with Large Language Models
+https://hri-eu.github.io/Loom/
+
+Language-Guided Robot Skill Acquisition
+https://github.com/real-stanford/scalingup
+Give it a task description, and it will automatically generate rich, diverse robot trajectories, complete with success label and dense language labels
+
+UMI
+https://umi-gripper.github.io/
+
+Self improving
+https://deepmind.google/discover/blog/robocat-a-self-improving-robotic-agent/
+
+
+Robot two hand
+https://toruowo.github.io/bimanual-twist/
+
+
+
+Planning/Memory
+
+Open-Vocabulary 3D Scene Graphs
+find book on table
+https://github.com/changhaonan/OVSG
+
+CLIP-Fields: Weakly Supervised Semantic Fields for Robotic Memory
+
+Perceiver-Actor: A Multi-Task Transformer for Robotic Manipulation
+https://github.com/peract/peract

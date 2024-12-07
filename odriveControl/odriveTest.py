@@ -6,7 +6,7 @@ odrv0 = odrive.find_any()
 odrive.utils.dump_errors(odrv0)
 odrv0.clear_errors()
 odrv0.axis0.requested_state=odrive.utils.AxisState.MOTOR_CALIBRATION
-time.sleep(5)
+time.sleep(10)
 while (odrv0.axis0.current_state!=1):
     time.sleep(0.5)
     odrive.utils.dump_errors(odrv0)
