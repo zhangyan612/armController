@@ -107,8 +107,8 @@ def continuous_output():
 if __name__ == "__main__":
     # 示例操作
     # reset_position()
-    # calibrate()
-    continuous_output()
+    calibrate()
+    # continuous_output()
 
 # 使用完毕关闭串口
 ser.close()

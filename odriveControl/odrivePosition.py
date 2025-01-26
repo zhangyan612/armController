@@ -50,3 +50,9 @@ odrv0.axis0.controller.input_pos=0
 
 # 默认通信接口是 CAN，最大通信速率 1Mbps
 #  odrv0.can.config.baud_rate    500000
+
+
+odrv1.axis0.controller.config.control_mode=CONTROL_MODE_POSITION_CONTROL
+odrv1.axis0.controller.config.input_mode=INPUT_MODE_POS_FILTER
+odrv1.axis0.requested_state=AXIS_STATE_CLOSED_LOOP_CONTROL
+odrv1.axis0.controller.input_pos=10

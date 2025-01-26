@@ -1,0 +1,37 @@
+
+odrivetool
+
+
+odrv0.vbus_voltage
+
+odrv0.hw_version_minor
+
+参数识别
+odrv0.axis0.requested_state=4
+dump_errors(odrv0)
+
+# 对编码器进行校准。执行此操作前，请确认电机输出轴没有任何负载，且用手或其他装置固定住电机。此操作执行后，电机会正向和反向旋转一定时间，对编码器进行识别和校准。
+# 在电机停转后，运行dump_errors(odrv0)查看错误，确认没有错误再进行其他后续步骤。
+odrv0.axis0.requested_state=7
+dump_errors(odrv0)
+
+odrv0.axis0.motor.config.pre_calibrated = 1
+odrv0.axis0.encoder.config.pre_calibrated = 1
+odrv0.save_configuration()
+
+
+位置控制
+odrv0.axis0.controller.config.control_mode=CONTROL_MODE_POSITION_CONTROL
+odrv0.axis0.controller.config.input_mode=INPUT_MODE_POS_FILTER
+odrv0.axis0.requested_state=AXIS_STATE_CLOSED_LOOP_CONTROL
+odrv0.axis0.controller.input_pos=10
+
+归零
+odrv0.axis0.controller.input_pos=0
+
+
+# node_id：代表这个电机在总线上的唯一 ID，可在 odrivetool 中用
+# odrv0.axis0.config.can.node_id 来读取和设置。
+
+# 默认通信接口是 CAN，最大通信速率 1Mbps
+#  odrv0.can.config.baud_rate    500000
