@@ -1,7 +1,7 @@
 import odrive
 odrv0 = odrive.find_any()
 
-# odrv0.config.enable_can_a = True
+odrv0.config.enable_can_a = True
 # odrv0.axis0.requested_state = AXIS_STATE_IDLE
 # odrv0.save_configuration()
 

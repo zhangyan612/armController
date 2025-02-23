@@ -17,19 +17,19 @@ else:
     print("Failed to open serial port")
 
 
-
-
 def construct_message(id_value, pwm_value, time_value):
     # 检查pwm_value和time_value是否为整数
     if not (isinstance(pwm_value, int) and isinstance(time_value, int)):
         raise ValueError("PWM and Time values must be integers.")
     pwm_str = f"{pwm_value:04}"  # Format PWM as a 4-digit string
-    time_str = f"{time_value:04}"  # Format Time as a 4-digit string
-    return f"#{id_value}P{pwm_str}T{time_str}!".encode('utf-8')
+    time_str = f"{time_value:05}"  # Format Time as a 4-digit string
+    return f"#{id_value}#{pwm_str}#{time_str}#".encode('utf-8')
 
+
+#02#1600#00010#
 
 def Grow():
-    grow = b'#001P0500T1000!'
+    grow = b'#01#1600#00010#'
     ser.write(grow)
     # for i in range(4):
     #     print(f"Iteration {i+1}")
@@ -37,11 +37,12 @@ def Grow():
     #     time.sleep(0.9)
 
 def Shrink():
-    shrink = b'#001P2500T1000!'
-    for i in range(4):
-        print(f"Iteration {i+1}")
-        ser.write(shrink)
-        time.sleep(0.9)
+    shrink = b'#02#3000#00010#'
+    ser.write(shrink)
+    # for i in range(4):
+    #     print(f"Iteration {i+1}")
+    #     ser.write(shrink)
+    #     time.sleep(0.9)
 
 # pwm 500 small, pwm 2500 big
 def Move_Motor(id, pwm, time):
@@ -60,20 +61,21 @@ def Move_Motor(id, pwm, time):
 
 if __name__ == "__main__":
     # Grow()
+    # time.sleep(0.1)
     # Shrink()
-    id_value = '001'
-    pwm_value = 2500
-    time_value = 500
+
+    # 1000 grow 2100 shrink
+    # 2000 is the divider
+    #small linear motor 1- 5000
+
+    id_value = '04'
+    pwm_value = 5000
+    time_value = 20
     Move_Motor(id_value, pwm_value, time_value)
+    time.sleep(0.1)
 
-    # id_value = '002'
-    # pwm_value = 1600
-    # time_value = 20
-    # Move_Motor(id_value, pwm_value, time_value)
-
-    # time.sleep(0.3)
-    # id_value = '002'
-    # pwm_value = 500
-    # time_value = 1000
+    # id_value = '02'
+    # pwm_value = 1000
+    # time_value = 10
     # Move_Motor(id_value, pwm_value, time_value)
 

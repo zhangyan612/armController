@@ -92,3 +92,52 @@ def send_one():
 
 if __name__ == "__main__":
     send_one()
+
+
+
+
+
+
+
+stm 32 code 
+
+MWMotor.c 
+
+
+
+/* Initialize all configured peripherals */
+  MX_GPIO_Init();
+  MX_FDCAN1_Init();
+  /* USER CODE BEGIN 2 */
+  /* FDCAN³õÊ¼»¯ */
+    CanFilter_Init();
+    HAL_FDCAN_Start(&hfdcan1);
+    HAL_FDCAN_ActivateNotification(&hfdcan1,FDCAN_IT_RX_FIFO0_NEW_MESSAGE,0);
+
+		/* µç»ú×ÜÏß´´½¨ */
+    MWRegisterMotor(MWtest);
+    /* ÉèÖÃµç»úNODE IDÎª5 */
+    MWSetAxisNodeID(1, 0, 5, &MWtest);
+    /* µç»úÉÏµçÐ£×¼ */
+    MWSetAxisState(1, 5, MW_AXIS_STATE_MOTOR_CALIBRATION);
+    HAL_Delay(100);
+    while(MWtest.motorData->currentState == MW_AXIS_STATE_MOTOR_CALIBRATION)
+    HAL_Delay(10);
+    MWSetAxisState(1, 5, MW_AXIS_STATE_ENCODER_OFFSET_CALIBRATION);
+    HAL_Delay(100);
+    while(MWtest.motorData->currentState == MW_AXIS_STATE_ENCODER_OFFSET_CALIBRATION)
+        HAL_Delay(10);
+  #if MODE_TEST == 1    
+    /* ÉèÖÃÄ£Ê½ÎªÎ»ÖÃÂË²¨¿ØÖÆÄ£Ê½ */
+    MWSetControllerMode(1, 5, MW_POSITION_CONTROL, MW_POSITION_FILTERING_INPUT);
+    /* ½øÈë±Õ»·¿ØÖÆ×´Ì¬ */
+    MWSetAxisState(1, 5, MW_AXIS_STATE_CLOSED_LOOP_CONTROL);
+    /* ÊäÈë¿ØÖÆÎ»ÖÃ */
+    MWPosControl(1, 5, 10, 0, 0);
+  #elif MODE_TEST == 2    
+    /* ÉèÖÃÄ£Ê½ÎªÐ±ÆÂËÙ¶È¿ØÖÆÄ£Ê½ */
+    MWSetControllerMode(1, 5, MW_VELOCITY_CONTROL, MW_RAMP_RATE_INPUT);
+    /* ½øÈë±Õ»·¿ØÖÆ×´Ì¬ */
+    MWSetAxisState(1, 5, MW_AXIS_STATE_CLOSED_LOOP_CONTROL);
+    /* ÊäÈë¿ØÖÆËÙ¶È */
+    MWVelControl(1, 5, 5, 0);
