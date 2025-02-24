@@ -511,6 +511,28 @@ def get_encoder_estimates(bus, motor_id):
         print('  Failed to get encoder estimates')
         return None, None
 
+def set_axis_state(bus, motor_id, requested_state):
+    """
+    Set the axis state of the motor (e.g., calibration, closed-loop control, idle).
+    
+    Args:
+        bus: CAN bus object
+        motor_id: Motor ID
+        requested_state: The desired state to set (e.g., 1: Idle state, 4 for motor calibration, 7: Encoder calibration, 8 for closed-loop control)
+    """
+    cmd_id = 0x007  # CMD ID for Set_Axis_State
+    arbitration_id = (motor_id << 5) + cmd_id  # Calculate CAN ID
+    print(f'Setting axis state for motor {motor_id} to {requested_state}')
+    print(f'  CAN-ID: {hex(arbitration_id)}')
+    
+    # Convert requested_state to bytes (little-endian, 4 bytes)
+    state_bytes = struct.pack('<I', requested_state)
+    
+    # Prepare the data frame (first 4 bytes are the state, remaining bytes are 0)
+    data = list(state_bytes) + [0x00, 0x00, 0x00, 0x00]
+    
+    print(f'  Sending data: {data}')
+    send_can_frame(bus, arbitration_id, data, block_receive=0)
 
 
 # Main function with command line arguments

@@ -68,7 +68,7 @@ odrv0.axis0.controller.torque_setpoint
 # odrv0.axis0.config.can.node_id 来读取和设置。
 # nodeid = 0
 
-# odrv1.axis0.config.can.node_id   0
+# odrv0.axis0.config.can.node_id   0
 
 # Connected to ODrive v3.7 86640B6C3537 (firmware v0.5.7) as odrv0
 
