@@ -1,0 +1,375 @@
+
+### 4 通信协议及示例
+#### 4.1 CAN 协议
+默认通信接口是 CAN。最大通信速率 1Mbps (可通过 odrv0.can.config.baud_rate 读取和设置)。**请注意：早期硬件版本 (小于等于 3.7) 中 USB 与 CAN 不兼容，请参见 3.1.2 如何从 USB 切换到 CAN。**
+
+##### 4.1.1 协议帧格式
+CAN 通信采用标准帧格式。数据帧，11 位 ID，8 字节数据。如下表示 (左为 MSB, 右为 LSB)：
+
+| 数据域   | CAN ID (11bits) | Data (8 bytes) |
+|----------|-----------------|----------------|
+| 分段     | Bit10 ~ Bit5    | Bit4 ~ Bit0    |
+| 描述     | node_id         | cmd_id         | 通信数据 |
+
+- **node_id**: 代表这个电机在线总线上的唯一 ID。可在 odrivetool 中用 odrv0.axis0.config.can.node_id 读取和设置。
+- **cmd_id**: 指令编码，表示协议的消息类型。请参见本节余下内容。
+- **通信数据**: 8 个字节。每一个消息中携带的参数会被编码成数据或浮点数。字节序为小端 (small endian)，其中浮点数是按照 IEEE 754 标准进行编码 (可通过网站 [https://www.h-schmidt.net/FloatConverter/IEEE754.html](https://www.h-schmidt.net/FloatConverter/IEEE754.html) 测试编码)。
+
+以 4.1.2 中描述的 Set_Input_Pos 消息为例。假设其三个参数分别为：Input_Pos=3.14, Vel_FF=1000 (表示 1rev/s)，Torque_FF=5000 (表示 5Nm)，而 Set_Input_Pos 消息的 CMD ID=0x00C。假设驱动器的节点 (node_id) 被设置成 0x05，则：
+
+- 11 位 CAN ID=(0x05<<5)+0x0C=0xAC
+- 根据 4.1.2 中对于 Set_Input_Pos 的描述可知，Input_Pos 在第 0 个字节开始的 4 个字节，编码为 C3 F5 48 40 (浮点数 3.14 用 IEEE 754 标准编码为 32 位数 0x4048F5C3)，Vel_FF 在第 4 个字节开始的 2 个字节，编码为 E8 03 (1000=0x03E8)，Torque_FF 在第 6 个字节开始的 2 个字节，编码为 88 13 (5000=0x1388)，则 8 个字节的通信数据为：
+
+| Byte0 | Byte1 | Byte2 | Byte3 | Byte4 | Byte5 | Byte6 | Byte7 |
+|-------|-------|-------|-------|-------|-------|-------|-------|
+| C3    | F5    | 48    | 40    | E8    | 03    | 88    | 13    |
+
+#### 4.1.2 帧消息
+下表列出了所有的可用消息:
+
+| CMD ID | 名称 | 方向 | 参数 |
+|--------|------|------|------|
+| 0x001  | Heartbeat | 电机→主机 | Axis_Error, Axis_State, Motor_Flag, Encoder_Flag, Controller_Flag |
+| 0x002  | Estop | 主机→电机 | |
+| 0x003  | Get_Error | 电机→主机 | Error_Type |
+| 0x004  | RxSdo | 电机→主机 | |
+| 0x005  | TxSdo | 电机→主机 | |
+| 0x006  | Set_Axis_Node_ID | 主机→电机 | Axis_Node_ID |
+| 0x007  | Set_Axis_State | 主机→电机 | Axis_Requested_State |
+| 0x009  | Get_Encoder_Estimates | 电机→主机 | Pos_Estimate, Vel_Estimate |
+| 0x00B  | Set_Controller_Mode | 主机→电机 | Control_Mode, Input_Mode |
+| 0x00C  | Set_Input_Pos | 主机→电机 | Input_Pos, Vel_FF, Torque_FF |
+| 0x00D  | Set_Input_Vel | 主机→电机 | Input_Vel, Torque_FF |
+| 0x00E  | Set_Input_Torque | 主机→电机 | Input_Torque |
+| 0x00F  | Set_Limits | 主机→电机 | Velocity_Limit, Current_Limit |
+| 0x010  | Start_Anticogging | 主机→电机 | |
+| 0x011  | Set_Traj_Vel_Limit | 主机→电机 | Traj_Vel_Limit |
+| 0x012  | Set_Traj_Accel_Limits | 主机→电机 | Traj_Accel_Limit, Traj_Decel_Limit |
+| 0x013  | Set_Traj_Inertia | 主机→电机 | Traj_Inertia |
+| 0x014  | Get_Iq | 电机→主机 | Iq_Setpoint, Iq_Measured |
+| 0x015  | Get_Sensorless_Estimates | 电机→主机 | Pos_Estimate, Vel_Estimate |
+| 0x016  | Reboot | 主机→电机 | |
+| 0x017  | Get_Bus_Voltage_Current | 电机→主机 | Bus_Voltage, Bus_Current |
+| 0x018  | Clear_Errors | 主机→电机 | |
+| 0x019  | Set_Linear_Count | 主机→电机 | Linear_Count |
+| 0x01A  | Set_Pos_Gain | 主机→电机 | Pos_Gain |
+| 0x01B  | Set_Vel_Gains | 主机→电机 | Vel_Gain, Vel_Integrator_Gain |
+| 0x01C  | Get_Torques | 电机→主机 | Torque_Setpoint, Torque |
+| 0x01D	 | Get_Powers	电机 -> 主机	Electrical_Power, Mechanical_Power
+| 0x01E	 | Disable_Can	主机 -> 电机	
+| 0x01F	 | Save_Configuration	主机 -> 电机	
+
+
+Heartbeat
+CMD ID: 0x001 (电机 -> 主机)
+
+起始字节	名称	类型	odrivetool 访问
+0	Axis_Error	uint32	odrv0.axis0.error
+4	Axis_State	uint8	odrv0.axis0.current_state
+5	Motor_Flag	uint8	1: odrv0.axis0.motor.error不为 0<br>0: odrv0.axis0.motor.error为 0
+6	Encoder_Flag	uint8	1: odrv0.axis0.encoder.error不为 0<br>0: odrv0.axis0.encoder.error为 0
+7	Controller_Flag	uint8	bit7: odrv0.axis0.controller.trajectory_done<br>bit0:<br>1: odrv0.axis0.controller.error不为 0<br>0: odrv0.axis0.controller.error为 0
+
+
+Estop
+CMD ID: 0x002 (主机 -> 电机) 无参数无数据
+此指令会导致电机紧急停机，并报 ESTOP_REQUESTED 异常。
+
+Get_Error
+CMD ID: 0x003 (电机 -> 主机)
+输入 (主机 -> 电机):
+起始字节	名称	类型	说明
+0	Error_Type	uint8	0: 获取电机异常<br>1: 获取编码器异常<br>2: 获取无矢异常<br>3: 获取控制器异常
+输出 (电机 -> 主机):
+
+起始字节	名称	类型	odrivetool 访问
+0	Error	uint32	不同输⼊ Error_Type：0：odrv0.axis0.motor.error  1：odrv0.axis0.encoder.error  2：odrv0.axis0. 3：odrv0.axis0.controller.error
+
+
+### RxSdo
+#### CMD ID: 0x004 (主机 -> 电机)
+
+**输入:**
+
+| 起始字节 | 名称          | 类型     | 说明                                                                                                  |
+|----------|---------------|----------|-------------------------------------------------------------------------------------------------------|
+| 0        | opcode        | uint8    | 0: 读<br>1: 写                                                                                         |
+| 1        | Endpoint_ID   | uint16   | 请下载所有参数和接口函数对应的 ID 的 JSON 文件: [https://cyberbeast.cn/filedownload/784822](https://cyberbeast.cn/filedownload/784822) |
+| 3        | 预留          | uint8    |                                                                                                       |
+| 4        | Value         | uint8[4] | 根据 Endpoint_ID 不同而不同, 可参见上述 JSON 中的描述。如 Endpoint_ID 对应一个可读写的 float 值, 则此处 4 个字节为 IEEE 编码而成的 float 值, opcode=1 时将此值写入这个 float 值。 |
+
+**输出 (当上述 opcode=0 时):**
+
+| 起始字节 | 名称          | 类型     | 说明                                                                                                  |
+|----------|---------------|----------|-------------------------------------------------------------------------------------------------------|
+| 0        | opcode        | uint8    | 固定为 0                                                                                              |
+| 1        | Endpoint_ID   | uint16   | 请下载所有参数和接口函数对应的 ID 的 JSON 文件: [https://cyberbeast.cn/filedownload/784822](https://cyberbeast.cn/filedownload/784822) |
+| 3        | 预留          | uint8    |                                                                                                       |
+| 4        | Value         | uint8[4] | 根据 Endpoint_ID 不同而不同, 可参见上述 JSON 中的描述。如 Endpoint_ID 对应一个可读的 uint32 值, 则此处 4 个字节为小端字节序的 uint32。 |
+
+### TxSdo
+
+#### CMD ID: 0x005 (电机 -> 主机)
+
+用法跟 opcode=1 时的 RxSdo 一样。
+
+### Set_Axis_Node_ID
+
+#### CMD ID: 0x006 (主机 -> 电机)
+
+| 起始字节 | 名称          | 类型     | 说明                 |
+|----------|---------------|----------|----------------------|
+| 0        | Axis_Node_ID  | uint32   | odrivetool 访问<br>odrv0.axis0.config.can.node_id |
+
+
+
+### Set_Axis_State
+
+#### CMD ID: 0x007 (主机 -> 电机)
+
+| 起始字节 | 名称                | 类型   | 说明                    |
+|----------|---------------------|--------|-------------------------|
+| 0        | Axis_Requested_State| uint32 | odrivetool 访问<br>odrv0.axis0.requested_state |
+
+### Get_Encoder_Estimates
+
+#### CMD ID: 0x009 (电机 -> 主机)
+
+| 起始字节 | 名称         | 类型    | 单位  | 说明                   |
+|----------|--------------|---------|-------|------------------------|
+| 0        | Pos_Estimate | float32 | rev   | odrivetool 访问<br>odrv0.axis0.encoder.pos_estimate |
+| 4        | Vel_Estimate | float32 | rev/s | odrivetool 访问<br>odrv0.axis0.encoder.vel_estimate |
+
+### Get_Encoder_Count
+
+#### CMD ID: 0x00A (电机 -> 主机)
+
+| 起始字节 | 名称           | 类型   | 说明                    |
+|----------|----------------|--------|-------------------------|
+| 0        | Shadow_Count   | int32  | odrivetool 访问<br>odrv0.axis0.encoder.shadow_count |
+| 4        | Count_In_Cpr   | int32  | odrivetool 访问<br>odrv0.axis0.encoder.count_in_cpr |
+
+### Set_Controller_Mode
+
+#### CMD ID: 0x00B (主机 -> 电机)
+
+| 起始字节 | 名称        | 类型   | 说明                    |
+|----------|-------------|--------|-------------------------|
+| 0        | Control_Mode| uint32 | odrivetool 访问<br>odrv0.axis0.controller.config.control_mode |
+| 4        | Input_Mode  | uint32 | odrivetool 访问<br>odrv0.axis0.controller.config.input_mode |
+
+### Set_Input_Pos
+
+#### CMD ID: 0x00C (主机 -> 电机)
+
+| 起始字节 | 名称      | 类型   | 单位  | 说明                   |
+|----------|-----------|--------|-------|------------------------|
+| 0        | Input_Pos | float32| rev   | odrivetool 访问<br>odrv0.axis0.controller.input_pos |
+| 4        | Vel_FF    | int16  | 0.001rev/s | odrivetool 访问<br>odrv0.axis0.controller.input_vel |
+| 6        | Torque_FF | int16  | 0.001Nm | odrivetool 访问<br>odrv0.axis0.controller.input_torque |
+
+### Set_Input_Vel
+
+#### CMD ID: 0x00D (主机 -> 电机)
+
+| 起始字节 | 名称      | 类型   | 单位  | 说明                   |
+|----------|-----------|--------|-------|------------------------|
+| 0        | Input_Vel | float32| rev/s | odrivetool 访问<br>odrv0.axis0.controller.input_vel |
+| 4        | Torque_FF | float32| Nm    | odrv0.axis0.controller.input_torque |
+
+- Set_Input_Torque
+  - CMD ID: 0x00E（主机→电机）
+
+| 起始字节 | 名称 | 类型 | 单位 | odrivetool 访问 |
+| --- | --- | --- | --- | --- |
+| 0 | Input_Torque | float32 | Nm | odrv0.axis0.controller.input_torque |
+
+- Set_Limits
+  - CMD ID: 0x00F（主机→电机）
+
+| 起始字节 | 名称 | 类型 | 单位 | odrivetool 访问 |
+| --- | --- | --- | --- | --- |
+| 0 | Velocity_Limit | float32 | rev/s | odrv0.axis0.controller.config.vel_limit |
+| 4 | Current_Limit | float32 | A | odrv0.axis0.motor.config.current_lim |
+
+- Start_Anticogging
+  - CMD ID: 0x010（主机→电机）
+
+- Set_Traj_Vel_Limit
+  - CMD ID: 0x011（主机→电机）
+
+| 起始字节 | 名称 | 类型 | 单位 | odrivetool 访问 |
+| --- | --- | --- | --- | --- |
+| 0 | Traj_Vel_Limit | float32 | rev/s | odrv0.axis0.trap_traj.config.vel_limit |
+
+- Set_Traj_Accel_Limits
+  - CMD ID: 0x012（主机→电机）
+
+| 起始字节 | 名称 | 类型 | 单位 | odrivetool 访问 |
+| --- | --- | --- | --- | --- |
+| 0 | Traj_Accel_Limit | float32 | rev/s^2 | odrv0.axis0.trap_traj.config.accel_limit |
+| 4 | Traj_Decel_Limit | float32 | rev/s^2 | odrv0.axis0.trap_traj.config.decel_limit |
+
+- Set_Traj_Inertia
+  - CMD ID: 0x013（主机→电机）
+
+| 起始字节 | 名称 | 类型 | 单位 | odrivetool 访问 |
+| --- | --- | --- | --- | --- |
+| 0 | Traj_Inertia | float32 | Nm/(rev/s^2) | odrv0.axis0.controller.config.inertia |
+
+- Get_Jq
+  - CMD ID: 0x014（电机→主机）
+
+| 起始字节 | 名称 | 类型 | 单位 | odrivetool 访问 |
+| --- | --- | --- | --- | --- |
+| 0 | Iq_Setpoint | float32 | A | odrv0.axis0.motor.current_control.idq_setpoint |
+| 4 | Iq_Measured | float32 | A | odrv0.axis0.motor.current_control.idq_measured |
+
+#### Get_Sensorless_Estimates
+CMD ID: 0x015（电机→主机）
+
+| 起始字节 | 名称 | 类型 | 单位 | odrivetool 访问 |
+| --- | --- | --- | --- | --- |
+| 0 | Pos_Estimate | float32 | rev | odrv0.axis0.sensorless_estimator.pll_pos |
+| 4 | Vel_Estimate | float32 | rev/s | odrv0.axis0.sensorless_estimator.vel_estimate |
+
+#### Reboot
+CMD ID: 0x016（主机→电机）
+
+#### Get_Bus_Voltage_Current
+CMD ID: 0x017（电机→主机）
+
+| 起始字节 | 名称 | 类型 | 单位 | odrivetool 访问 |
+| --- | --- | --- | --- | --- |
+| 0 | Bus_Voltage | float32 | V | odrv0.vbus_voltage |
+| 4 | Bus_Current | float32 | A | odrv0.ibus |
+
+#### Clear_Errors
+CMD ID: 0x018（主机→电机）
+
+清除所有错误和异常。
+
+#### Set_Linear_Count
+CMD ID: 0x019（主机→电机）
+
+设置编码器绝对位置。
+
+| 起始字节 | 名称 | 类型 | 单位 | odrivetool 访问 |
+| --- | --- | --- | --- | --- |
+| 0 | Linear_Count | int32 | odrv0.axis0.encoder.set_linear_count() |
+
+#### Set_Pos_Gain
+CMD ID: 0x01A（主机→电机）
+
+| 起始字节 | 名称 | 类型 | 单位 | odrivetool 访问 |
+| --- | --- | --- | --- | --- |
+| 0 | Pos_Gain | float32 | (rev/s)/rev | odrv0.axis0.controller.config.pos_gain |
+
+
+- Set_Vel_Gains
+
+CMD ID: 0x01B（主机→电机）
+
+| 起始字节 | 名称 | 类型 | 单位 | odrivetool 访问 |
+| --- | --- | --- | --- | --- |
+| 0 | Vel_Gain | float32 | Nm/(rev/s) | odrv0.axis0.controller.config.vel_gain |
+| 4 | Vel_Integrator_Gain | float32 | Nm/rev | odrv0.axis0.controller.config.vel_integrator_gain |
+
+- Get_Torques
+
+CMD ID: 0x01C（电机→主机）
+
+| 起始字节 | 名称 | 类型 | odrivetool 访问 |
+| --- | --- | --- | --- |
+| 0 | Torque_Setpoint | float32 | odrv0.axis0.controller.torque_setpoint |
+| 4 | Torque | float32 | 无。表示当前力矩值。 |
+
+- Get_Powers
+
+CMD ID: 0x01D（电机→主机）
+
+| 起始字节 | 名称 | 类型 | odrivetool 访问 |
+| --- | --- | --- | --- |
+| 0 | Electrical_Power | float32 | odrv0.axis0.controller.electrical_power |
+| 4 | Mechanical_Power | float32 | odrv0.axis0.controller.mechanical_power |
+
+- Disable_Can
+
+CMD ID: 0x01E（主机→电机）
+
+禁用 CAN，并重启驱动器。
+
+- Save_Configuration
+
+CMD ID: 0x01F（主机→电机）
+
+存储当前的配置，生效并重启。
+
+### 4.1.3 CAN 协议实战
+
+#### 4.1.3.1 实战：上电校准
+
+发送 CAN 消息的序列如下：
+
+| CAN ID | 帧类型 | 帧数据 | 说明 |
+| --- | --- | --- | --- |
+| 0x007 | 数据帧 | 04 00 00 00 00 00 00 00 | 消息：Set_Axis_State 参数：4 对电机进行校准 |
+
+
+| 0x007 | 数据帧 | 07 00 00 00 00 00 00 00 00 | 消息：Set_Axis_State 参数：7 对编码器进行校准
+
+### 4.1.3.2 实战：速度控制
+发送 CAN 消息的序列如下：
+
+| CAN ID | 帧类型 | 帧数据 | 说明 |
+| --- | --- | --- | --- |
+| 0x00B | 数据帧 | 02 00 00 00 02 00 00 00 | 消息：Set_Controller_Mode 参数：2/2 设置控制模式为速度控制，输入模式为速度斜坡 |
+| 0x007 | 数据帧 | 08 00 00 00 00 00 00 00 | 消息：Set_Axis_State 参数：8 进入闭环控制状态 |
+
+| 0x0D | 数据帧 | 00 00 20 41 00 00 00 00 | 消息：Set_Input_Vel 参数：10/0 设置目标速度和力矩前馈，其中目标速度为 10（浮点数：0x41200000），力矩前馈为 0（浮点数：0x00000000）
+
+### 4.1.3.3 实战：位置控制
+发送 CAN 消息的序列如下：
+
+| CAN ID | 帧类型 | 帧数据 | 说明 |
+| --- | --- | --- | --- |
+| 0x00B | 数据帧 | 03 00 00 00 03 00 00 00 | 消息：Set_Controller_Mode 参数：3/3 设置控制模式为位置控制，输入模式为位置滤波 |
+| 0x007 | 数据帧 | 08 00 00 00 00 00 00 00 | 消息：Set_Axis_State 参数：8 进入闭环控制状态 |
+| 0x0C | 数据帧 | CD CC 0C 40 00 00 00 00 | 消息：Set_Input_Pos 参数：2.2/0/0 设置目标位置，速度前馈和力矩前馈，其中目标位置为 2.2（浮点数：0x400CCCCD），力矩前馈和速度前馈为 0
+
+### 4.1.4 CANopen 兼容性
+如果 node ID 分配得当，可与 CANopen 互通。下表列出了 CANopen 和本协议的有效 node ID 组合：
+
+## CANOpen node IDs
+
+| CANOpen node IDs | 本协议 node IDs |
+|------------------|------------------|
+| 32 ... 127       | 0x10, 0x18, 0x20, 0x28 |
+| 64 ... 127       | 0x10, 0x11, 0x18, 0x19, 0x20, 0x21, 0x28, 0x29 |
+| 96 ... 127       | 0x10, 0x11, 0x12, 0x18, 0x19, 0x1A, 0x20, 0x21, 0x22, 0x28, 0x29, 0x2A |
+
+## 4.1.5 周期消息
+
+用户可配置电机向上位机周期性发送消息，而不用上位机向电机发送请求消息。可通过 odrv0.axis0.config.can 下的一系列配置来打开/关闭周期消息（值为 0 表示关闭，为其他值表示周期时间，单位为 ms），如下表所示：
+
+| 消息 | odrivetool 配置 | 默认值 |
+|------|----------------|--------|
+| Heartbeat | odrv0.axis0.config.can.heartbeat_rate_ms | 100 |
+| Get_Encoder_Estimates | odrv0.axis0.config.can.encoder_rate_ms | 10 |
+| Get_Motor_Error | odrv0.axis0.config.can.motor_error_rate_ms | 0 |
+| Get_Encoder_Error | odrv0.axis0.config.can.encoder_error_rate_ms | 0 |
+| Get_Controller_Error | odrv0.axis0.config.can.controller_error_rate_ms | 0 |
+| Get_Sensorless_Error | odrv0.axis0.config.can.sensorless_error_rate_ms | 0 |
+| Get_Encoder_Count | odrv0.axis0.config.can.encoder_count_rate_ms | 0 |
+| Get_Iq | odrv0.axis0.config.can.iq_rate_ms | 0 |
+| Get_Sensorless_Estimates | odrv0.axis0.config.can.sensorless_rate_ms | 0 |
+| Get_Bus_Voltage_Current | odrv0.axis0.config.can.bus_vi_rate_ms | 0 |
+
+默认情况下，前两种周期消息在出厂时打开，所以当用户监控 CAN 总线时，会看到两种消息以设定周期进行广播。用户可通过下述指令关闭它们：
+
+```python
+odrv0.axis0.config.can.heartbeat_rate_ms = 0
+odrv0.axis0.config.can.encoder_rate_ms = 0
+```
+
+对于各个消息的详细内容，请参见 4.1.2。

@@ -35,3 +35,6 @@ odrv0.axis0.controller.input_pos=0
 
 # 默认通信接口是 CAN，最大通信速率 1Mbps
 #  odrv0.can.config.baud_rate    500000
+
+
+try odrive can 
