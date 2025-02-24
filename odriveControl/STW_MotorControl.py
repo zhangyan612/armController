@@ -476,6 +476,43 @@ def estop(bus, motor_id):
     print(f'  Sending data: {data}')
     send_can_frame(bus, arbitration_id, data, block_receive=0)
 
+
+def get_encoder_estimates(bus, motor_id):
+    """
+    Get encoder position and velocity estimates
+    
+    Args:
+        bus: CAN bus object
+        motor_id: Motor ID
+        
+    Returns:
+        tuple: (position, velocity) estimates
+            - position: Encoder position in revolutions (float)
+            - velocity: Encoder velocity in revolutions per second (float)
+    """
+    cmd_id = 0x009  # CMD ID for Get_Encoder_Estimates
+    arbitration_id = (motor_id << 5) + cmd_id  # Calculate CAN ID
+    print(f'Requesting encoder estimates for motor {motor_id}')
+    print(f'  CAN-ID: {hex(arbitration_id)}')
+    
+    # Empty data for request
+    data = [0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]
+    
+    # Send CAN frame and wait for response
+    state, rx_data = send_can_frame(bus, arbitration_id, data)
+    
+    if state == 0 and len(rx_data) >= 8:
+        # Convert bytes to floats (little endian)
+        position = struct.unpack('<f', bytes(rx_data[0:4]))[0]
+        velocity = struct.unpack('<f', bytes(rx_data[4:8]))[0]
+        print(f'  Position: {position} rev, Velocity: {velocity} rev/s')
+        return position, velocity
+    else:
+        print('  Failed to get encoder estimates')
+        return None, None
+
+
+
 # Main function with command line arguments
 def main():
     parser = argparse.ArgumentParser(description='STW Motor Control via CAN')
