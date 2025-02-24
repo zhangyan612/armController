@@ -534,6 +534,26 @@ def set_axis_state(bus, motor_id, requested_state):
     print(f'  Sending data: {data}')
     send_can_frame(bus, arbitration_id, data, block_receive=0)
 
+def disable_can(bus, motor_id):
+    """
+    Disable CAN interface and reboot the motor.
+    
+    Args:
+        bus: CAN bus object
+        motor_id: Motor ID
+    """
+    cmd_id = 0x01E  # CMD ID for Disable_Can
+    arbitration_id = (motor_id << 5) + cmd_id  # Calculate CAN ID
+    print(f'Disabling CAN for motor {motor_id}')
+    print(f'  CAN-ID: {hex(arbitration_id)}')
+    
+    # Empty data for Disable_Can command
+    data = [0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]
+    
+    # Send CAN frame (no response expected)
+    send_can_frame(bus, arbitration_id, data, block_receive=0)
+    print(f'CAN disabled for motor {motor_id}. Motor will reboot.')
+
 
 # Main function with command line arguments
 def main():
