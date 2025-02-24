@@ -311,8 +311,8 @@ def main():
     bus = can.interface.Bus(interface='socketcan', channel='can0', bitrate=500000) 
     #bus = can.interface.Bus(interface='socketcan', channel='can0', bitrate=1000000) 
     
-    # motorID1 = 0x01                      
-    # calibration(bus,motorID1)             # 执行校准
+    motorID1 = 0x01                      
+    calibration(bus,motorID1)             # 执行校准
 
     # motorID2= 0x02                       
     # calibration(bus,motorID2)             # 执行校准
@@ -323,8 +323,8 @@ def main():
     # motorID4 = 0x04                       
     # calibration(bus,motorID4)             # 执行校准
 
-    motorID5 = 0x05                       
-    calibration(bus,motorID5)             # 执行校准 can disabled not working  3.7 old hardware
+    # motorID5 = 0x05                       
+    # calibration(bus,motorID5)             # 执行校准 can disabled not working  3.7 old hardware
 
 
     # 在退出时确保资源被释放  

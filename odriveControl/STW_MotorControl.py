@@ -302,32 +302,75 @@ def main():
             print("CAN bus shut down")
 
 
-def runMotor():
+
+def positionControlTest(bus, motorID, position):
+    # # position control test success
+    set_controller_mode(bus, motorID, control_mode=3, input_mode=3)
+    time.sleep(0.5)
+    # Set to closed loop state
+    set_closed_loop_state(bus, motorID)
+    time.sleep(0.5)
+    # Set position
+    set_position(bus, motorID, position)
+
+
+def speedControlTest(bus, motor_id, speed):
+    set_controller_mode(bus, motor_id, control_mode=2, input_mode=2)
+    time.sleep(0.5)
+    
+    # Set to closed loop state
+    set_closed_loop_state(bus, motor_id)
+    time.sleep(0.5)
+    
+    # Set velocity
+    set_velocity(bus, motor_id, speed, 0)
+            
+
+def speedLoopTest(bus, motor_id):
+    speedControlTest(bus, motor_id, 10)
+    time.sleep(5)
+    speedControlTest(bus, motor_id, -10)
+    time.sleep(5)
+    speedControlTest(bus, motor_id, 0)
+
+
+
+def runMotorTest():
+    # remember to manually open can port before running code
+    # sudo ip link set up can0
+    # sudo ip link set can0 type can bitrate 500000 loopback off
+    # sudo ip link set up can0
+
     bus = can.interface.Bus(interface='socketcan', channel='can0', bitrate=500000) 
     print(f"Connected to can bus")
 
-    motorID1 = 0x01                      
-    calibrate_motor(bus,motorID1)             # 执行校准
+    motorID1 = 0x01      
+    motorID2 = 0x02                       
+    motorID3 = 0x03   
+    motorID4 = 0x04     
+    motorID5 = 0x05    
 
-    motorID1 = 0x02                       
-    calibrate_motor(bus,motorID1)             # 执行校准
+    # 执行校准 pass
+    # calibrate_motor(bus,motorID1)             
+    # calibrate_motor(bus,motorID1)             
+    # calibrate_motor(bus,motorID3)      
+       
+    # all motor back to 0 position  pass
+    # positionControlTest(bus, motorID1, 0)
+    # positionControlTest(bus, motorID2, 0)
+    # positionControlTest(bus, motorID3, 0)
+    # positionControlTest(bus, motorID4, 0)
+    # positionControlTest(bus, motorID5, 0)
 
-    # # position control
-    # set_controller_mode(bus, motorID1, control_mode=3, input_mode=3)
-    # time.sleep(0.5)
-    # # Set to closed loop state
-    # set_closed_loop_state(bus, motorID1)
-    # time.sleep(0.5)
-    # # Set position
-    # set_position(bus, motorID1, 0)
-
+    # speedLoopTest(bus, motorID1) pass
+    # speedLoopTest(bus, motorID2) pass
+    # speedLoopTest(bus, motorID3) pass
+    # speedLoopTest(bus, motorID4) pass
 
     # 在退出时确保资源被释放  
     bus.shutdown() 
 
 
-
-
 if __name__ == "__main__":
     # main()
-    runMotor()
+    runMotorTest()

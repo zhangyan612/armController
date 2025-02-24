@@ -50,17 +50,7 @@ This rule will redirect WebSocket requests from yourdomain.com to your Python We
 ifconfig
 
 echo $ROS_MASTER_URI
-echo $ROS_HOSTNAME
-
-export ROS_HOSTNAME=192.168.0.177
-export ROS_HOSTNAME=192.168.1.184
-
-sudo nano .bashrc
-or
-gedit .bashrc
-
-
-
+echo $ROS_HOSTNAMEgit config --global user.email "you@example.com"
 # rosbridge for moving control
 
 ROS Update, remote server control
@@ -180,3 +170,7 @@ alias sudo='sudo env PATH=$PATH'
 # <<< conda init <<<
 EOF
 
+
+
+git config --global user.email "zhangyan612@gmail.com"
+git config --global user.name "Yan Zhang"
