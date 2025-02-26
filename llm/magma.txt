@@ -32,4 +32,12 @@ pip install -e ".[train]"
 
 Install packages for agents:
 
+      ModuleNotFoundError: No module named 'common'
+
+pip install common
+pip install dual
+pip install tight
+pip install data
+pip install prox
+
 pip install -e ".[agent]"
