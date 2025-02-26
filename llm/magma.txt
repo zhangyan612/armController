@@ -1,0 +1,35 @@
+install 
+
+cd repos 
+
+git clone https://github.com/microsoft/Magma
+cd Magma
+
+conda create -n magma python=3.10 -y
+conda activate magma
+pip install --upgrade pip
+
+
+
+pip3 install torch torchvision torchaudio
+
+set cuda home 
+
+Add the following line to your shell configuration file (e.g., ~/.bashrc, ~/.zshrc, or ~/.bash_profile):
+
+export CUDA_HOME=/usr/local/cuda-12.4
+
+source ~/.bashrc
+
+
+
+pip install -e .
+
+
+Install packages for training:
+
+pip install -e ".[train]"
+
+Install packages for agents:
+
+pip install -e ".[agent]"
