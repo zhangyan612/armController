@@ -18,6 +18,7 @@ def calculate_crc(cf, sf, df0, df1):
 # 发送指令帧
 def send_command(command, repeat=1):
     for _ in range(repeat):
+        print(f"Sent: {command}")  
         ser.write(command)
         time.sleep(0.0008) # 时间间隔 >= 600微秒
 
@@ -57,7 +58,7 @@ def calibrate():
                 angle = df0 + (df1 << 8)
                 status = sf
                 print(f"校准中，角度: {angle}, 运行状态: {status}")
-            time.sleep(0.0007) # 保证两次发送间隔大于600微秒
+            time.sleep(0.0008) # 保证两次发送间隔大于600微秒
 
     # 校准初始化
     print("校准初始化...")
@@ -99,7 +100,7 @@ def continuous_output():
             angle, status, response = read_position()
             if angle is not None and status is not None:
                 print(f"角度: {angle}, 运行状态: {status}")
-            time.sleep(1)  # 每秒打印一次
+            # time.sleep(1)  # 每秒打印一次
     except KeyboardInterrupt:
         print("停止输出位置信号")
 
@@ -107,11 +108,39 @@ def continuous_output():
 if __name__ == "__main__":
     # 示例操作
     # reset_position()
-    calibrate()
-    # continuous_output()
+    # calibrate()
+    continuous_output()
 
 # 使用完毕关闭串口
 ser.close()
 
 
 #success
+
+# 串口助手
+# 发送 ASCII 接收HEX 
+# 发送 \x02 \xBA
+
+
+
+
+# Sent: b'\x02'
+# b'\x02\x08y\x19j'
+# 角度: 6521, 运行状态: 8
+# Sent: b'\x02'
+# b'\x02\x08y\x19j'
+# 角度: 6521, 运行状态: 8
+# Sent: b'\x02'
+# b'\x02\x08k\x19x'
+# 角度: 6507, 运行状态: 8
+# Sent: b'\x02'
+# b'\x02\x08p\x19c'
+# 角度: 6512, 运行状态: 8
+# Sent: b'\x02'
+# b'\x02\x08m\x19~'
+# 角度: 6509, 运行状态: 8
+# Sent: b'\x02'
+# b'\x02\x08z\x19i'
+# 角度: 6522, 运行状态: 8
+# Sent: b'\x02'
+# b'\x02\x08s\x19`'
