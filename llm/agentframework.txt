@@ -23,6 +23,17 @@ Exploring Large Language Model based Intelligent Agents Definitions, Methods, an
 
 Coscientist[218]利用大型语言模型的功能，结合互联网和文献搜索、代码执行和实验自动化等工具，能够自主设计、规划和执行现实世界的化学实验。
 
+Research goal
+Scientist describes a research goal along with preferences, experiment constraints, and other attributes.
+
+Research hypotheses comparison and ranking with scientific debate in tournaments. 
+Limitations and top win-loss patterns are summarized and provided as feedback to other agents. 
+This enables iterative improvement in quality of research hypothesis generation creating a self-improving loop.
+
+Hypothesis generation 
+Experimental validation 
+New insights submitted to a top journal
+
 
 图2：基于LLM的智能体概览
 
@@ -31,6 +42,27 @@ Coscientist[218]利用大型语言模型的功能，结合互联网和文献搜�
 执行：行动作用于环境或调用工具，产生结果。
 反馈：环境返回反馈，智能体通过反思（R）更新记忆并优化后续行动。
 循环：流程重复，直到目标达成。
+
+
+
+首先 
+实现给定 LLM 一个task，比如 发送邮件给 lisa
+LLM 自动执行, 并把用户偏好保存
+下次就执行相同的动作
+这里 用户可以给提示
+
+
+step by step to achieve robot self improving 
+不基于人工特定程序的自动升级计划
+1.实现 agent 程序 可以任意 scraping 网上内容并保存
+2.通过多种方案执行目标任务，进行evaluate 确定最佳方案并保存
+3.下次执行相似任务，自动选择最佳方案
+
+human's Role
+Give requirement 
+Evaluate result 
+Everything else handled by robot 
+
 
 
 机器人领域
@@ -47,4 +79,255 @@ ProAgent[71]可以预测队友的即将做出的决策并为其自身制定改�
 
 ProgPrompt: Generating Situated Robot Task Plans using Large Language Models
 https://progprompt.github.io/
+
+
+Save learnt knowledge
+
+Towards Lifelong Learning of Large Language Models: A Survey
+https://arxiv.org/abs/2406.06391
+
+
+HippoRAG: Neurobiologically Inspired Long-Term Memory for Large Language Models
+https://arxiv.org/abs/2405.14831
+
+
+OpenAI operator
+GPT Swarm 
+
+smolagents from huggingface 
+
+
+
+omniParser
+
+
+
+1. choose agent framework
+
+smolagents
+LangChain
+
+
+2. basic functionality 
+
+navigate to web, get data from web content -- automa 
+
+planning - execution 
+save planning and execution steps 
+
+create database table-auto save and retrieve 
+
+api -- tool registry 
+
+
+
+
+构建一个能够自主学习和自动提升的LLM Agent系统需要系统化设计核心组件与持续学习机制，以下是具体步骤及技术实现方案：
+
+---
+
+### 一、核心组件设计
+#### 1. **规划与任务分解模块**
+- **技术实现**：
+  - 采用 **思维链（CoT）** 和 **树形思维（Tree of Thoughts）** 技术，将复杂任务分解为可执行的子目标。
+  - 结合**LLM+P方法**，利用外部经典规划器（如PDDL规划器）处理长期规划问题，例如机器人路径规划。
+- **优化策略**：
+  - 引入动态优先级调度，根据任务执行反馈调整子任务顺序。
+
+#### 2. **自我反思与迭代改进模块**
+- **技术实现**：
+  - 集成**ReAct框架**，将推理（Reasoning）与动作（Action）结合，通过环境反馈生成改进策略。
+  - 使用**Reflexion框架**，通过动态记忆存储历史错误案例，训练模型避免重复错误。
+  - 应用 **课程学习（Curriculum Learning）** ，逐步增加任务难度，例如清华团队的WebRL框架中的自进化课程生成。
+- **反馈机制**：
+  - 设计自动评估器（如基于规则的验证模块或人工反馈接口）生成改进信号。
+
+#### 3. **记忆管理模块**
+- **技术实现**：
+  - **短期记忆**：利用LLM的上下文窗口管理临时信息（如对话历史）。
+  - **长期记忆**：通过向量数据库（如FAISS）实现高效检索，支持最大内积搜索（MIPS）优化。
+  - 采用分层存储策略，按信息重要性分类存储至不同数据库。
+- **案例参考**：
+  - **Generative Agents**使用时间戳和语义索引组织记忆，支持复杂事件推理。
+
+#### 4. **工具调用与扩展能力**
+- **技术实现**：
+  - 构建工具API网关，支持代码执行、搜索引擎调用、专业数据库访问（如化学领域的ChemCrow）。
+  - 使用**Toolformer**或**HuggingGPT**框架，通过微调让LLM自主选择工具。
+- **安全机制**：
+  - 沙箱环境隔离高风险操作（如文件写入），限制API调用权限。
+
+---
+
+### 二、持续学习机制设计
+#### 1. **动态数据管道构建**
+- **数据采集**：
+  - 自动化爬虫收集开放数据（如Common Crawl），结合主动学习选择高价值样本。
+- **清洗与标注**：
+  - 使用规则引擎（如正则表达式）和预训练模型（如BERT分类器）过滤噪声数据。
+  - 采用半监督学习（如FixMatch算法）自动标注部分数据，降低人工成本。
+- **存储优化**：
+  - 分层存储策略：热数据存于内存数据库（Redis），冷数据存于分布式文件系统（HDFS）。
+
+#### 2. **模型更新策略**
+- **增量学习**：
+  - 应用 **弹性权重整合（EWC）** ，保护重要参数不被新任务覆盖。
+  - 使用 **Contextual Experience Replay（CER）** ，从历史轨迹中蒸馏环境动态和决策模式。
+- **元学习优化**：
+  - 采用**MAML算法**训练模型快速适应新任务，例如WebAgent中的自适应策略。
+- **自动化调参**：
+  - 贝叶斯优化（如Hyperopt）与强化学习（如PPO）结合，动态调整学习率和批大小。
+
+---
+
+### 三、评估与反馈闭环
+#### 1. **性能评估体系**
+- **指标设计**：
+  - 基础指标：任务完成率、响应延迟、资源消耗量。
+  - 高级指标： **泛化能力指数（GPI）** 、对抗攻击鲁棒性评分。
+- **测试方法**：
+  - 仿真环境验证（如WebArena、VisualWebArena）。
+  - A/B测试对比不同版本模型的表现。
+
+#### 2. **反馈闭环实现**
+- **实时监控**：
+  - 部署Prometheus+Grafana监控系统，跟踪模型推理延迟、内存占用等。
+- **自动化回滚**：
+  - 设定性能阈值，当关键指标（如准确率下降5%）触发模型版本回退。
+
+---
+
+### 四、安全与稳定性保障
+#### 1. **过拟合防护**
+- **技术方案**：
+  - 输入数据增强（如文本回译、图像旋转）。
+  - 模型层面应用**Dropout**和**Batch Normalization**。
+- **动态正则化**：
+  - 根据训练阶段调整L2正则化强度，早期阶段加强约束，后期逐步放松。
+
+#### 2. **对抗攻击防御**
+- **防护措施**：
+  - 输入净化：使用 **对抗样本检测器（如ML-LOO）** 过滤恶意输入。
+  - 模型加固： **对抗训练（Adversarial Training）** ，在训练数据中混入对抗样本。
+
+---
+
+### 五、系统集成与部署
+#### 1. **架构设计**
+- **模块化架构**：
+  - 核心组件通过gRPC通信，支持独立升级（如单独更新规划模块）。
+  - 参考AutoGen的多Agent协作架构，实现任务并行处理。
+
+#### 2. **开发工具链**
+- **推荐框架**：
+  - 基础框架：LangChain（工具集成）、AutoGPT（自主任务执行）。
+  - 高级功能：AgentScope（多Agent协作）、AI Town（虚拟环境模拟）。
+
+#### 3. **硬件优化**
+- **推理加速**：
+  - 使用TensorRT量化模型，部署至NVIDIA Triton推理服务器。
+  - 针对长文本任务优化KV Cache内存管理。
+
+---
+
+### 六、典型应用案例
+1. **化学研究助手ChemCrow**：
+   - 整合18种专业工具（如Reaxys、LitSearch），完成有机合成路径规划。
+2. **虚拟社会模拟（AI小镇）**：
+   - 25个Agent通过记忆共享和协作完成社区事件推演。
+3. **工业自动化控制**：
+   - 使用Model Predictive Control Toolbox实现能耗优化，某挖掘机厂商油耗降低15%。
+
+---
+
+### 挑战与未来方向
+- **核心挑战**：
+  - 长上下文窗口依赖（如需处理10万token以上的化学文献）。
+  - 工具调用延迟优化（如API响应时间>500ms时的体验下降）。
+- **前沿探索**：
+  - 多模态融合：视觉-语言联合建模提升物理交互能力。
+  - 神经符号结合：将符号推理规则嵌入LLM决策流程。
+
+通过以上步骤的系统化实施，可构建出具备持续进化能力的LLM Agent系统。实际开发中需根据场景需求权衡组件复杂度，例如科研场景侧重工具扩展性，而商业场景优先考虑响应速度和安全性。
+
+
+
+
+
+
+LLM解决方案固化与复用技术全景解析
+当LLM成功解决特定问题后，如何系统化保存其推理路径和结果以实现高效复用，是构建自主进化Agent系统的核心挑战。当前研究主要围绕六大技术路线展开，以下结合最新进展进行深度剖析：
+
+一、基于记忆存储的解决方案固化
+1. 对话日志全量存储
+技术原理：将完整的用户-LLM交互序列（包括问题描述、中间推理、最终答案）以结构化格式（JSON/XML）持久化存储，形成可追溯的解决方案库。
+实现方案：
+使用MongoDB时间序列集合存储带时间戳的对话记录，支持按问题类型、解决时间等多维度检索。
+结合LangChain的ConversationBufferMemory，自动维护上下文窗口内的对话状态，并通过MessagesPlaceholder实现历史消息注入。
+研究案例：Codecademy的LangChain教程展示了如何通过ConversationBufferMemory实现多轮对话记忆，存储容量可达1000轮以上。
+
+2. 向量化知识沉淀
+技术突破：
+采用RAG（检索增强生成）架构，将解决方案拆解为<问题向量, 解决路径向量, 答案向量>三元组，通过FAISS/HNSW等向量数据库实现语义级匹配。
+OnPrem.LLM框架实现了文档级存储，将解决方案相关的原始文本、生成答案及参考文档统一编码，支持source_documents溯源查询。
+性能优化：
+使用混合索引策略（IVF_PQ + 标量过滤），在MS MARCO数据集上实现98%召回率的同时，查询延迟低于50ms。
+
+二、基于缓存机制的快速复用
+1. 语义缓存技术
+核心思想：对输入问题进行语义哈希（如SimHash），当新问题与缓存问题的余弦相似度>0.85时直接返回历史答案。
+实现框架：
+llm-cache：支持JavaScript环境的语义缓存库，通过BERT-base生成128维语义向量，内存占用较传统Redis降低40%。
+GPTCache：采用多级缓存架构，热数据存于GPU显存（通过CUDA Unified Memory），冷数据存于分布式存储。
+2. 注意力状态缓存
+硬件级加速：
+vLLM的PagedAttention：将KV Cache分页存储，支持跨请求共享相同prompt前缀的注意力状态，在Llama-2-13B上实现3倍吞吐量提升。
+Prompt Cache：通过提示标记语言（PML）定义可复用注意力模块，在HuggingFace Transformers中实测降低首个token生成延迟达70%
+。
+三、模型参数持久化与知识蒸馏
+1. 增量微调固化
+技术路径：
+LoRA微调：对LLM的交叉注意力层进行低秩适配，将解决方案相关的参数增量保存为adapter_model.bin，单个适配器大小仅需50-100MB。
+Elastic Weight Consolidation (EWC) ：通过Fisher信息矩阵识别重要参数，防止新知识覆盖已存储的解决方案。
+2. 解决方案蒸馏
+流程优化：
+使用T5-small作为蒸馏模型，将LLM生成的复杂推理路径压缩为决策树规则，在SQuAD数据集上实现87%的答案复现率
+。
+Code-Llama的代码固化：将自然语言解决方案转换为Python函数并存储为API端点，通过@cache装饰器实现计算结果缓存
+。
+四、结构化知识库构建
+1. 本体工程融合
+方法论：
+基于GoT（Graph of Thoughts）框架，将解决方案拆解为原子推理步骤，存储为OWL本体中的hasStep、hasDependency等关系
+。
+动态本体更新：当LLM生成新解决方案时，通过SPARQL UPDATE语句扩展知识图谱，支持联邦查询
+。
+2. 解决方案模板库
+工业级实践：
+西门子工业AI平台将故障诊断方案存储为<故障代码, 传感器数据模式, 修复指令>模板，通过DTW算法匹配实时数据流
+。
+LangChain的Chain固化：使用LLMChain.persist()方法将特定任务的处理流水线（如NER→SQL生成→查询执行）保存为可复用的DAG。
+五、前沿研究方向与挑战
+1. 技术瓶颈
+长上下文记忆：超过10万token的解决方案存储会引发KV Cache内存爆炸，新型Ring Attention机制通过分块循环存储可缓解此问题。
+缓存一致性：当底层数据更新时（如知识库修改），现有语义缓存缺乏自动失效机制，MIT提出的Semantic Versioning Cache通过嵌入漂移检测解决该问题。
+2. 安全增强方向
+隐私保护存储：
+同态加密缓存：IBM研究院的HE-GPT方案允许在加密状态下存储解决方案，推理时仅暴露解密后的最终结果
+。
+差分隐私训练：在微调阶段添加Laplace噪声，防止存储的解决方案泄露训练数据细节
+。
+3. 商业化应用
+AWS SageMaker新特性：
+Solution Snapshot：将LLM推理过程中的权重快照、中间变量、API调用记录保存为可回放的Docker镜像。
+Neural Artifact Store：专为AI模型设计的版本控制系统，支持解决方案的Git式分支管理。
+结论建议
+选择解决方案存储策略时需权衡实时性、存储成本与知识泛化性：
+
+高频简单问题：优先采用vLLM的注意力缓存结合llm-cache，达到亚秒级响应
+复杂决策链路：推荐使用RAG+本体库的混合架构，通过LangChain实现端到端管理
+企业级部署：需集成加密存储
+与审计追踪，符合ISO/IEC 27017云安全标准
+当前技术演进正朝着记忆-缓存-蒸馏三位一体的方向发展，如微软的Brainformers框架已实现三种机制的动态协同，在Azure OpenAI服务中实测降低推理成本达65%
+。
 
