@@ -1,0 +1,14 @@
+Task 1 
+
+Objective: Find the right researcher/professor to contact 
+
+constraints: research topic related to robot, robot manipulation studies, research published in arxiv in recent 2 years, who has not been asoociated with a company
+
+
+Planning:
+Query arxiv database to find related research
+
+Web scraping to get more author info 
+
+search related author info on web to find professor
+
