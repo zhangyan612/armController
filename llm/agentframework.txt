@@ -81,6 +81,8 @@ ProgPrompt: Generating Situated Robot Task Plans using Large Language Models
 https://progprompt.github.io/
 
 
+
+
 Save learnt knowledge
 
 Towards Lifelong Learning of Large Language Models: A Survey
@@ -331,3 +333,21 @@ Neural Artifact Store：专为AI模型设计的版本控制系统，支持解决
 当前技术演进正朝着记忆-缓存-蒸馏三位一体的方向发展，如微软的Brainformers框架已实现三种机制的动态协同，在Azure OpenAI服务中实测降低推理成本达65%
 。
 
+
+
+VLM 
+https://github.com/OpenGVLab/vinci  
+
+dify
+
+tool use 
+
+AutoGen
+
+collect all projects and find similarity 
+
+
+ 什么是 MGX？
+
+MGX（MetaGPT X）是你的专属 AI 软件团队，由 5 位“AI 同事”组成：产品经理、架构师、工程师、数据分析师……
+无需写代码，只需用自然语言说出需求，团队协作帮你从 0 到 1 开发应用！
