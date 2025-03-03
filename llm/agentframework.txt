@@ -48,3 +48,16 @@ ProAgent[71]可以预测队友的即将做出的决策并为其自身制定改�
 ProgPrompt: Generating Situated Robot Task Plans using Large Language Models
 https://progprompt.github.io/
 
+
+
+
+VLM 
+https://github.com/OpenGVLab/vinci  
+
+dify
+
+tool use 
+
+
+
+collect all projects and find similarity 
