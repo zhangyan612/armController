@@ -1,0 +1,30 @@
+screws
+
+RV servo - M4 X 14
+M4 X 12
+
+RV servo holder - M3 X 5 
+
+Body holder 
+M5 X 10
+M5 X 15
+
+
+Shoulder
+M3.5 X 60 - 12 
+
+中空电机
+M2.5 X 10 - 4 
+M3 X 6 - 4
+M5 X 15 - 1
+
+
+2020直角块
+
+
+中心转换
+圆柱销 
+M3 X 45 OR 48 better - 1
+M4 X 25 - 2
+
+
