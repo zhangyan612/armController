@@ -61,7 +61,7 @@ def runMotorTest():
     # positionControlTest(bus, motorID2, 0)
     # positionControlTest(bus, motorID3, 0)
     # positionControlTest(bus, motorID4, 0)
-    # positionControlTest(bus, motorID5, 0)
+    positionControlTest(bus, motorID5, 0)
 
     # odriveMotor.clear_errors(bus, motorID5)
 
@@ -79,7 +79,7 @@ def runMotorTest():
     # err = odriveMotor.get_error(bus, motorID5, 0)
     # print(err)
 
-    odriveMotor.reboot_motor(bus, motorID4)
+    # odriveMotor.reboot_motor(bus, motorID4)
 
     # 在退出时确保资源被释放  
     bus.shutdown()
