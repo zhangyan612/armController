@@ -69,18 +69,30 @@ if __name__ == "__main__":
     #small linear motor 1- 5000
 
     # id_value = '01'
-    # pwm_value = 1000
-    # time_value = 20
+    # # pwm_value = 5000  # 拉
+    # pwm_value = 1000  # 松
+
+    # time_value = 5
     # Move_Motor(id_value, pwm_value, time_value)
     # time.sleep(0.01)
 
     # id_value = '02'
-    # pwm_value = 1000
-    # time_value = 20
+    # # pwm_value = 1000  # 松
+    # pwm_value = 5000  # 拉
+    # time_value = 5
     # Move_Motor(id_value, pwm_value, time_value)
+    # time.sleep(0.01)
+
+    id_value = '03'
+    # pwm_value = 1000 # 拉
+    pwm_value = 5000 # 松
+    time_value = 5
+    Move_Motor(id_value, pwm_value, time_value)
+
+    time.sleep(0.01)
 
     id_value = '04'
-    pwm_value = 1000
-    time_value = 10
+    pwm_value = 1000 # 拉
+    time_value = 5
     Move_Motor(id_value, pwm_value, time_value)
 
