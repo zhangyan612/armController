@@ -13,8 +13,23 @@ M5 X 15
 Shoulder
 M3.5 X 60 - 12 
 
+圆柱销 m3 x 40 
+
+平头 
+M3 X 8 
+M3 X 10
+
 Xintuo Motor 
 M2.5 X 8 
+
+
+Wrist 
+圆柱销 
+m3 x 70 
+M8 x 45
+M8 x 60
+
+Wheels 
 
 
 中空电机
