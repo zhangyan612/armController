@@ -1,6 +1,7 @@
 #include "FOC_H.h"
 #include "gpio.h"
 #include <stdio.h>
+#include <stdlib.h> 
 #include "math.h"
 #include "main.h"
 #include "tim.h"
@@ -31,8 +32,12 @@ DQCurrent_s current;                  //!< DQ坐标系下的电流
 // 编码器信号数
 #define ENCODER_RESOLUTION 128
 
+volatile uint8_t motor_enabled = 0;  // 电机使能标志
+
 // 编码器初始化计数值
 #define ENCODER_MAX_COUNT 65535
+// rotatation count
+int32_t rotation_count = 0; // rotatation
 
 // 变量定义
 int16_t last_count = 0;      // 上一次的计数值（用于计算增量）
@@ -323,8 +328,18 @@ float getAngle(void)
     d_angle = angle_data - angle_data_prev;
 
     // 如果角度变化量超过阈值（80%的CPR），判断为发生了溢出（全转）
-    if(fabs(d_angle) > (0.8 * 16383)) 
-        full_rotation_offset += d_angle > 0 ? -_2PI : _2PI; // 根据方向调整全转偏移量
+    //if(fabs(d_angle) > (0.8 * 16383)) 
+        //full_rotation_offset += d_angle > 0 ? -_2PI : _2PI; // 根据方向调整全转偏移量
+
+		if(fabs(d_angle) > (0.8 * 16383)) {
+        if (d_angle > 0) {
+            full_rotation_offset -= _2PI;
+            rotation_count--; 
+        } else {
+            full_rotation_offset += _2PI;
+            rotation_count++; 
+        }
+    }
 
     // 保存当前角度计数值，为下次计算做准备
     angle_data_prev = angle_data;
@@ -345,7 +360,7 @@ char test_flag;
 /* 定义命令接收状态 */
 typedef enum {
     CMD_STATE_WAIT_START,      // 等待命令起始字符
-    CMD_STATE_RECEIVE_COMMAND  // 接收命令内容
+    CMD_STATE_RECEIVE_COMMAND,  // 接收命令内容
 } CMD_State;
 
 /* 定义命令类型 */
@@ -406,6 +421,9 @@ typedef enum {
     CMD_STATE_RECEIVE_EQUALS,  // 已接收到A/B，等待=字符
     CMD_STATE_RECEIVE_DATA_A,  // 接收A命令的数据部分
     CMD_STATE_RECEIVE_DATA_B,  // 接收B命令的数据部分
+		CMD_STATE_RECEIVE_DATA_C,  // encoder value
+    CMD_STATE_RECEIVE_DATA_E,  // 接收E命令的数据部分
+		CMD_STATE_RECEIVE_DATA_Q,  // Rotation
     CMD_STATE_RECEIVE_TERMINATOR // 接收命令终止符;
 } cmd_state_t;
 volatile cmd_state_t cmd_state = CMD_STATE_IDLE;
@@ -413,11 +431,34 @@ volatile cmd_state_t cmd_state = CMD_STATE_IDLE;
 
 char current_cmd_type = '\0';
 
+void motorEnable(void)
+{
+    motor_enabled = 1;
+    // Optional: Print a message to indicate the motor is enabled
+    printf("Motor enabled\r\n");
+}
+
+void motorDisable(void)
+{
+    motor_enabled = 0;
+    // Force the motor to stop by setting zero voltage
+    setPhaseVoltage(0, 0, 0);
+    // Optional: Print a message to indicate the motor is disabled
+    printf("Motor disabled\r\n");
+}
 
 
 extern float Bias_buf;
 void run()
-{
+{    
+    if (!motor_enabled) {
+        // Zero out the voltages to prevent any movement
+        voltage.q = 0;
+        voltage.d = 0;
+        setPhaseVoltage(0, 0, 0);
+        return;
+    }
+
 	switch(pattern)
 	{
 		case 0:
@@ -432,10 +473,9 @@ void run()
 			pole_pairs=7;  
 			
 			zero_electric_angle =2.3;
-
 			pattern=4;
 			HAL_UART_Receive_IT(&huart1, &rx_byte, 1);
-		  HAL_UART_Receive_IT(&huart2, &rx_byte_uart2, 1);  /* 启动串口2接收中断,接收目标角度和减速比，接收一个字节 */
+		    HAL_UART_Receive_IT(&huart2, &rx_byte_uart2, 1);  /* 启动串口2接收中断,接收目标角度和减速比，接收一个字节 */
 
 			break;
 		case 2:
@@ -496,38 +536,61 @@ void run()
 			pattern=3;
 			break;
 		case 3:
-		//printf("%.3f,%.3f\n",shaft_angle,electrical_angle); // 可选的调试输出，打印轴角度
+		printf("case 3: %.3f,%.3f\n",shaft_angle,electrical_angle); // 可选的调试输出，打印轴角度
 		 voltage.q =0.5;
 		 voltage.d =0;
-			break;
-		case 4:
-			P_angle.P = 5;
-			P_angle.I = 0;
-			P_angle.D = 0;		
-			voltage.q = PIDoperator(&P_angle, (shaft_angle - target_angle)); 		
-			
-//		  printf("%.3f,%.3f,%.3f\n",shaft_angle,shaft_velocity,voltage.q); // 可选的调试输出，打印轴角度
-				break;
+		    break;
+        case 4:
+            // 如果是第一次进入 case 4，设置目标角度为当前角度
+            if (target_angle == 0.0f) {
+                target_angle = getAngle();
+            }
+                
+            // 设置 PID 参数
+            P_angle.P = 5;
+						P_angle.I = 0;
+						P_angle.D = 0;
 
-		
-			
+            // 计算 Q 轴电压
+            float error = shaft_angle - target_angle;
+            
+            error = _constrain(error, -10.0f, 10.0f); // 限制误差范围
+            voltage.q = PIDoperator(&P_angle, error);
+            voltage.q = _constrain(voltage.q, -12.0f, 12.0f); // 限制电压范围
+        
+            // // Define an acceptable error threshold
+            // float error_threshold = 0.05f; // Adjust as needed
+
+            // if (fabs(error) > error_threshold) {
+            //     // Determine rotation direction
+            //     float direction = (error > 0) ? 1.0f : -1.0f; // Positive for forward, negative for reverse
+
+            //     // Apply a control voltage to correct the position
+            //     voltage.q = PIDoperator(&P_angle, fabs(error)) * direction;
+            //     voltage.q = _constrain(voltage.q, -12.0f, 12.0f); // Limit voltage
+            // } else {
+            //     // Maintain the position by setting a low holding torque
+            //     voltage.q = 0.5f * ((shaft_angle > target_angle) ? -1.0f : 1.0f); // Adjust holding force based on position
+            // }
+
+            // 调试输出
+            //printf("Shaft Angle: %.3f, Target Angle: %.3f, Voltage Q: %.3f, Error: %.3f\n",
+                   //shaft_angle, target_angle, voltage.q, error);
+            break;
+        
 	}
 	
-	
-		shaft_angle = getAngle();
-	
+	shaft_angle = getAngle();
     electrical_angle = electricalAngle();
     
     // 根据扭矩控制的类型执行相应的控制策略
-
-		setPhaseVoltage(voltage.q, voltage.d, electrical_angle);
+	setPhaseVoltage(voltage.q, voltage.d, electrical_angle);
 
 	if(feedback_send_flag==1)
 	{
 		feedback_send_flag=0;
-		printf("C=%d\r\n",MGT_angle);
+		//printf("C=%d\r\n",MGT_angle);
 		/*
-		
 		*/
 	}
 		
@@ -603,70 +666,62 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 {
-      if (huart->Instance == USART1) {
-        switch (current_state) {
+    if (huart->Instance == USART1)
+    {
+        switch(current_state)
+        {
             case WAIT_FOR_START:
-                printf("WAIT_FOR_START: Received byte: 0x%02X\n", rx_byte);
-                if (rx_byte == 0x02) {
-                    printf("Start byte (0x02) received, moving to WAIT_FOR_IDENT\n");
+                if (rx_byte == 0x02)
+                {
                     current_state = WAIT_FOR_IDENT;
-                } else {
-                    printf("Invalid start byte, resetting to WAIT_FOR_START\n");
-                    current_state = WAIT_FOR_START;
                 }
                 break;
 
             case WAIT_FOR_IDENT:
-                printf("WAIT_FOR_IDENT: Received byte: 0x%02X\n", rx_byte);
-                if (rx_byte == 0x08) {  // ??????? 0x08
-                    printf("Ident byte (0x08) received, moving to WAIT_FOR_DATA1\n");
+                if (rx_byte == 0x08)
+                {
                     current_state = WAIT_FOR_DATA1;
-                } else {
-                    printf("Invalid ident byte, resetting to WAIT_FOR_START\n");
+                }
+                else
+                {
+                    // 不匹配，重新等待起始字节
                     current_state = WAIT_FOR_START;
                 }
                 break;
 
             case WAIT_FOR_DATA1:
-                received_bytes[0] = rx_byte;  // DF0
-                printf("WAIT_FOR_DATA1: Received DF0: 0x%02X\n", rx_byte);
+                received_bytes[0] = rx_byte;
                 current_state = WAIT_FOR_DATA2;
                 break;
 
             case WAIT_FOR_DATA2:
-                received_bytes[1] = rx_byte;  // DF1
-                printf("WAIT_FOR_DATA2: Received DF1: 0x%02X\n", rx_byte);
+                received_bytes[1] = rx_byte;
                 current_state = WAIT_FOR_CHECKSUM;
                 break;
 
             case WAIT_FOR_CHECKSUM:
-                received_bytes[2] = rx_byte;  // CRC
-                printf("WAIT_FOR_CHECKSUM: Received CRC: 0x%02X\n", rx_byte);
-
-                // ?????
-                uint8_t calculated_checksum = 0x02 ^ 0x08 ^ received_bytes[0] ^ received_bytes[1];
-                printf("Calculated CRC: 0x%02X, Received CRC: 0x%02X\n", calculated_checksum, rx_byte);
-
-                if (rx_byte == calculated_checksum) {
-                    // ????,????
-                    MGT_angle = received_bytes[1] + (received_bytes[0] << 8);  // DF0 + (DF1 << 8)
-                    printf("CRC check passed, parsed angle: %d\n", MGT_angle);
-                    MGT_angle_rx_flag = 1;
-                } else {
-                    printf("CRC check failed, discarding data\n");
+                received_bytes[2] = rx_byte;
+                // 计算校验值
+                {
+                    uint8_t calculated_checksum = 0x02 ^ 0x08 ^ received_bytes[0] ^ received_bytes[1];
+                    if (rx_byte == calculated_checksum)
+                    {
+                        // 校验通过，解析角度
+                        MGT_angle = -( received_bytes[0] + (received_bytes[1] << 8));
+										//		shaft_angle = MGT_angle * _2PI / 16383;
+                        MGT_angle_rx_flag = 1;
+                    }
+                    // 无论校验是否通过，都需要重置状态机
+                    current_state = WAIT_FOR_START;
                 }
-
-                // ?????
-                current_state = WAIT_FOR_START;
                 break;
 
             default:
-                printf("Unknown state, resetting to WAIT_FOR_START\n");
                 current_state = WAIT_FOR_START;
                 break;
         }
 
-        // ????????
+        // 重新开启中断接收下一个字节
         HAL_UART_Receive_IT(&huart1, &rx_byte, 1);
     }
 		else
@@ -680,12 +735,20 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
         switch(cmd_state) {
             case CMD_STATE_IDLE:
                 if (received_char == 'A' || received_char == 'a' ||
-                    received_char == 'B' || received_char == 'b') {
-
-										cmd_buffer[0] = received_char;
-                    cmd_idx = 1;
-                    cmd_state = CMD_STATE_RECEIVE_EQUALS;
+                    received_char == 'B' || received_char == 'b'||
+                    received_char == 'E' || received_char == 'e'||
+										received_char == 'Q' || received_char == 'q') {
+                        cmd_buffer[0] = received_char;
+                        cmd_idx = 1;
+                        cmd_state = CMD_STATE_RECEIVE_EQUALS;
                 }
+										
+                if (received_char == 'C' || received_char == 'c') {
+                    printf("%d\r\n", MGT_angle);
+                    cmd_state = CMD_STATE_IDLE;
+                    cmd_idx = 0;
+                }
+
                 // 非法起始字符，保持在IDLE状态
                 break;
 
@@ -699,6 +762,12 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
                     else if (cmd_buffer[0]  == 'B') {
                         cmd_state = CMD_STATE_RECEIVE_DATA_B;
                     }
+                    else if (cmd_buffer[0] == 'E') {
+                        cmd_state = CMD_STATE_RECEIVE_DATA_E;
+                    }else if (cmd_buffer[0] == 'Q') {
+                        cmd_state = CMD_STATE_RECEIVE_DATA_Q;
+                    }
+
                 }
                 else {
                     // 非法字符，重置状态机
@@ -724,7 +793,7 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
                     target_angle = (cmd_buffer[3]-'0')*100 + (cmd_buffer[4]-'0')*10 +(cmd_buffer[5]-'0')*1 + (cmd_buffer[7]-'0')*0.1 + (cmd_buffer[8]-'0')*0.01 +( cmd_buffer[9]-'0')*0.001 ;
 										target_angle *=reduction_ratio;
 										if(cmd_buffer[2]=='-')target_angle*=-1;
-										//  printf("Set Target Angle: %.3f rad\r\n", target_angle);
+										 printf("Set Target Angle: %.3f rad\r\n", target_angle);
 
                     command_ready = 1;
 
@@ -782,6 +851,65 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 
 				
                 break;
+            case CMD_STATE_RECEIVE_DATA_E:
+                if (received_char == ';' && cmd_idx == 3) 
+                {
+                    cmd_buffer[cmd_idx++] = received_char;
+                    cmd_buffer[cmd_idx] = '\0';
+
+                    if(cmd_buffer[2] == '1') {
+                        motor_enabled = 1;
+                        printf("Motor Enabled\r\n");
+                    } else if(cmd_buffer[2] == '0') {
+                        motor_enabled = 0;
+                        voltage.q = 0;
+                        voltage.d = 0;
+                        printf("Motor Disabled\r\n");
+                    }
+
+                    command_ready = 1;
+                    cmd_state = CMD_STATE_IDLE;
+                    cmd_idx = 0;
+                }
+                else 
+                {
+                    if (cmd_idx < 3) {
+                        cmd_buffer[cmd_idx++] = received_char;
+                    }
+                    else {
+                        cmd_state = CMD_STATE_IDLE;
+                        cmd_idx = 0;
+                    }
+                }
+                break;
+						case CMD_STATE_RECEIVE_DATA_Q:
+							if (received_char == ';') {
+									cmd_buffer[cmd_idx] = '\0'; // ?????
+									if (cmd_idx > 2) { // ??? Q=123;
+											char *data_start = (char *)&cmd_buffer[2]; 
+											if (*data_start == '=') { 
+													data_start++; 
+													int32_t new_count = atoi(data_start);
+													rotation_count = new_count;
+													full_rotation_offset = rotation_count * _2PI;
+													printf("Q:%ld\r\n", rotation_count); 
+											} else {
+													printf("ERROR: Invalid Q format\r\n");
+											}
+									} else { // ??? Q;
+											printf("Q:%ld\r\n", rotation_count);
+									}
+									cmd_state = CMD_STATE_IDLE;
+									cmd_idx = 0;
+							} else {
+									if (cmd_idx < CMD_BUFFER_SIZE) {
+											cmd_buffer[cmd_idx++] = received_char;
+									} else {
+											cmd_state = CMD_STATE_IDLE;
+											cmd_idx = 0;
+									}
+							}
+							break;
 
             default:
                 // 非预期状态，重置状态机
