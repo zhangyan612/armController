@@ -536,48 +536,17 @@ void run()
 			pattern=3;
 			break;
 		case 3:
-		printf("case 3: %.3f,%.3f\n",shaft_angle,electrical_angle); // 可选的调试输出，打印轴角度
-		 voltage.q =0.5;
-		 voltage.d =0;
-		    break;
-        case 4:
-            // 如果是第一次进入 case 4，设置目标角度为当前角度
-            if (target_angle == 0.0f) {
-                target_angle = getAngle();
-            }
-                
-            // 设置 PID 参数
-            P_angle.P = 5;
-						P_angle.I = 0;
-						P_angle.D = 0;
-
-            // 计算 Q 轴电压
-            float error = shaft_angle - target_angle;
-            
-            error = _constrain(error, -10.0f, 10.0f); // 限制误差范围
-            voltage.q = PIDoperator(&P_angle, error);
-            voltage.q = _constrain(voltage.q, -12.0f, 12.0f); // 限制电压范围
-        
-            // // Define an acceptable error threshold
-            // float error_threshold = 0.05f; // Adjust as needed
-
-            // if (fabs(error) > error_threshold) {
-            //     // Determine rotation direction
-            //     float direction = (error > 0) ? 1.0f : -1.0f; // Positive for forward, negative for reverse
-
-            //     // Apply a control voltage to correct the position
-            //     voltage.q = PIDoperator(&P_angle, fabs(error)) * direction;
-            //     voltage.q = _constrain(voltage.q, -12.0f, 12.0f); // Limit voltage
-            // } else {
-            //     // Maintain the position by setting a low holding torque
-            //     voltage.q = 0.5f * ((shaft_angle > target_angle) ? -1.0f : 1.0f); // Adjust holding force based on position
-            // }
-
-            // 调试输出
-            //printf("Shaft Angle: %.3f, Target Angle: %.3f, Voltage Q: %.3f, Error: %.3f\n",
-                   //shaft_angle, target_angle, voltage.q, error);
-            break;
-        
+			printf("case 3: %.3f,%.3f\n",shaft_angle,electrical_angle); // 可选的调试输出，打印轴角度
+			voltage.q =0.5;
+			voltage.d =0;
+		  break;
+    case 4:
+			P_angle.P = 5;
+			P_angle.I = 0;
+			P_angle.D = 0;		
+			voltage.q = PIDoperator(&P_angle, (shaft_angle - target_angle)); 		
+//		  printf("%.3f,%.3f,%.3f\n",shaft_angle,shaft_velocity,voltage.q); // 可选的调试输出，打印轴角度
+			break;
 	}
 	
 	shaft_angle = getAngle();
@@ -812,45 +781,74 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 								break;
 
             case CMD_STATE_RECEIVE_DATA_B:
-                if (received_char == ';'&&cmd_idx==6) 
-								{
-                    cmd_buffer[cmd_idx++] = received_char;
-                    cmd_buffer[cmd_idx] = '\0'; // 字符串终止符
+							if (received_char == ';') 
+							{
+									cmd_buffer[cmd_idx++] = received_char;
+									cmd_buffer[cmd_idx] = '\0'; // Null terminate
 
-                    // 解析B命令
-                    received_command = CMD_SET_REDUCTION_RATIO;
+									// Manually parse "B=1234;" format
+									if (cmd_idx >= 4 && cmd_buffer[0] == 'B' && cmd_buffer[1] == '=') 
+									{
+											uint32_t ratio = 0;
+											uint8_t digit_count = 0;
+											
+											// Start reading digits after 'B='
+											for (uint8_t i = 2; i < cmd_idx - 1; i++) 
+											{
+													char c = cmd_buffer[i];
+													if (c >= '0' && c <= '9') 
+													{
+															ratio = ratio * 10 + (c - '0');
+															digit_count++;
+													}
+													else 
+													{
+															printf("Invalid digit in ratio\r\n");
+															goto reset_state; // Invalid character, reset
+													}
+											}
 
-										reduction_ratio = (cmd_buffer[2]-'0')*1000 +(cmd_buffer[3]-'0')*100 +(cmd_buffer[4]-'0')*10 +(cmd_buffer[5]-'0')*1 ;
-                    // 限制减速比范围
-                    if (reduction_ratio < 1) reduction_ratio = 1;
-                    if (reduction_ratio > 1000) reduction_ratio = 1000;
+											if (digit_count > 0) 
+											{
+													// Apply limits
+													if (ratio < 1) ratio = 1;
+													if (ratio > 1000) ratio = 1000;
 
-                    printf("Set Reduction Ratio: %d\r\n", reduction_ratio);
+													reduction_ratio = ratio;
+													printf("Set Reduction Ratio: %d\r\n", reduction_ratio);
+													command_ready = 1;
+											}
+											else 
+											{
+													printf("No valid digits after B=\r\n");
+											}
+									}
+									else 
+									{
+											printf("Invalid B command format (expected 'B=...;')\r\n");
+									}
 
-                    command_ready = 1;
-
-                    // 重置状态机
-                    cmd_state = CMD_STATE_IDLE;
-                    cmd_idx = 0;
-                }
-                else 
-								{
-                    // 检查数据长度是否超出
-                    if (cmd_idx < (CMD_BUFFER_SIZE_B - 1))
-										{
-
+					reset_state:
+									// Reset state machine
+									cmd_state = CMD_STATE_IDLE;
+									cmd_idx = 0;
+							}
+							else 
+							{
+									// Check buffer space
+									if (cmd_idx < (CMD_BUFFER_SIZE_B - 1)) 
+									{
 											cmd_buffer[cmd_idx++] = received_char;
-                    }
-										else 
-										{
-												// 非法数据字符，重置状态机
-												cmd_state = CMD_STATE_IDLE;
-												cmd_idx = 0;
-										}
-                }
+									}
+									else 
+									{
+											printf("Error: Command too long\r\n");
+											cmd_state = CMD_STATE_IDLE;
+											cmd_idx = 0;
+									}
+							}
+							break;
 
-				
-                break;
             case CMD_STATE_RECEIVE_DATA_E:
                 if (received_char == ';' && cmd_idx == 3) 
                 {
