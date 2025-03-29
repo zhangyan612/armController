@@ -57,6 +57,42 @@ def Move_Motor(id, pwm, time):
 # if count != 0:  # 如果接收到的数据不空
 #     recv_data = ser.read(count)  # 读取接收到的数据
 #     print(recv_data)
+def shoulderRight(turn, time_value):
+    if turn == "left":
+        id_value = '06'
+        pwm_value = 5000  # 松
+        Move_Motor(id_value, pwm_value, time_value)
+        time.sleep(0.01)
+        id_value = '01'
+        pwm_value = 5000  # 拉
+        Move_Motor(id_value, pwm_value, time_value)
+    if turn == "right":
+        id_value = '01'
+        pwm_value = 0  # 松
+        Move_Motor(id_value, pwm_value, time_value)
+        time.sleep(0.01)
+        id_value = '06'
+        pwm_value = 0 # 拉
+        Move_Motor(id_value, pwm_value, time_value)
+
+
+def lowerRight(turn, time_value):
+    if turn == "left":
+        id_value = '04'
+        pwm_value = 0 # 松
+        Move_Motor(id_value, pwm_value, time_value)
+        time.sleep(0.01)
+        id_value = '05'
+        pwm_value = 5000 # 拉
+        Move_Motor(id_value, pwm_value, time_value)
+    if turn == "right":
+        id_value = '05'
+        pwm_value = 0  # 松
+        Move_Motor(id_value, pwm_value, time_value)
+        time.sleep(0.01)
+        id_value = '04'
+        pwm_value = 5000 # 拉
+        Move_Motor(id_value, pwm_value, time_value)
 
 
 if __name__ == "__main__":
@@ -68,31 +104,64 @@ if __name__ == "__main__":
     # 2000 is the divider
     #small linear motor 1- 5000
 
-    # id_value = '01'
-    # # pwm_value = 5000  # 拉
-    # pwm_value = 1000  # 松
+    timeChange = 2
 
-    # time_value = 5
+    # shoulderRight("right", timeChange)
+    # shoulderRight("left", timeChange)
+    # lowerRight("right", timeChange)
+    lowerRight("left", timeChange)
+    
+
+    # id_value = '06'
+    # pwm_value = 0 # 拉
+    # # pwm_value = 5000  # 松
+
+    # time_value = timeChange
+    # Move_Motor(id_value, pwm_value, time_value)
+
+    # time.sleep(0.01)
+
+    # id_value = '01'
+    # pwm_value = 5000  # 拉
+    # # pwm_value = 1000  # 松
+
+    # time_value = timeChange
     # Move_Motor(id_value, pwm_value, time_value)
     # time.sleep(0.01)
+
 
     # id_value = '02'
-    # # pwm_value = 1000  # 松
-    # pwm_value = 5000  # 拉
+    # pwm_value = 1000  # 松
+    # # pwm_value = 5000  # 拉
     # time_value = 5
     # Move_Motor(id_value, pwm_value, time_value)
     # time.sleep(0.01)
 
-    id_value = '03'
-    # pwm_value = 1000 # 拉
-    pwm_value = 5000 # 松
-    time_value = 5
-    Move_Motor(id_value, pwm_value, time_value)
+    # id_value = '03'
+    # pwm_value = 0  # 松
+    # # pwm_value = 5000  # 拉
+    # time_value = 5
+    # Move_Motor(id_value, pwm_value, time_value)
+    # time.sleep(5)
 
-    time.sleep(0.01)
+    # id_value = '03'
+    # pwm_value = 3000  # 拉
+    # time_value = 5
+    # Move_Motor(id_value, pwm_value, time_value)
+    # time.sleep(0.01)
 
-    id_value = '04'
-    pwm_value = 1000 # 拉
-    time_value = 5
-    Move_Motor(id_value, pwm_value, time_value)
+
+    # id_value = '04'
+    # pwm_value = 1000 # 松
+    # # pwm_value = 5000 # 拉
+    # time_value = 3
+    # Move_Motor(id_value, pwm_value, time_value)
+
+    # time.sleep(0.01)
+
+    # id_value = '05'
+    # # pwm_value = 0 # 松
+    # pwm_value = 5000 # 拉
+    # time_value = 3
+    # Move_Motor(id_value, pwm_value, time_value)
 
