@@ -113,6 +113,14 @@ def shoulderLeft(turn, time_value):
 
 def lowerLeft(turn, time_value):
     if turn == "left":
+        id_value = '08'
+        pwm_value = 5000  # 松
+        Move_Motor(id_value, pwm_value, time_value)
+        id_value = '07'
+        pwm_value = 5000 # 拉
+        Move_Motor(id_value, pwm_value, time_value)
+
+    if turn == "right":
         id_value = '07'
         pwm_value = 0 # 松
         # pwm_value = 5000 # 拉
@@ -120,13 +128,6 @@ def lowerLeft(turn, time_value):
         id_value = '08'
         pwm_value = 0 # 拉
         # pwm_value = 5000 # 松
-        Move_Motor(id_value, pwm_value, time_value)
-    if turn == "right":
-        id_value = '08'
-        pwm_value = 5000  # 松
-        Move_Motor(id_value, pwm_value, time_value)
-        id_value = '07'
-        pwm_value = 5000 # 拉
         Move_Motor(id_value, pwm_value, time_value)
 
 
@@ -147,7 +148,7 @@ if __name__ == "__main__":
     # lowerRight("left", timeChange)
     # shoulderLeft("right", timeChange)
     # shoulderLeft("left", timeChange)
-    # lowerLeft("right", timeChange)
+    # lowerLeft("left", timeChange)
 
     # id_value = '06'
     # pwm_value = 0 # 拉
@@ -208,13 +209,13 @@ if __name__ == "__main__":
     # time_value = 2
     # Move_Motor(id_value, pwm_value, time_value)
 
-    # id_value = '07'
-    # # pwm_value = 0 # 松
-    # pwm_value = 5000 # 拉
-    # time_value = 3
-    # Move_Motor(id_value, pwm_value, time_value)
-    # id_value = '08'
-    # pwm_value = 0 # 拉
-    # # pwm_value = 5000 # 松
-    # time_value = 3
-    # Move_Motor(id_value, pwm_value, time_value)
+    id_value = '07'
+    # pwm_value = 0 # 松
+    pwm_value = 5000 # 拉
+    time_value = 3
+    Move_Motor(id_value, pwm_value, time_value)
+    id_value = '08'
+    pwm_value = 0 # 拉
+    # pwm_value = 5000 # 松
+    time_value = 3
+    Move_Motor(id_value, pwm_value, time_value)
