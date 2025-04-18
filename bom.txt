@@ -19,6 +19,12 @@ M3.5 X 60 - 12
 M3 X 8 
 M3 X 10
 
+
+Shoulder Twist 
+M2 X 16 
+M3 X 12 OR 14
+M3 X 6
+
 Xintuo Motor 
 M2.5 X 8 
 
