@@ -19,7 +19,7 @@ else:
 
 def construct_message(id_value, pwm_value, time_value):
     # 检查pwm_value和time_value是否为整数
-    if not (isinstance(pwm_value, int) and isinstance(time_value, int)):
+    if not (isinstance(pwm_value, int) and isinstance(time_value, int)): # and isinstance(time_value, int)):
         raise ValueError("PWM and Time values must be integers.")
     pwm_str = f"{pwm_value:04}"  # Format PWM as a 4-digit string
     time_str = f"{time_value:05}"  # Format Time as a 4-digit string
@@ -161,32 +161,38 @@ if __name__ == "__main__":
 
     # id_value = '01'
     # pwm_value = 5000  # 拉
-    # # pwm_value = 1000  # 松
+    # # pwm_value = 0  # 松
 
+    # time_value = timeChange
+    # Move_Motor(id_value, pwm_value, time_value)
+    # # time.sleep(0.01)
+
+
+    # id_value = '02'
+    # # pwm_value = 0  # 松
+    # pwm_value = 5000  # 拉
     # time_value = timeChange
     # Move_Motor(id_value, pwm_value, time_value)
     # time.sleep(0.01)
 
-
     # id_value = '02'
-    # pwm_value = 1000  # 松
-    # # pwm_value = 5000  # 拉
-    # time_value = 5
+    # # pwm_value = 0  # 松
+    # pwm_value = 0  # 拉
+    # time_value = timeChange
     # Move_Motor(id_value, pwm_value, time_value)
-    # time.sleep(0.01)
 
-    # id_value = '03'
-    # pwm_value = 0  # 松
-    # # pwm_value = 5000  # 拉
-    # time_value = 5
+    # id_value = '05'
+    # # pwm_value = 0  # 松
+    # pwm_value = 5000  # 拉
+    # time_value = 1
     # Move_Motor(id_value, pwm_value, time_value)
-    # time.sleep(5)
 
-    # id_value = '03'
-    # pwm_value = 3000  # 拉
-    # time_value = 5
-    # Move_Motor(id_value, pwm_value, time_value)
-    # time.sleep(0.01)
+
+    id_value = '04'
+    pwm_value = 3000  # 拉
+    time_value = 1
+    Move_Motor(id_value, pwm_value, time_value)
+    time.sleep(0.01)
 
 
     # id_value = '04'
@@ -209,13 +215,13 @@ if __name__ == "__main__":
     # time_value = 2
     # Move_Motor(id_value, pwm_value, time_value)
 
-    id_value = '07'
-    # pwm_value = 0 # 松
-    pwm_value = 5000 # 拉
-    time_value = 3
-    Move_Motor(id_value, pwm_value, time_value)
-    id_value = '08'
-    pwm_value = 0 # 拉
-    # pwm_value = 5000 # 松
-    time_value = 3
-    Move_Motor(id_value, pwm_value, time_value)
+    # id_value = '07'
+    # # pwm_value = 0 # 松
+    # pwm_value = 5000 # 拉
+    # time_value = 0.5
+    # Move_Motor(id_value, pwm_value, time_value)
+    # id_value = '08'
+    # pwm_value = 0 # 拉
+    # # pwm_value = 5000 # 松
+    # time_value = 3
+    # Move_Motor(id_value, pwm_value, time_value)

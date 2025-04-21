@@ -149,8 +149,10 @@ if __name__ == "__main__":
     mc = MotorController(port='COM6')
     try:
         mc.motor_enable(True)
-        # mc.set_reduction_ratio(10)
-        mc.set_angle(360)    # 正转3圈
+        mc.set_reduction_ratio(80)
+
+        # TODO: 设置关节限位
+        mc.set_angle(0)    # 度数 0 - 360
         # print("Current Q:", mc.query_rotation())
         # mc.set_angle(-540)    # 反转1.5圈
         a = mc.query_encoder_angle()

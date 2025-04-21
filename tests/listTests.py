@@ -22,3 +22,17 @@ list2 =[-0.10986663411358677, 0, 0.03295999023407697, -67.01864680928986, 7.7565
 
 
 print(compare_lists(list1, list2))
+
+
+
+
+def degrees_to_value(degrees):
+    return round(degrees * 6.28 / 360, 2)
+
+# 示例
+# print(degrees_to_value(180))  # 输出 3.14
+# print(degrees_to_value(360))  # 输出 6.28
+# print(degrees_to_value(90))   # 输出 1.57
+
+
+print(degrees_to_value(-31))  # 输出 6.28
