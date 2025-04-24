@@ -38,3 +38,9 @@ odrv0.axis0.controller.input_pos=0
 
 
 try odrive can 
+
+
+
+based on following code and documentation, generate python functions based on CAN for motors
+
+Reboot, Get_Error，Clear_Errors, Set_Linear_Count, Get_Torques，Get_Powers, Get_Encoder_Estimates， Heartbeat, Estop

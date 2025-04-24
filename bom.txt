@@ -100,3 +100,25 @@ M3 X 45
 
 
 脚裸
+
+
+
+
+
+
+20000 / 12 /5
+
+
+
+把人类从体力劳动中解放出来
+
+
+
+Evolutionary algorithms
+
+Given a language command, environment observation, Find solution 
+
+Seed program
+take sunshine and soil as input, grow into a tree as a software. 
+
+different robot will grow different trees depending on their tasks assigned 

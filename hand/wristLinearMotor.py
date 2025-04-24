@@ -45,12 +45,27 @@ def Shrink():
     #     time.sleep(0.9)
 
 # pwm 500 small, pwm 2500 big
+# 定义一个函数Move_Motor，用于控制电机
+# def Move_Motor(id, pwm, duration):
+#     # 调用construct_message函数，传入id、pwm、duration参数，生成消息
+#     msg = construct_message(id, pwm, duration)
+#     # 打印消息
+#     print(msg)
+#     # 将消息写入串口
+#     ser.write(msg)
+#     # 等待0.01秒
+#     time.sleep(0.01)
+
 def Move_Motor(id, pwm, duration):
+    # Limit PWM if ID is 1, 2, 3, or 4
+    limitPWMList = {'03', '06'}
+    if id not in limitPWMList:
+        pwm = max(1580, min(pwm, 2420))  # Ensure PWM stays within range
+    
     msg = construct_message(id, pwm, duration)
     print(msg)
     ser.write(msg)
     time.sleep(0.01)
-
 
 # # ser.flushInput()  # 清空接收缓存
 # # portRead()  # 将单线串口配置为输入
@@ -140,7 +155,50 @@ if __name__ == "__main__":
     # 2000 is the divider
     #small linear motor 1- 5000
 
-    timeChange = 2
+    # PWM 电压计算方式： 输入电压/2000 x(设定值-2000)
+    # 5v大概是2420的样子
+    # 2300 大概 3.6v
+    timeChange = 5
+    id_value = '02'
+    pwm_value = 1700  # 拉  -6
+    # pwm_value = 2016  # 拉  -6
+    # pwm_value = 0  # 松
+    # pwm_value = 1700  # 拉  6
+    
+    time_value = timeChange
+    Move_Motor(id_value, pwm_value, time_value)
+    time.sleep(0.01)
+
+    # timeChange = 10
+    # id_value = '02'
+    # # pwm_value = 1580  # 松
+    # pwm_value = 2600  # 拉  -6
+    
+    # time_value = timeChange
+    # Move_Motor(id_value, pwm_value, time_value)
+
+
+    # timeChange = 2
+    # id_value = '03'
+    # # pwm_value = 2100  # 拉  -6
+    # # pwm_value = 2016  # 拉  -6
+    # pwm_value = 0  # 松
+    # # pwm_value = 5000  # 拉  6
+    
+    # time_value = timeChange
+    # Move_Motor(id_value, pwm_value, time_value)
+
+
+    # timeChange = 2
+    # id_value = '04'
+    # # pwm_value = 2100  # 拉  -6
+    # # pwm_value = 2016  # 拉  -6
+    # pwm_value = 2500  # 松
+    # # pwm_value = 5000  # 拉  6
+    
+    # time_value = timeChange
+    # Move_Motor(id_value, pwm_value, time_value)
+
 
     # shoulderRight("right", timeChange)
     # shoulderRight("left", timeChange)
@@ -188,11 +246,11 @@ if __name__ == "__main__":
     # Move_Motor(id_value, pwm_value, time_value)
 
 
-    id_value = '04'
-    pwm_value = 3000  # 拉
-    time_value = 1
-    Move_Motor(id_value, pwm_value, time_value)
-    time.sleep(0.01)
+    # id_value = '04'
+    # pwm_value = 3000  # 拉
+    # time_value = 1
+    # Move_Motor(id_value, pwm_value, time_value)
+    # time.sleep(0.01)
 
 
     # id_value = '04'

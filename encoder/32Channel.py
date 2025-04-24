@@ -47,9 +47,9 @@ def schedule_task(interval):
     try:
         while True:
             percentages = process_serial_commands()
-            # a1Pos = percentages[0]
-            # print(a1Pos)
-            print(percentages)
+            a1Pos = percentages[6]
+            print(a1Pos)
+            # print(percentage                                                                   s)
 
             time.sleep(interval)
 
