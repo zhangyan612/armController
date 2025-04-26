@@ -62,7 +62,16 @@ class Robot:
             pos.append(self.encoder_to_rad(self.motor_control.read_position_output(motor["id"])))
         return np.array(pos)
     
-    
+
+    def restrict_motor_range(self, value, lower=-2, upper=2):
+        return max(lower, min(value, upper))
+
+    # motor 1 180 (-3.14 to 3.14)
+    # motor 2 # -2 to 2
+    # motor 3  # -2.2 to 2.25 
+    # motor 4 180
+    # motor 5 range [-2,2]
+    # motor 6 180
     def write_position(self, pos, vel):
         # pos: rad, vel: rad/s
         motor_count = len(self.motor_list)
@@ -70,6 +79,10 @@ class Robot:
             raise Exception("The number of pos/vel is inconsistent with the number of motors!")
         for i in range(motor_count):
             motor = self.motor_list[i]
+            pos[1] = self.restrict_motor_range(pos[1])
+            pos[2] = self.restrict_motor_range(pos[2])
+            pos[4] = self.restrict_motor_range(pos[4])
+            print(pos)
             self.motor_control.write_position(motor["id"], int(motor["ratio"] * self.rad_to_encoder(pos[i])), int(vel[i] * motor["ratio"] * 60 / (2 * math.pi)))
             print(f"Motor {motor['id']} set to position {int(motor['ratio'] * self.rad_to_encoder(pos[i]))} rad with velocity {int(vel[i] * motor['ratio'] * 60 / (2 * math.pi))} rad/s")
         print("Running write position command ...")
@@ -82,11 +95,10 @@ class Robot:
             time.sleep(0.02)
 
 
-    def is_running (self):
+    def is_running(self):
         for motor in self.motor_list:
             if self.motor_control.read_running_state(motor["id"]):
                 return True
-            # 将pos和vel转换为电机编码器的值
         return False
 
 
@@ -107,13 +119,6 @@ if __name__ == "__main__":
     # robot.register_motor(2, 101)
     robot.register_motor(6, 101)
     
-    # motor 1 180
-
-    # motor 2 # -2 to 2
-    # motor 3  # -2.2 to 2.25 
-    # motor 4 180
-    # motor 5 range [-2,2]
-    # motor 6 180
 
     # 1654220
     # 3307940

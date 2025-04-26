@@ -56,8 +56,14 @@ def schedule_task(interval):
     robot = Robot("COM8", 2250000)
     # 设置电机ID与减速比
     # robot.register_motor(2, 101)
+    robot.register_motor(1, 101)
+    robot.register_motor(2, 101)
+    robot.register_motor(3, 101)
+    robot.register_motor(4, 101)
+    robot.register_motor(5, 101)
     robot.register_motor(6, 101)
-    vel = np.array([2.5])
+
+    vel = np.array([2.5, 2.5, 2.5, 2.5, 2.5, 2.5])
     robot.servo_enable()
 
     try:
@@ -67,11 +73,11 @@ def schedule_task(interval):
             # print(a1Pos)
             mapped_a1Pos = [map_to_motor(value) for value in a1Pos]
             print(mapped_a1Pos)
-            pos1 = np.array([mapped_a1Pos[0]])
-            robot.write_position(pos1, vel)
+            # pos1 = np.array([mapped_a1Pos])
+            # print(mapped_a1Pos[2])
+            robot.write_position(mapped_a1Pos, vel)
 
             # print(percentages)
-
             time.sleep(interval)
 
     except KeyboardInterrupt:
