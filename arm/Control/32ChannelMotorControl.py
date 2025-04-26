@@ -1,8 +1,11 @@
 
 
 
+import numpy as np
 import serial
 import time
+from Actutor import Robot
+
 
 def hex_to_percentage(hex_data):
     percentages = []
@@ -50,6 +53,13 @@ def map_to_motor(value, in_min=0, in_max=9940, out_min=-3.14, out_max=3.14):
     return (value - in_min) * (out_max - out_min) / (in_max - in_min) + out_min
 
 def schedule_task(interval):
+    robot = Robot("COM8", 2250000)
+    # 设置电机ID与减速比
+    # robot.register_motor(2, 101)
+    robot.register_motor(6, 101)
+    vel = np.array([2.5])
+    robot.servo_enable()
+
     try:
         while True:
             percentages = process_serial_commands()
@@ -57,6 +67,8 @@ def schedule_task(interval):
             # print(a1Pos)
             mapped_a1Pos = [map_to_motor(value) for value in a1Pos]
             print(mapped_a1Pos)
+            pos1 = np.array([mapped_a1Pos[0]])
+            robot.write_position(pos1, vel)
 
             # print(percentages)
 

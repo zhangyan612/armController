@@ -158,12 +158,12 @@ if __name__ == "__main__":
     # PWM 电压计算方式： 输入电压/2000 x(设定值-2000)
     # 5v大概是2420的样子
     # 2300 大概 3.6v
-    timeChange = 5
-    id_value = '02'
-    pwm_value = 1700  # 拉  -6
+    timeChange = 2
+    id_value = '07'
+    # pwm_value = 1700  # 拉  -6
     # pwm_value = 2016  # 拉  -6
     # pwm_value = 0  # 松
-    # pwm_value = 1700  # 拉  6
+    pwm_value = 2300  # 拉  6
     
     time_value = timeChange
     Move_Motor(id_value, pwm_value, time_value)
