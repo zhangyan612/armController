@@ -82,6 +82,7 @@ def schedule_task(interval):
 
     except KeyboardInterrupt:
         print("Exiting...")
+        robot.servo_disable()
 
 # Start the task scheduling every 5 seconds
 schedule_task(0.1)

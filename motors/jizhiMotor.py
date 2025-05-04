@@ -22,22 +22,22 @@ def main():
                     continue
                 
                 # 验证命令格式
-                if command_re.match(user_input):
-                    # 构造完整命令（自动添加\n\r结尾）
-                    full_command = f"{user_input}\n\r"
-                    ser.write(full_command.encode('ascii'))
-                    print(f"Sent: {user_input}")
-                    
-                    # 读取并打印返回信息
-                    response = ser.readline().decode('ascii').strip()
-                    if response:
-                        print(f"Received: {response}")
-                    else:
-                        print("No response received.")
+                # if command_re.match(user_input):
+                # 构造完整命令（自动添加\n\r结尾）
+                full_command = f"{user_input}\r\ne"
+                ser.write(full_command.encode('ascii'))
+                print(f"Sent: {user_input}")
+                
+                # 读取并打印返回信息
+                response = ser.readline().decode('ascii').strip()
+                if response:
+                    print(f"Received: {response}")
                 else:
-                    print("Invalid command! Valid formats:")
-                    print("- m/b followed by float (e.g. m10.0, b-5.5)")
-                    print("- Single letter commands: r, p, s, z, x, e, c")
+                    print("No response received.")
+                # else:
+                #     print("Invalid command! Valid formats:")
+                #     print("- m/b followed by float (e.g. m10.0, b-5.5)")
+                #     print("- Single letter commands: r, p, s, z, x, e, c")
     
     except serial.SerialException as e:
         print(f"Serial port error: {e}")

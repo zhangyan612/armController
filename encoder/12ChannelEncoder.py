@@ -27,8 +27,8 @@ def process_serial_commands():
     try:
         for command in commands:
             ser.write(bytes([command]))
-            response = read_serial_data(ser, 66)  # 32 channels
-            # response = read_serial_data(ser, 22)  # 16 channel
+            # response = read_serial_data(ser, 66)  # 32 channels
+            response = read_serial_data(ser, 22)  # 16 channel
 
             if command == 0xEE:
                 percentages = hex_to_percentage(response[2:-2])  # Remove start and end markers

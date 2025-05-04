@@ -83,6 +83,7 @@ class Robot:
             pos[2] = self.restrict_motor_range(pos[2])
             pos[4] = self.restrict_motor_range(pos[4])
             print(pos)
+            # if move less than 0.1 degree, do not move 
             self.motor_control.write_position(motor["id"], int(motor["ratio"] * self.rad_to_encoder(pos[i])), int(vel[i] * motor["ratio"] * 60 / (2 * math.pi)))
             print(f"Motor {motor['id']} set to position {int(motor['ratio'] * self.rad_to_encoder(pos[i]))} rad with velocity {int(vel[i] * motor['ratio'] * 60 / (2 * math.pi))} rad/s")
         print("Running write position command ...")

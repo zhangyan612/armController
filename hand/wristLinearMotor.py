@@ -3,7 +3,7 @@ import serial
 
 # Create a serial object
 ser = serial.Serial(
-    port='COM10',  # replace with your port
+    port='COM9',  # replace with your port
     baudrate=115200,
     parity=serial.PARITY_NONE,
     stopbits=serial.STOPBITS_ONE,
@@ -159,15 +159,15 @@ if __name__ == "__main__":
     # 5v大概是2420的样子
     # 2300 大概 3.6v
     timeChange = 2
-    id_value = '07'
-    # pwm_value = 1700  # 拉  -6
-    # pwm_value = 2016  # 拉  -6
-    # pwm_value = 0  # 松
-    pwm_value = 2300  # 拉  6
+    # id_value = '07'
+    # # pwm_value = 1700  # 拉  -6
+    # # pwm_value = 2016  # 拉  -6
+    # # pwm_value = 0  # 松
+    # pwm_value = 2300  # 拉  6
     
-    time_value = timeChange
-    Move_Motor(id_value, pwm_value, time_value)
-    time.sleep(0.01)
+    # time_value = timeChange
+    # Move_Motor(id_value, pwm_value, time_value)
+    # time.sleep(0.01)
 
     # timeChange = 10
     # id_value = '02'
@@ -273,11 +273,11 @@ if __name__ == "__main__":
     # time_value = 2
     # Move_Motor(id_value, pwm_value, time_value)
 
-    # id_value = '07'
-    # # pwm_value = 0 # 松
-    # pwm_value = 5000 # 拉
-    # time_value = 0.5
-    # Move_Motor(id_value, pwm_value, time_value)
+    id_value = '01'
+    # pwm_value = 0 # 松
+    pwm_value = 5000 # 拉
+    time_value = 5
+    Move_Motor(id_value, pwm_value, time_value)
     # id_value = '08'
     # pwm_value = 0 # 拉
     # # pwm_value = 5000 # 松
