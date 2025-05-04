@@ -1,0 +1,81 @@
+
+ji zhi motor
+
+figuration Options 
+
+ prefix parameter                       min   max    current value
+
+ b    Current Bandwidth (Hz)          100   2000   1000.0
+
+ p    P (Position)                    1     100    50.0
+
+ d    D (Position)                    0     100    50.0
+
+ x    MAX(Position)                   1     100    1.0
+
+ f    CAN FD EN                       0     1      1
+ VToBL 
+
+
+
+ i    CAN ID                          0     127    2
+
+ m    CAN Master ID                   0     127    100
+
+ .    CW-0-CCW-1                      0     1      1
+
+ g    STEP CONFIG                     1     360    45
+
+ l    Current Limit (A)               0.0   4.0    3.0
+
+ t    CAN Timeout (cycles)(0 = none)  0     100000 0
+
+ r    CAN BitRate                      100000   1000000   0
+
+
+
+ To change a value, type 'prefix''value''ENTER'
+
+ i.e. 'b1000''ENTER'
+
+
+
+
+ e - Exit to Menu 
+
+Working Motor
+ prefix parameter                       min   max    current value
+
+ b    Current Bandwidth (Hz)          100   2000   1000.0
+
+ p    P (Position)                    1     100    50.0
+
+ d    D (Position)                    0     100    50.0
+
+ x    MAX(Position)                   1     100    1.0
+
+ f    CAN FD EN                       0     1      0
+
+ i    CAN ID                          0     127    1
+
+ m    CAN Master ID                   0     127    0
+
+ .    CW-0-CCW-1                      0     1      0
+
+ g    STEP CONFIG                     1     360    45
+
+ l    Current Limit (A)               0.0   4.0    3.0
+
+ r    CAN BitRate                      100000   1000000   1000000
+
+
+
+ To change a value, type 'prefix''value''ENTER'
+
+ i.e. 'b1000''ENTER'
+
+
+
+
+ e - Exit to Menu 
+

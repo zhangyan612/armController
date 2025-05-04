@@ -45,3 +45,5 @@ https://kernel.ubuntu.com/~kernel-ppa/mainline/v5.0.21/linux-modules-5.0.21-0500
 二、拷贝功能包到工作空间并编译
 功能包【ddynamic_reconfigure-kinetic-devel】
 功能包【realsense-ros-development】
+
+

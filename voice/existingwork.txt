@@ -1,0 +1,14 @@
+
+
+
+https://github.com/huggingface/speech-to-speech
+
+
+
+TTS Leaderboard
+https://huggingface.co/hexgrad/Kokoro-82M
+
+https://github.com/gpt-omni/mini-omni
+
+
+https://huggingface.co/spaces/TTS-AGI/TTS-Arena

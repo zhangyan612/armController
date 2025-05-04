@@ -1,0 +1,7 @@
+ros launch robot 
+
+ros start web cam
+
+ros launch websocket server
+
+then open the html ui 
