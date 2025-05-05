@@ -1,12 +1,12 @@
 import can
+import time 
 
 class MotorController:
-    def __init__(self, interface='socketcan', can_channel='can0', bitrate=100000):
-        # CAN总线初始化
+    def __init__(self, interface='pcan', can_channel='PCAN_USBBUS1', bitrate=100000):
+        # CAN总线初始化（Windows兼容配置）
         self.bus = can.interface.Bus(
-            interface = interface,
+            interface=interface,
             channel=can_channel,
-            # bustype='socketcan',
             bitrate=bitrate
         )
         
@@ -68,34 +68,91 @@ class MotorController:
             'velocity': velocity,
             'current': current
         }
+    
+    def send_raw_command(self, can_id, data_bytes):
+        """发送原始数据指令（匹配上位机格式）"""
+        message = can.Message(
+            arbitration_id=can_id,
+            data=data_bytes,
+            is_extended_id=False
+        )
+        try:
+            self.bus.send(message)
+            print(f"成功发送原始指令: ID=0x{can_id:X}, Data={data_bytes.hex().upper()}")
+        except can.CanError as e:
+            print(f"发送失败: {e}")
+
+    def send_initialization(self):
+        """发送初始化命令（连续两次FF FF FF FF FF FF FF FD）"""
+        init_data = bytes.fromhex("FF FF FF FF FF FF FF FD")
+        for _ in range(2):  # 发送两次初始化命令
+            message = can.Message(
+                arbitration_id=0x1,  # CAN ID = 1
+                data=init_data,
+                is_extended_id=False
+            )
+            try:
+                self.bus.send(message)
+                print(f"成功发送初始化指令: {init_data.hex().upper()}")
+                time.sleep(0.05)  # 50ms间隔
+            except can.CanError as e:
+                print(f"初始化发送失败: {e}")
 
     def receive_loop(self):
-        """持续接收数据的循环"""
+        """增强型接收循环"""
+        print("启动接收监听...")
         while True:
-            msg = self.bus.recv(1)  # 1秒超时
-            if msg is not None:
-                try:
-                    data = self.parse_rx_data(msg.data)
-                    print(f"收到电机反馈 - 位置: {data['position']}, "
-                          f"速度: {data['velocity']}, "
-                          f"电流: {data['current']}")
-                except Exception as e:
-                    print(f"数据解析错误: {e}")
+            msg = self.bus.recv(timeout=2)  # 增加超时时间
+            if msg:
+                print(f"收到原始数据: ID=0x{msg.arbitration_id:X}, "
+                      f"数据: {msg.data.hex().upper()}, "
+                      f"时间戳: {msg.timestamp}")
+            else:
+                print("等待数据中...")
+
+    def receive_response(self):
+        """接收响应数据（带增强解析）"""
+        print("启动响应监听...")
+        start_time = time.time()
+        while time.time() - start_time < 5:  # 5秒监听窗口
+            msg = self.bus.recv(timeout=1)
+            if msg:
+                if len(msg.data) == 6:  # 确认6字节响应
+                    print(f"收到有效响应: ID=0x{msg.arbitration_id:X}")
+                    print(f"原始数据: {msg.data.hex().upper()}")
+                    self._parse_response(msg.data)
+                else:
+                    print(f"收到非常规数据: {msg.data.hex().upper()}")
+            else:
+                print("等待响应中...")
+
+    def _parse_response(self, data):
+        """解析6字节响应数据"""
+        # 根据上位机数据格式解析（示例数据：01 E3 65 7F F7 FC）
+        status = {
+            'byte1': data[0],
+            'byte2': data[1],
+            'byte3': data[2],
+            'byte4': data[3],
+            'byte5': data[4],
+            'byte6': data[5]
+        }
+        print(f"解析结果: {status}")
+
 
 # 使用示例
 if __name__ == "__main__":
-    # 初始化控制器
-    mc = MotorController(can_channel='can0')
-    
-    # 发送位置控制命令（示例参数）
-    mc.send_position_command(
-        can_id=0x101,            # 目标CAN ID
-        pos=0x8000,              # 位置基准点
-        vel=0x900,               # 速度设置
-        Kp=0x800,                # 位置环Kp
-        Kd=0x800,                # 位置环Kd
-        current=0x900            # 力矩设置
+    # 初始化控制器（关键参数配置）
+    mc = MotorController(
+        interface='pcan',          # 硬件接口类型
+        can_channel='PCAN_USBBUS1', # 根据实际设备修改
+        bitrate=1000000            # 1Mbps波特率
     )
-    
-    # 启动接收循环（需要在另一个线程运行）
-    # mc.receive_loop()
+
+    # 执行初始化序列
+    mc.send_initialization()
+
+    # 启动响应接收
+    mc.receive_response()
+
+
