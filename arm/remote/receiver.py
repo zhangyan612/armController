@@ -8,7 +8,7 @@ last_pos = {'x': None, 'y': None}
 
 while True:
     try:
-        resp = requests.get(f"{CF_WORKER_URL}/latest", timeout=1)
+        resp = requests.get(f"{CF_WORKER_URL}/latest", timeout=10)
         if resp.status_code == 200:
             data = resp.json()
             x, y = data.get('x'), data.get('y')
