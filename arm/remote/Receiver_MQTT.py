@@ -17,7 +17,7 @@ def on_message(client, userdata, msg):
 
         if etype == 'move':
             print(f"Mouse moved to: {event['x']}, {event['y']}")
-            pyautogui.moveTo(event['x'], event['y'])
+            pyautogui.moveTo(event['x'], event['y'], duration=0)
 
         elif etype == 'mouse':
             pyautogui.moveTo(event['x'], event['y'])
