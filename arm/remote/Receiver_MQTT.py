@@ -1,6 +1,10 @@
+#！/usr/bin/env python3
 import json
 import paho.mqtt.client as mqtt
 import pyautogui
+
+# pip install paho-mqtt
+# pip install pyautogui
 
 MQTT_BROKER = "broker.mqttdashboard.com"
 MQTT_PORT = 1883
@@ -12,6 +16,7 @@ def on_message(client, userdata, msg):
         etype = event.get('type')
 
         if etype == 'move':
+            print(f"Mouse moved to: {event['x']}, {event['y']}")
             pyautogui.moveTo(event['x'], event['y'])
 
         elif etype == 'mouse':
