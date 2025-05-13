@@ -114,32 +114,32 @@ class MotorController:
             print(f"发送失败: {e}")
 
     def parse_response(self, data):
-        """解析电机响应数据"""
-        if len(data) != 8:
-            return {"error": "无效数据长度"}
+        """解析6字节反馈数据（示例：8000ABA000000A00）"""
+        try:
+            # 组合成64位数据（补充两个字节）
+            extended_data = data + b'\x00\x00'
+            value = struct.unpack('>Q', extended_data)[0]
             
-        # 解析位置（16位）
-        pos_code = (data[0] << 8) | data[1]
-        position = ((pos_code - 0x8000) / 0x8000) * 360 * self.Pmax
-        
-        # 解析速度（12位）
-        vel_high = data[2]
-        vel_low = (data[3] & 0xF0) >> 4
-        vel_code = (vel_high << 4) | vel_low
-        velocity = ((vel_code - 0x800) / 0x800) * self.Vmax
-        
-        # 解析电流（12位）
-        cur_high = data[3] & 0x0F
-        cur_low = data[4]
-        cur_code = (cur_high << 8) | cur_low
-        current = ((cur_code - 0x800) / 0x800) * self.Imax
-        
-        return {
-            "position_deg": round(position, 2),
-            "velocity_rads": round(velocity, 3),
-            "current_a": round(current, 4),
-            "raw_data": data.hex().upper()
-        }
+            # 位置解析（20位有符号）
+            position_raw = (value >> 44) & 0xFFFFF
+            position_deg = self._twos_complement(position_raw, 20) * 0.1
+            
+            # 速度解析（20位有符号）
+            velocity_raw = (value >> 24) & 0xFFFFF
+            velocity_rads = self._twos_complement(velocity_raw, 20) * 0.01
+            
+            # 电流解析（24位有符号）
+            current_raw = value & 0xFFFFFF
+            current_a = self._twos_complement(current_raw, 24) * 0.001
+            
+            return {
+                'position': f"{position_deg:.1f}°",
+                'velocity': f"{velocity_rads:.2f} rad/s",
+                'current': f"{current_a:.3f} A"
+            }
+        except Exception as e:
+            return {"error": f"6字节解析失败: {str(e)}"}
+
 
     def monitor(self, timeout=10):
         """监听电机反馈"""
@@ -161,10 +161,14 @@ if __name__ == "__main__":
     mc.send_command('start_motor')
     mc.monitor(timeout=3)
 
+    # # 测试位置超限（Pmax=1时设置361度）
+    # mc.send_position_command(degrees=361)
+    # # 预期收到raw_data显示0xFFFF
+
     # 测试位置命令（180度，100rad/s，2A，Kp=0x100，Kd=0x020）
     print("\n发送位置命令：")
     mc.send_position_command(
-        degrees=180,
+        degrees=340,
         max_speed=100,
         max_current=2,
         Kp=0x100,
@@ -172,13 +176,22 @@ if __name__ == "__main__":
     )
     mc.monitor(timeout=2)
     
-    # 测试速度命令（-50rad/s，1A）
-    print("\n发送速度命令：")
-    mc.send_speed_command(
-        target_speed=-50,
-        max_current=1
-    )
-    mc.monitor(timeout=2)
+    # mc.send_position_command(
+    #     degrees=360,
+    #     max_speed=100,
+    #     max_current=2,
+    #     Kp=0x100,
+    #     Kd=0x020
+    # )
+    # mc.monitor(timeout=2)
+
+    # # 测试速度命令（-50rad/s，1A）
+    # print("\n发送速度命令：")
+    # mc.send_speed_command(
+    #     target_speed=-50,
+    #     max_current=1
+    # )
+    # mc.monitor(timeout=2)
 
 
     mc.send_command('stop_motor')

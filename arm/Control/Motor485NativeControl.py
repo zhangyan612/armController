@@ -64,6 +64,7 @@ class MotorControl:
 
     def set_baudrate(self, mode: int) -> int:
         """寄存器 0x0001: 通信波特率 1-5"""
+        # 将mode写入寄存器0x0001
         self.write32(0x0001, mode)
         return self.read32(0x0001)
 
@@ -161,22 +162,35 @@ class MotorControl:
         """寄存器 0x0081: 位置模式运行（无减速）"""
         self.write32(0x0081, pos)
         return pos
+    
+    def move_accel(self, pos: int) -> int:
+        """位置模式有加减速（寄存器 0x0082）"""
+        self.write32(0x0082, pos)
+        return pos
+    
+    def enable(self):
+        self.write32(0x0010, 1)
+
+    def disable(self):
+        self.write32(0x0010, 0)
+
 
 # 测试代码
 if __name__ == '__main__':
     mc = MotorControl(port='COM8', baudrate=19200, device_id=0x01)
     try:
         print("Version Info:", mc.version_info())
-        # print("Set Baudrate to 2:", mc.set_baudrate(2))
-        # print("Set Address to 1:", mc.set_address(1))
         print("Temperature:", mc.read_temperature())
         print("Servo Status:", mc.servo_status())
         print("Position1:", mc.position1())
-        print("Speed:", mc.speed())
         print("Position2:", mc.position2())
-        print("Current:", mc.current())
         print("Run Status:", mc.run_status())
         print("Fault Code:", mc.fault_code())
+
+        # print("Set Baudrate to 2:", mc.set_baudrate(2))
+        # print("Set Address to 1:", mc.set_address(1))
+        # print("Speed:", mc.speed())
+        # print("Current:", mc.current())
         # print("Set Max Current:", mc.set_max_current(1000))
         # print("Set PID:", mc.set_pid(100, 10, 1))
         # print("Set Accel:", mc.set_accel(200))
@@ -185,28 +199,34 @@ if __name__ == '__main__':
         # print("Set Target Speed:", mc.set_target_speed(1000))
         # print("Set Speed Mode:", mc.set_speed_mode(500))
         # print("Set Current Mode:", mc.set_current_mode(100))
-        mc.set_origin()
-        mc.return_to_origin()
+
+        # mc.set_origin()
+        # mc.return_to_origin()
 
 
         # 伺服开/关测试
         print("Disabling servo...")
-        mc.write32(0x0010, 0)
+        mc.disable()
         print("Servo Status after disable:", mc.servo_status())
         print("Enabling servo...")
-        mc.write32(0x0010, 1)
+        mc.enable()
         print("Servo Status after enable:", mc.servo_status())
 
-        # 编码器位置测试
-        print("Encoder1 Position:", mc.position1())
-        print("Encoder2 Position:", mc.position2())
-
         # 其他功能测试示例
-        mc.move_position(0)
+
+        print("Setting target speed to 1000 RPM...", mc.set_target_speed(1000))
+        print("Setting accel to 500 ms...", mc.set_accel(500))
+        print("Setting decel to 500 ms...", mc.set_decel(500))
+
+        print("Moving with accel to 20000...", mc.move_accel(327680))
+
+        time.sleep(2)
+        print("Moving with accel to 20000...", mc.move_accel(0))
+
         time.sleep(1)
 
         # 伺服开/关测试
-        mc.write32(0x0010, 0)
+        mc.disable()
 
         mc.stop()
 
