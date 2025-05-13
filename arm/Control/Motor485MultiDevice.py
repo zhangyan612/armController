@@ -150,10 +150,29 @@ class MotorControl:
 
 # Example usage:
 if __name__ == '__main__':
-    mc = MotorControl(port='COM8', baudrate=19200)
+    # mc = MotorControl(port='COM8', baudrate=19200)
+
+    # linux lsusb
+    # mc = MotorControl(port='/dev/ttyUSB0', baudrate=19200)
+    mc = MotorControl(port='/dev/ttyUSB0', baudrate=2250000)
+
+    # permission deny 
+    # sudo usermod -aG dialout $USER
+    # log out and log in
+    # group command to see list
+
+    # To make the permission change permanent, you can create a udev rule:
+    # sudo nano /etc/udev/rules.d/50-myusb.rules
+    # Add this line:
+    # KERNEL=="ttyUSB[0-9]*", MODE="0666"
+    # Then reload udev rules:
+    # sudo udevadm control --reload-rules
+    # sudo udevadm trigger
+    # This will make all USB serial devices accessible to all users.
+
     try:
         # for dev_id in range(1, 7):
-        dev_id = 1
+        dev_id = 6
         print(f"[Device {dev_id}] Version Info:", mc.version_info(device_id=dev_id))
         print(f"[Device {dev_id}] Temperature:", mc.read_temperature(device_id=dev_id))
         print(f"[Device {dev_id}] Servo Status:", mc.servo_status(device_id=dev_id))
@@ -163,14 +182,18 @@ if __name__ == '__main__':
         print(f"[Device {dev_id}] Enabled.")
 
 
-        print("Setting target speed to 1000 RPM...", mc.set_target_speed(1000, 1))
-        print("Setting accel to 500 ms...", mc.set_accel(500, 1))
-        print("Setting decel to 500 ms...", mc.set_decel(500, 1))
+        print("Setting target speed to 1000 RPM...", mc.set_target_speed(1000, dev_id))
+        print("Setting accel to 500 ms...", mc.set_accel(500, dev_id))
+        print("Setting decel to 500 ms...", mc.set_decel(500, dev_id))
+        time.sleep(1)
 
-        print("Moving with accel to 20000...", mc.move_accel(327680, 1))
+        current_pos = mc.position1(dev_id)
+        print(f'current position {current_pos}')
+
+        print("Moving with accel to 20000...", mc.move_accel(327680, dev_id))
 
         time.sleep(2)
-        print("Moving with accel to 20000...", mc.move_accel(0, 1))
+        print("Moving with accel to 20000...", mc.move_accel(0, dev_id))
 
         time.sleep(1)
 

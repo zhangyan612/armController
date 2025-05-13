@@ -5,7 +5,7 @@ import numpy as np
 import serial
 import time
 from Actutor import Robot
-from Motor485NativeControl import MotorControl
+from Motor485MultiDevice import MotorControl
 
 def hex_to_percentage(hex_data):
     percentages = []
@@ -68,7 +68,7 @@ def schedule_task(interval):
 
     # 单圈 32768 x 10 x 51  
     # 51 速比 单圈 1671168
-    mc = MotorControl(port='COM8', baudrate=19200, device_id=0x01)
+    mc = MotorControl(port='COM8', baudrate=19200)
     print("Version Info:", mc.version_info())
     print("Temperature:", mc.read_temperature())
     print("Servo Status:", mc.servo_status())
