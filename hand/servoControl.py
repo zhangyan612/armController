@@ -36,15 +36,18 @@ LOBOT_SERVO_LED_CTRL_READ        = 34
 LOBOT_SERVO_LED_ERROR_WRITE      = 35
 LOBOT_SERVO_LED_ERROR_READ       = 36
 
-def getServoPort():
-        ports = serial.tools.list_ports.comports()
-        for port, desc, hwid in sorted(ports):
-                if 'USB-SERIAL CH340' in desc:
-                        return port
-        print('Error: Servo is not connected to any port')
-        return None
+# def getServoPort():
+#         ports = serial.tools.list_ports.comports()
+#         for port, desc, hwid in sorted(ports):
+#                 if 'USB-SERIAL CH340' in desc:
+#                         return port
+#         print('Error: Servo is not connected to any port')
+#         return None
 
-port = getServoPort()
+# port = getServoPort()
+# linux 
+# ttyUSB1
+port = 'ttyUSB1'
 
 serialHandle = serial.Serial(port, 115200)  # 初始化串口， 波特率为115200
 

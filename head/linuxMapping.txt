@@ -1,0 +1,13 @@
+
+sudo nano /etc/udev/rules.d/99-servo.rules
+
+SUBSYSTEM=="tty", ATTRS{idVendor}=="1a86", ATTRS{idProduct}=="7523", KERNELS=="1-2.1.2.3.4", SYMLINK+="servo1"
+
+sudo udevadm control --reload-rules
+sudo udevadm trigger
+
+Unplug/replug the device, then check:
+
+ls -l /dev/servo1
+
+udevadm info -a -n /dev/ttyUSB1
