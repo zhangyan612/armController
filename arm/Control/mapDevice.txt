@@ -1,0 +1,49 @@
+To map a USB device to a specific COM port in Ubuntu, you can create a UDEV rule. This rule will create a symbolic link to the device, allowing you to access it using a consistent name like /dev/COM5. 
+Here's a step-by-step guide: 
+Identify the device:
+You can use lsusb to list connected USB devices and find the vendor ID (idVendor) and product ID (idProduct) of your device. For example:
+Code
+
+     lsusb -v | grep -i "idVendor"
+Code
+
+     lsusb -v | grep -i "idProduct"
+You might also see the device listed in /dev/ttyACM* or similar. 
+Create the UDEV rule file:
+Open a terminal and navigate to /etc/udev/rules.d:
+Code
+
+     sudo cd /etc/udev/rules.d
+Create a new rule file. For example, COM5.rules: 
+Code
+
+     sudo nano COM5.rules
+Add the UDEV rule:
+In the file, add a line that specifies the device's vendor and product IDs, along with the desired COM port name. For example: 
+Code
+
+     SUBSYSTEM=="tty", ATTRS{idVendor}=="067b", ATTRS{idProduct}=="2303", SYMLINK+="COM5"
+Replace "067b" and "2303" with the actual vendor and product IDs from your lsusb output.
+Replace "COM5" with the desired COM port name (e.g., COM1, COM2, etc.).
+Reload UDEV rules:
+Save the file and reload the UDEV rules:
+Code
+
+     sudo udevadm control --reload-rules
+     sudo udevadm trigger
+1. Reboot (optional):
+A reboot may be necessary for the changes to take effect, but it's often not required.
+2. Test:
+After the changes are applied, you should be able to access the device as /dev/COM5 in your software.
+Explanation:
+SUBSYSTEM=="tty": Specifies that this rule applies to serial devices.
+ATTRS{idVendor}=="067b": Matches the vendor ID of the device.
+ATTRS{idProduct}=="2303": Matches the product ID of the device.
+SYMLINK+="COM5": Creates a symbolic link named COM5 pointing to the device. 
+Important Considerations:
+COM port conflicts:
+Be sure to choose a COM port number that isn't already in use by another device or program.
+udevadm info:
+You can use udevadm info --name=/dev/ttyACMx --attribute-walk to get detailed information about a USB device, including its attributes. This can be helpful for identifying the correct vendor and product IDs for your rule.
+Persistent mapping:
+This method provides a persistent mapping, meaning the device will be recognized as the specified COM port each time it's plugged in, regardless of the physical port it's connected to. 
