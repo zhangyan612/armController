@@ -150,10 +150,10 @@ class MotorControl:
 
 # Example usage:
 if __name__ == '__main__':
-    mc = MotorControl(port='COM3', baudrate=19200)
+    # mc = MotorControl(port='COM3', baudrate=19200)
 
     # linux lsusb
-    # mc = MotorControl(port='/dev/ttyUSB0', baudrate=19200)
+    mc = MotorControl(port='/dev/arm1', baudrate=19200)
 
     # permission deny 
     # sudo usermod -aG dialout $USER
