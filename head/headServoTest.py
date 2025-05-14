@@ -2,19 +2,19 @@ import time
 import serial
 
 
-def getServoPort():
-        ports = serial.tools.list_ports.comports()
-        for port, desc, hwid in sorted(ports):
-                if 'USB-SERIAL CH340' in desc:
-                        return port
-        print('Error: Servo is not connected to any port')
-        return None
+# def getServoPort():
+#         ports = serial.tools.list_ports.comports()
+#         for port, desc, hwid in sorted(ports):
+#                 if 'USB-SERIAL CH340' in desc:
+#                         return port
+#         print('Error: Servo is not connected to any port')
+#         return None
 
-port = getServoPort()
+# port = getServoPort()
 
 # Create a serial object
 ser = serial.Serial(
-    port='COM6',  # replace with your port
+    port='COM10',  # replace with your port
     baudrate=115200,
     parity=serial.PARITY_NONE,
     stopbits=serial.STOPBITS_ONE,
@@ -72,3 +72,9 @@ time.sleep(1)
 
 position = readHeadPosition('002')
 print(position)
+
+
+
+
+# #000PRAD!  read position
+# response #000P1846! 
