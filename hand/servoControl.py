@@ -165,8 +165,8 @@ def move_servo(position, id=1, time=500):
     # time it takes to finish the movement
     if position < 412:
         position = 412
-    if position > 620:
-        position = 620
+    if position > 990:
+        position = 990
     if serialHandle.is_open == False:
         serialHandle.open()
     serial_serro_wirte_cmd(id,1,position,time)
@@ -176,7 +176,7 @@ def move_command(command, id=1):
     if command == 'open':
         move_servo(412, id)
     if command == 'close':
-        move_servo(620, id)
+        move_servo(1000, id)
 
 if __name__ == "__main__":
     move_command('open')
