@@ -22,7 +22,7 @@ def send_move(event_type, data):
     client.publish(TOPIC, json.dumps(payload), retain=True)
     
 
-MOVE_THRESHOLD = 20  # Only send if movement > 5 pixels
+MOVE_THRESHOLD = 10  # Only send if movement > 5 pixels
 
 last_sent_pos = {'x': 0, 'y': 0}
 
