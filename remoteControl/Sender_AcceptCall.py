@@ -32,7 +32,7 @@ def left_click():
     send_event("mouse", {"x": mouse.position[0], "y": mouse.position[1], "button": "left", "action": "up"})
     print("Left button released")
 
-
+# china desktop call control
 # accept call
 target_x, target_y = 1582, 955  # Define the target position
 move_mouse(target_x, target_y)
@@ -42,16 +42,16 @@ left_click()
 
 time.sleep(5)
 
-
+# share screen
 target_x, target_y = 821, 883  # Define the target position
-move_mouse(target_x, target_y)
+move_mouse(target_x, target_y)  
 
 time.sleep(1)
 left_click()
 
 time.sleep(5)
 
-
+# choose screen
 target_x, target_y = 485, 419  # Define the target position
 move_mouse(target_x, target_y)
 
@@ -60,6 +60,7 @@ left_click()
 
 time.sleep(10)
 
+# accept control
 target_x, target_y = 998, 541  # Define the target position
 move_mouse(target_x, target_y)
 
