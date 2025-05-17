@@ -5,7 +5,8 @@ from base64 import b64decode
 
 ociMessageEndpoint = "https://cell-1.streaming.us-chicago-1.oci.oraclecloud.com"  
 ociStreamOcid = "ocid1.stream.oc1.us-chicago-1.amaaaaaaoa2s45aam2sr7zfgu34z365rgfkeuch5qule2b2dbbpztvoudq6q"  
-ociConfigFilePath = "C:\\Users\\Admin\\.oci\\config"
+# ociConfigFilePath = "C:\\Users\\Admin\\.oci\\config"
+ociConfigFilePath = "C:\\Users\\yanzh\\.oci\\config"
 ociProfileName = "DEFAULT"  
 
 
