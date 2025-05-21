@@ -44,3 +44,40 @@ pip install data
 pip install prox
 
 pip install -e ".[agent]"
+
+We built agent models for our model. The first one we built is UI Agent Demo. As our model is pretrained with Set-of-Mark and Trace-of-Mark, 
+it is naturally synergic to OmniParser. Combining them together, you can immediately get an UI agent, run:
+
+
+
+
+
+VLAS: Vision-Language-Action Model with Speech Instructions for Customized Robot Manipulation
+https://arxiv.org/html/2502.13508v2
+
+https://github.com/whichwhichgone/VLAS
+
+
+VLM 
+
+
+综上所述，这些开源视觉语言模型项目在社区活跃度和更新频率方面表现出色，
+特别是LLama 3.2 Vision、NVLM系列、Molmo系列、Qwen2-VL、Pixtral的Mistral、SmolVLM、MiniMind-V、DeepSeek R1和PaliGemma等项目。
+
+Qwen2-VL
+
+LLama 3.2 Vision 和 NVLM系列 更侧重于跨模态理解和生成任务，适用于复杂的视觉和语言任务。
+Molmo系列 和 Qwen2-VL 在视觉领域表现优异，特别是在图像识别和生成方面。
+Pixtral的Mistral 和 DeepSeek R1 强调高性能推理和多模态数据处理。
+SmolVLM 和 MiniMind-V 更适合边缘和移动设备，提供轻量级解决方案。
+R1-V 和 PaliGemma 在特定任务（如遥感和分割）中表现出色。
+
+
+高活跃项目：
+Llama 3.2 Vision：Meta定期发布新版本，社区工具（如OpenLLM）持续更新。
+Qwen2-VL：阿里巴巴积极维护GitHub仓库，提供多语言文档和商用支持
+SmolVLM：Hugging Face社区贡献频繁，适配多种边缘部署场景
+
+新兴项目：
+R1-V：GitHub近期提交频繁，强化学习框架受学术界关注。
+MiniMind-V：教育领域开发者活跃，教程和案例丰富。

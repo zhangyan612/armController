@@ -158,7 +158,7 @@ if __name__ == "__main__":
     # PWM 电压计算方式： 输入电压/2000 x(设定值-2000)
     # 5v大概是2420的样子
     # 2300 大概 3.6v
-    timeChange = 2
+    timeChange = 5
     # id_value = '07'
     # # pwm_value = 1700  # 拉  -6
     # # pwm_value = 2016  # 拉  -6
@@ -170,12 +170,12 @@ if __name__ == "__main__":
     # time.sleep(0.01)
 
     # timeChange = 10
-    # id_value = '02'
-    # # pwm_value = 1580  # 松
-    # pwm_value = 2600  # 拉  -6
+    id_value = '02'
+    pwm_value = 0  # 松
+    # pwm_value = 3000  # 拉  -6
     
-    # time_value = timeChange
-    # Move_Motor(id_value, pwm_value, time_value)
+    time_value = timeChange
+    Move_Motor(id_value, pwm_value, time_value)
 
 
     # timeChange = 2
@@ -190,14 +190,14 @@ if __name__ == "__main__":
 
 
     # timeChange = 2
-    # id_value = '04'
-    # # pwm_value = 2100  # 拉  -6
-    # # pwm_value = 2016  # 拉  -6
-    # pwm_value = 2500  # 松
-    # # pwm_value = 5000  # 拉  6
+    id_value = '04'
+    # pwm_value = 2100  # 拉  -6
+    # pwm_value = 2016  # 拉  -6
+    pwm_value = 0  # 松
+    # pwm_value = 3000  # 拉  6
     
-    # time_value = timeChange
-    # Move_Motor(id_value, pwm_value, time_value)
+    time_value = timeChange
+    Move_Motor(id_value, pwm_value, time_value)
 
 
     # shoulderRight("right", timeChange)
@@ -273,11 +273,11 @@ if __name__ == "__main__":
     # time_value = 2
     # Move_Motor(id_value, pwm_value, time_value)
 
-    id_value = '01'
-    # pwm_value = 0 # 松
-    pwm_value = 5000 # 拉
-    time_value = 5
-    Move_Motor(id_value, pwm_value, time_value)
+    # id_value = '01'
+    # # pwm_value = 0 # 松
+    # pwm_value = 5000 # 拉
+    # time_value = 5
+    # Move_Motor(id_value, pwm_value, time_value)
     # id_value = '08'
     # pwm_value = 0 # 拉
     # # pwm_value = 5000 # 松
