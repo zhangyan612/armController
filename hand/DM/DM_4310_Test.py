@@ -3,9 +3,15 @@ from DM_CAN import *
 import serial
 import time
 
+#  注意 第二行的 波特率 要设置跟电机设置的一致
+
+# sudo ip link set up can0
+# sudo ip link set can0 type can bitrate 500000 loopback off
+# sudo ip link set up can0
+
 
 Motor1=Motor(DM_Motor_Type.DM4310,0x01,0x11)
-serial_device = serial.Serial('COM13', 921600, timeout=0.5)
+serial_device = serial.Serial('/dev/ttyUSB0', 921600, timeout=0.5)
 MotorControl1=MotorControl(serial_device)
 MotorControl1.addMotor(Motor1)
 
