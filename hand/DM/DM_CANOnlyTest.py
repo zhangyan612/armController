@@ -3,6 +3,7 @@ import time
 import os
 import sys
 import select
+import math
 
 # 达妙4310电机参数限制
 class Limit_Motor:
@@ -167,7 +168,8 @@ def increase_socket_buffer():
 def main():
     # 电机参数
     motor_id = 0x01
-    control_frequency = 100  # Hz (控制频率)
+    target_frequency = 50  # Hz (目标控制频率)
+    cycle_time_target = 1.0 / target_frequency
     
     # 检查CAN通道是否可用
     if not check_can_channel('can0'):
@@ -185,7 +187,7 @@ def main():
             bitrate=921600,
             receive_own_messages=False  # 不接收自己发送的消息
         )
-        print("Connected to CAN bus at 921600 bps")
+        print(f"Connected to CAN bus at 921600 bps. Target frequency: {target_frequency}Hz")
         
         # 清空缓冲区
         flush_can_buffer(bus)
@@ -212,54 +214,92 @@ def main():
         if not feedback_received:
             print("Warning: No feedback received after enabling motor.")
             # 尝试继续但降低控制频率
-            control_frequency = 50
-            print(f"Reducing control frequency to {control_frequency} Hz")
+            target_frequency = 30
+            cycle_time_target = 1.0 / target_frequency
+            print(f"Reducing control frequency to {target_frequency} Hz")
         
         # 主控制循环
         print("Starting control loop. Press Ctrl+C to stop.")
-        last_send_time = time.time()
         cycle_count = 0
+        total_cycle_time = 0
+        min_cycle_time = float('inf')
+        max_cycle_time = 0
+        
+        # 初始位置设置
+        target_position = 0.0
+        position_step = 0.1  # 位置步进值
+        max_position = 3.0   # 最大位置
         
         try:
             while True:
                 cycle_start = time.time()
                 
-                # 发送控制命令 (示例值)
+                # 更新目标位置 (正弦波运动)
+                # target_position = max_position * math.sin(cycle_count * 0.05)
+                
+                # 或者使用步进运动
+                target_position = (target_position + position_step) % max_position
+                
+                # 发送控制命令
                 if not control_mit(bus, motor_id, 
-                                  kp=50.0,   # 位置增益
-                                  kd=1.0,    # 速度增益
-                                  q=1.0,     # 目标位置 (rad)
-                                  dq=0.0,    # 目标速度 (rad/s)
-                                  tau=0.5):  # 目标扭矩 (Nm)
+                                  kp=50.0,          # 位置增益
+                                  kd=1.0,           # 速度增益
+                                  q=target_position, # 目标位置 (rad)
+                                  dq=0.0,           # 目标速度 (rad/s)
+                                  tau=0.5):         # 目标扭矩 (Nm)
                     print("Failed to send control command")
                 
-                # 接收反馈
+                # 接收反馈 - 增加等待时间
                 feedback = None
-                receive_timeout = 1.0 / control_frequency
-                while receive_timeout > 0:
-                    start_recv = time.time()
-                    feedback = bus.recv(timeout=receive_timeout)
-                    if feedback is not None and feedback.arbitration_id == motor_id:
-                        q, dq, tau = parse_feedback(feedback.data)
-                        if cycle_count % 10 == 0:  # 每10个周期打印一次
-                            print(f"Position: {q:.3f} rad | Speed: {dq:.3f} rad/s | Torque: {tau:.3f} Nm")
-                        break
-                    receive_timeout -= (time.time() - start_recv)
+                receive_timeout = min(cycle_time_target * 1.5, 0.05)  # 最多等待50ms
                 
-                if feedback is None:
-                    print("No feedback received this cycle")
-                    # 清空缓冲区并继续
-                    flush_can_buffer(bus)
+                # 等待反馈消息
+                feedback = bus.recv(timeout=receive_timeout)
                 
-                # 控制频率
-                cycle_time = time.time() - cycle_start
-                sleep_time = (1.0 / control_frequency) - cycle_time
-                if sleep_time > 0:
-                    time.sleep(sleep_time)
+                if feedback and feedback.arbitration_id == motor_id:
+                    q, dq, tau = parse_feedback(feedback.data)
+                    if cycle_count % 10 == 0:  # 每10个周期打印一次
+                        print(f"Target: {target_position:.2f} rad | Actual: {q:.3f} rad | Speed: {dq:.3f} rad/s | Torque: {tau:.3f} Nm")
+                elif feedback:
+                    # 接收到其他ID的消息
+                    pass
                 else:
-                    print(f"Cycle time exceeded: {cycle_time:.4f}s > {1.0/control_frequency:.4f}s")
+                    if cycle_count % 20 == 0:  # 每20个周期打印一次
+                        print("No feedback received this cycle")
                 
+                # 计算实际循环时间
+                cycle_duration = time.time() - cycle_start
+                total_cycle_time += cycle_duration
+                min_cycle_time = min(min_cycle_time, cycle_duration)
+                max_cycle_time = max(max_cycle_time, cycle_duration)
+                
+                # 每100个周期打印性能统计
+                if cycle_count % 100 == 0 and cycle_count > 0:
+                    avg_cycle_time = total_cycle_time / 100
+                    actual_frequency = 1.0 / avg_cycle_time
+                    print(f"Performance: Min={min_cycle_time*1000:.1f}ms, Max={max_cycle_time*1000:.1f}ms, Avg={avg_cycle_time*1000:.1f}ms, Freq={actual_frequency:.1f}Hz")
+                    # 重置统计
+                    total_cycle_time = 0
+                    min_cycle_time = float('inf')
+                    max_cycle_time = 0
+                
+                # 控制频率 - 自适应调整
                 cycle_count += 1
+                
+                # 计算剩余时间并休眠
+                remaining_time = cycle_time_target - cycle_duration
+                if remaining_time > 0.001:  # 只有剩余时间>1ms才休眠
+                    time.sleep(remaining_time)
+                else:
+                    if cycle_count % 50 == 0:
+                        print(f"Cycle {cycle_count} exceeded: {cycle_duration*1000:.1f}ms > {cycle_time_target*1000:.1f}ms")
+                    
+                    # 如果连续超时，考虑降低频率
+                    if cycle_duration > cycle_time_target * 1.5 and target_frequency > 20:
+                        new_frequency = max(20, target_frequency - 5)
+                        print(f"Reducing frequency from {target_frequency}Hz to {new_frequency}Hz due to consistent overruns")
+                        target_frequency = new_frequency
+                        cycle_time_target = 1.0 / target_frequency
                 
         except KeyboardInterrupt:
             print("\nControl loop stopped by user")
