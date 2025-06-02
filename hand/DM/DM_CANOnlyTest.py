@@ -2,8 +2,8 @@ import can
 import time
 import os
 import sys
-import select
 import math
+from collections import deque
 
 # 达妙4310电机参数限制
 class Limit_Motor:
@@ -165,6 +165,66 @@ def increase_socket_buffer():
     except Exception as e:
         print(f"Error increasing socket buffers: {e}")
 
+class MotorController:
+    def __init__(self, motor_id):
+        self.motor_id = motor_id
+        self.last_feedback = None
+        self.feedback_history = deque(maxlen=5)
+        self.receive_timeout = 0.02  # 初始接收超时20ms
+        self.missed_cycles = 0
+        
+    def get_latest_feedback(self, bus, timeout):
+        """获取最新的电机反馈，带缓冲区管理"""
+        end_time = time.time() + timeout
+        latest_msg = None
+        
+        # 读取所有可用消息
+        while time.time() < end_time:
+            remaining = end_time - time.time()
+            if remaining <= 0:
+                break
+                
+            msg = bus.recv(timeout=min(remaining, 0.005))  # 小超时防止阻塞
+            if msg is None:
+                continue
+                
+            if msg.arbitration_id == self.motor_id:
+                latest_msg = msg
+                self.missed_cycles = 0  # 重置丢失计数器
+        
+        return latest_msg
+    
+    def update_feedback(self, msg):
+        """更新反馈数据并管理历史记录"""
+        if msg:
+            self.last_feedback = msg
+            self.feedback_history.append(time.time())
+            return parse_feedback(msg.data)
+        elif self.last_feedback:
+            # 使用最后已知的良好反馈
+            return parse_feedback(self.last_feedback.data)
+        
+        # 无任何反馈可用
+        self.missed_cycles += 1
+        return 0.0, 0.0, 0.0
+    
+    def adjust_timeout_based_on_performance(self, cycle_time):
+        """根据性能调整接收超时时间"""
+        if len(self.feedback_history) > 2:
+            # 计算平均反馈间隔
+            intervals = [self.feedback_history[i] - self.feedback_history[i-1] 
+                         for i in range(1, len(self.feedback_history))]
+            avg_interval = sum(intervals) / len(intervals) if intervals else 0
+            
+            # 动态调整超时
+            if avg_interval > 0:
+                self.receive_timeout = min(0.05, max(0.005, avg_interval * 1.2))
+        
+        # 如果连续丢失反馈，增加超时
+        if self.missed_cycles > 3:
+            self.receive_timeout = min(0.05, self.receive_timeout * 1.1)
+            self.missed_cycles = 0
+
 def main():
     # 电机参数
     motor_id = 0x01
@@ -183,7 +243,7 @@ def main():
         # 创建CAN总线连接 (921600波特率)
         bus = can.interface.Bus(
             interface='socketcan',
-            channel='can0',
+            channel='can1',
             bitrate=921600,
             receive_own_messages=False  # 不接收自己发送的消息
         )
@@ -197,6 +257,9 @@ def main():
             print("Failed to enable motor. Exiting.")
             return
         
+        # 创建电机控制器
+        controller = MotorController(motor_id)
+        
         # 等待电机响应
         print("Waiting for motor feedback...")
         feedback_received = False
@@ -204,9 +267,9 @@ def main():
         
         # 等待反馈最多3秒
         while time.time() - start_time < 3.0:
-            msg = bus.recv(timeout=0.1)
-            if msg and msg.arbitration_id == motor_id:
-                q, dq, tau = parse_feedback(msg.data)
+            msg = controller.get_latest_feedback(bus, timeout=0.1)
+            if msg:
+                q, dq, tau = controller.update_feedback(msg)
                 print(f"Initial feedback: Position={q:.3f} rad, Speed={dq:.3f} rad/s, Torque={tau:.3f} Nm")
                 feedback_received = True
                 break
@@ -249,23 +312,19 @@ def main():
                                   tau=0.5):         # 目标扭矩 (Nm)
                     print("Failed to send control command")
                 
-                # 接收反馈 - 增加等待时间
-                feedback = None
-                receive_timeout = min(cycle_time_target * 1.5, 0.05)  # 最多等待50ms
+                # 计算反馈接收超时时间
+                receive_timeout = min(cycle_time_target * 0.8, controller.receive_timeout)
                 
-                # 等待反馈消息
-                feedback = bus.recv(timeout=receive_timeout)
+                # 获取最新反馈
+                feedback_msg = controller.get_latest_feedback(bus, receive_timeout)
+                q, dq, tau = controller.update_feedback(feedback_msg)
                 
-                if feedback and feedback.arbitration_id == motor_id:
-                    q, dq, tau = parse_feedback(feedback.data)
-                    if cycle_count % 10 == 0:  # 每10个周期打印一次
+                # 定期打印状态
+                if cycle_count % 10 == 0:  # 每10个周期打印一次
+                    if feedback_msg:
                         print(f"Target: {target_position:.2f} rad | Actual: {q:.3f} rad | Speed: {dq:.3f} rad/s | Torque: {tau:.3f} Nm")
-                elif feedback:
-                    # 接收到其他ID的消息
-                    pass
-                else:
-                    if cycle_count % 20 == 0:  # 每20个周期打印一次
-                        print("No feedback received this cycle")
+                    else:
+                        print("No new feedback received this cycle")
                 
                 # 计算实际循环时间
                 cycle_duration = time.time() - cycle_start
@@ -278,6 +337,8 @@ def main():
                     avg_cycle_time = total_cycle_time / 100
                     actual_frequency = 1.0 / avg_cycle_time
                     print(f"Performance: Min={min_cycle_time*1000:.1f}ms, Max={max_cycle_time*1000:.1f}ms, Avg={avg_cycle_time*1000:.1f}ms, Freq={actual_frequency:.1f}Hz")
+                    print(f"Receive timeout: {controller.receive_timeout*1000:.2f}ms, Missed cycles: {controller.missed_cycles}")
+                    
                     # 重置统计
                     total_cycle_time = 0
                     min_cycle_time = float('inf')
@@ -285,6 +346,9 @@ def main():
                 
                 # 控制频率 - 自适应调整
                 cycle_count += 1
+                
+                # 基于性能调整超时
+                controller.adjust_timeout_based_on_performance(cycle_duration)
                 
                 # 计算剩余时间并休眠
                 remaining_time = cycle_time_target - cycle_duration
@@ -300,6 +364,8 @@ def main():
                         print(f"Reducing frequency from {target_frequency}Hz to {new_frequency}Hz due to consistent overruns")
                         target_frequency = new_frequency
                         cycle_time_target = 1.0 / target_frequency
+                        # 重置超时设置
+                        controller.receive_timeout = 0.02
                 
         except KeyboardInterrupt:
             print("\nControl loop stopped by user")
