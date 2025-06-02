@@ -160,7 +160,7 @@ if __name__ == "__main__":
         ('start_motor', 5),
         ('position_mode', 3),
         ('velocity_mode', 3),
-        ('torque_mode', 3),
+        # ('torque_mode', 3),
         ('stop_motor', 5)
     ]
     

@@ -170,12 +170,12 @@ if __name__ == "__main__":
     # time.sleep(0.01)
 
     # timeChange = 10
-    id_value = '02'
-    pwm_value = 0  # 松
-    # pwm_value = 3000  # 拉  -6
+    # id_value = '02'
+    # pwm_value = 0  # 松
+    # # pwm_value = 3000  # 拉  -6
     
-    time_value = timeChange
-    Move_Motor(id_value, pwm_value, time_value)
+    # time_value = timeChange
+    # Move_Motor(id_value, pwm_value, time_value)
 
 
     # timeChange = 2
@@ -190,7 +190,7 @@ if __name__ == "__main__":
 
 
     # timeChange = 2
-    id_value = '04'
+    id_value = '03'
     # pwm_value = 2100  # 拉  -6
     # pwm_value = 2016  # 拉  -6
     pwm_value = 0  # 松

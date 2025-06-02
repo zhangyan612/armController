@@ -1,0 +1,1 @@
+将qudongku.py中的   PORT = "COM11"，改为实际串口地址。
