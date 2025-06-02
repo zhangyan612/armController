@@ -638,10 +638,13 @@ if __name__ == "__main__":
     from time import sleep
 
     # Create CAN interface
-    can_bus = can.interface.Bus(channel='can1', bustype='socketcan', bitrate=500000, receive_own_messages=False)
+    can_interface = 'COM12'  # Replace with the actual port
+    bitrate = 1000000
+
+    bus = can.interface.Bus(interface='slcan', channel=can_interface, bitrate=bitrate)
 
     # Create motor control
-    motor_ctrl = MotorControl(can_bus)
+    motor_ctrl = MotorControl(bus)
 
     # Create motor object
     motor = Motor(MotorType=DM_Motor_Type.DM4310, SlaveID=0x01, MasterID=0x11)

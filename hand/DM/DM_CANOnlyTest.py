@@ -231,22 +231,16 @@ def main():
     target_frequency = 50  # Hz (目标控制频率)
     cycle_time_target = 1.0 / target_frequency
     
-    # 检查CAN通道是否可用
-    if not check_can_channel('can0'):
-        print("Error: can0 interface not found. Check hardware connection.")
-        sys.exit(1)
+    can_interface = 'COM12'  # Replace with the actual port
+    bitrate = 1000000
     
     # 尝试增加socket缓冲区大小
     increase_socket_buffer()
     
     try:
         # 创建CAN总线连接 (921600波特率)
-        bus = can.interface.Bus(
-            interface='socketcan',
-            channel='can1',
-            bitrate=921600,
-            receive_own_messages=False  # 不接收自己发送的消息
-        )
+        bus = can.interface.Bus(interface='slcan', channel=can_interface, bitrate=bitrate)
+
         print(f"Connected to CAN bus at 921600 bps. Target frequency: {target_frequency}Hz")
         
         # 清空缓冲区
@@ -290,7 +284,7 @@ def main():
         
         # 初始位置设置
         target_position = 0.0
-        position_step = 0.1  # 位置步进值
+        position_step = 1  # 位置步进值
         max_position = 3.0   # 最大位置
         
         try:
