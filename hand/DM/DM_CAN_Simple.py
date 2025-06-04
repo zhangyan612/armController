@@ -1,6 +1,8 @@
 import can
 import numpy as np
 import time
+from struct import unpack
+from struct import pack
 
 # -------------------- Motor Parameter Limits --------------------
 class LimitMotor:
@@ -35,6 +37,12 @@ def uint_to_float(x: int, x_min: float, x_max: float, bits: int) -> float:
     data_norm = float(x) / ((1 << bits) - 1)
     return data_norm * span + x_min
 
+
+def float_to_uint8s(value):
+    # Pack the float into 4 bytes
+    packed = pack('f', value)
+    # Unpack the bytes into four uint8 values
+    return unpack('4B', packed)
 
 # -------------------- Main Motor Controller Class --------------------
 class MotorController:
@@ -82,6 +90,28 @@ class MotorController:
         ]
         self.send_command(bytearray(data))
 
+    def control_pos_force(self, Pos_des: float, Vel_des, i_des):
+        """
+        control the motor in EMIT control mode 电机力位混合模式
+        :param Pos_des: desired position rad  期望位置 单位为rad
+        :param Vel_des: desired velocity rad/s  期望速度 为放大100倍
+        :param i_des: desired current rang 0-10000 期望电流标幺值放大10000倍
+        电流标幺值：实际电流值除以最大电流值，最大电流见上电打印
+        """
+        data_buf = np.array([0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00], np.uint8)
+        Pos_desired_uint8s = float_to_uint8s(Pos_des)
+        data_buf[0:4] = Pos_desired_uint8s
+        Vel_uint = np.uint16(Vel_des)
+        ides_uint = np.uint16(i_des)
+        data_buf[4] = Vel_uint & 0xff
+        data_buf[5] = Vel_uint >> 8
+        data_buf[6] = ides_uint & 0xff
+        data_buf[7] = ides_uint >> 8
+        self.send_command(self.can_id, data_buf)
+        msg = self.bus.recv(timeout=1.0)
+        if msg:
+            self.parse_feedback(msg)
+
     def listen(self, duration=5.0):
         print("Listening for motor feedback...")
         start = time.time()
@@ -109,6 +139,7 @@ if __name__ == "__main__":
 
     motor.clear_error()
     time.sleep(0.1)
+
     motor.enable_motor()
     time.sleep(0.2)
 
@@ -118,18 +149,9 @@ if __name__ == "__main__":
         # (5, 0.5, 0.5, 1, 0.0),
         # (0, 1, 1, 0.5, 1),
         # (5, 1, 0.5, 0.6, 1), //good
-        (0, 5, 0.3, 0.1, 1),
-        # (-80, 5, 0.3, 0.1, 2),
-        # (9, 5, 0.3, 0.1, 3),
-        # (5, 5, 0.3, 0.1, 2),
         # (0, 5, 0.3, 0.1, 1),
-
-        # (5, 0.5, 5, 1.5, 2),
-        # (0, 0.5, 5, 1.5, 0.0),
-
-        # (3, 0.4, 10, 1.0, 0.0),
-        # (2, 0.6, 8, 0.8, 0.0),
-        # (1.0, 0.2, 10, 1.0, 0.5),  # 回到原来测试的组合
+        (-12.5, 6, 0.3, 0.1, 2),
+        # (-2000, 6, 0.3, 0.1, 2),
     ]
 
     # 速度 dq （刚度）kp （阻尼）kd	力矩 tau		
@@ -146,8 +168,10 @@ if __name__ == "__main__":
 
     # motor.control_mit(q=1, dq=0.5, kp=5, kd=5, tau=1.0)
     # time.sleep(5)
+    # motor.save_zero_position()
+    # time.sleep(0.5)
 
-    motor.listen(duration=3)
+    motor.listen(duration=10)
 
     motor.disable_motor()
     motor.shutdown()

@@ -663,8 +663,17 @@ if __name__ == "__main__":
     sleep(2)
 
     print("🛠️ Sending MIT command...")
-    motor_ctrl.controlMIT(motor, kp=10.0, kd=0.5, q=1.0, dq=2.0, tau=2.0)
+
+    motor_ctrl.controlMIT(motor, kp=0.3, kd=0.5, q=0, dq=5, tau=2.0)
+
     sleep(2)
+
+    motor_ctrl.controlMIT(motor, kp=0.3, kd=0.5, q=30, dq=5, tau=2.0)
+
+    # motor_ctrl.control_pos_force(motor, Pos_des=10.0, Vel_des=2.0, i_des=10000)
+    
+    sleep(2)
+
 
     motor_ctrl.refresh_motor_status(motor)
     print(f"✅ Updated Position: {motor.getPosition()}, Velocity: {motor.getVelocity()}, Torque: {motor.getTorque()}")
