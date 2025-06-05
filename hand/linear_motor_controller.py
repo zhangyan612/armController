@@ -23,7 +23,7 @@ class MotorController:
         time_str = f"{time_value:05}"
         return f"#{id_value}#{pwm_str}#{time_str}#".encode('utf-8')
 
-    def construct_multi_message(motor_commands):
+    def construct_multi_message(self, motor_commands):
         """
         构造同时控制多个电机的消息
         :param motor_commands: 列表，每个元素是(id_value, pwm_value, time_value)的元组
@@ -92,6 +92,9 @@ class MotorController:
         print(f"Sending stop command: {stop_command}")
         self.ser.write(stop_command)
         time.sleep(0.01)
+
+    def sendMsg(self, command):
+        self.ser.write(command)
 
     def close(self):
         self.ser.close()

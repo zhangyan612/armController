@@ -189,8 +189,8 @@ if __name__ == "__main__":
     # 2300 大概 3.6v
 
     motor_commands = [
-        ('01', 0, 5),  
-        ('02', 0, 5),
+        ('11', 3000, 5),  
+        ('12', 0, 5),
     ]
 
     message = construct_multi_message(motor_commands)
@@ -200,9 +200,9 @@ if __name__ == "__main__":
     time.sleep(0.01)  # Brief delay
 
     # 停止电机
-    stop_message = construct_stop_command(['01','02'])  # 停止电机
-    print(f"Sending stop command: {stop_message}")
-    ser.write(stop_message)
+    # stop_message = construct_stop_command(['01','02'])  # 停止电机
+    # print(f"Sending stop command: {stop_message}")
+    # ser.write(stop_message)
 
     # timeChange = 5
     # id_value = '01'
