@@ -93,7 +93,7 @@ def Move_Motor(id, pwm, duration):
     msg = construct_message(id, pwm, duration)
     print(msg)
     ser.write(msg)
-    # time.sleep(0.01)
+    time.sleep(0.01)
 
 
 # # ser.flushInput()  # 清空接收缓存
@@ -189,18 +189,18 @@ if __name__ == "__main__":
     # 2300 大概 3.6v
 
     motor_commands = [
-        ('07', 0, 20),  
-        # ('12', 0, 10),
+        ('01', 0, 5),  
+        ('02', 0, 5),
     ]
 
     message = construct_multi_message(motor_commands)
     print(f"Sending message: {message}")
     ser.write(message)
 
-    # time.sleep(0.1)  # Brief delay
+    time.sleep(0.01)  # Brief delay
 
     # 停止电机
-    stop_message = construct_stop_command(['07'])  # 停止电机
+    stop_message = construct_stop_command(['01','02'])  # 停止电机
     print(f"Sending stop command: {stop_message}")
     ser.write(stop_message)
 

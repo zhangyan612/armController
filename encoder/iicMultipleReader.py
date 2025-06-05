@@ -2,7 +2,7 @@ import serial
 import json
 
 # Open COM9 at 115200 baud
-ser = serial.Serial('COM9', 115200, timeout=1)
+ser = serial.Serial('COM10', 115200, timeout=1)
 
 while True:
     try:
