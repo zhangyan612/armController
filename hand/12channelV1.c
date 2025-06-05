@@ -152,6 +152,54 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 //			HAL_GPIO_TogglePin(LED_GPIO_Port,LED_Pin);
 		}
 	
+//	if(htim==&htim2)
+//	{
+//		__HAL_TIM_SET_COMPARE(&htim2,TIM_CHANNEL_1,Moto_dat[5]);
+//		__HAL_TIM_SET_COMPARE(&htim2,TIM_CHANNEL_2,Moto_dat[6]);
+//		__HAL_TIM_SET_COMPARE(&htim2,TIM_CHANNEL_3,Moto_dat[1]);
+//		__HAL_TIM_SET_COMPARE(&htim2,TIM_CHANNEL_4,Moto_dat[2]);
+//		
+//	}
+//	if(htim==&htim3)
+//	{
+//		__HAL_TIM_SET_COMPARE(&htim3,TIM_CHANNEL_1,Moto_dat[13]);
+//		__HAL_TIM_SET_COMPARE(&htim3,TIM_CHANNEL_2,Moto_dat[14]);
+//		__HAL_TIM_SET_COMPARE(&htim3,TIM_CHANNEL_3,Moto_dat[9]);
+//		__HAL_TIM_SET_COMPARE(&htim3,TIM_CHANNEL_4,Moto_dat[10]);
+//		
+//	}
+//	if(htim==&htim5)
+//	{
+//		__HAL_TIM_SET_COMPARE(&htim5,TIM_CHANNEL_1,Moto_dat[21]);
+//		__HAL_TIM_SET_COMPARE(&htim5,TIM_CHANNEL_2,Moto_dat[22]);
+//		__HAL_TIM_SET_COMPARE(&htim5,TIM_CHANNEL_3,Moto_dat[17]);
+//		__HAL_TIM_SET_COMPARE(&htim5,TIM_CHANNEL_4,Moto_dat[18]);
+//		
+//	}
+//	if(htim==&htim4)
+//	{
+//		__HAL_TIM_SET_COMPARE(&htim4,TIM_CHANNEL_1,Moto_dat[29]);
+//		__HAL_TIM_SET_COMPARE(&htim4,TIM_CHANNEL_2,Moto_dat[30]);
+//		__HAL_TIM_SET_COMPARE(&htim4,TIM_CHANNEL_3,Moto_dat[25]);
+//		__HAL_TIM_SET_COMPARE(&htim4,TIM_CHANNEL_4,Moto_dat[26]);
+//		
+//	}
+//	if(htim==&htim1)
+//	{
+//		__HAL_TIM_SET_COMPARE(&htim1,TIM_CHANNEL_1,Moto_dat[37]);
+//		__HAL_TIM_SET_COMPARE(&htim1,TIM_CHANNEL_2,Moto_dat[38]);
+//		__HAL_TIM_SET_COMPARE(&htim1,TIM_CHANNEL_3,Moto_dat[33]);
+//		__HAL_TIM_SET_COMPARE(&htim1,TIM_CHANNEL_4,Moto_dat[34]);
+//		
+//	}
+//	if(htim==&htim8)
+//	{
+//		__HAL_TIM_SET_COMPARE(&htim8,TIM_CHANNEL_1,Moto_dat[45]);
+//		__HAL_TIM_SET_COMPARE(&htim8,TIM_CHANNEL_2,Moto_dat[46]);
+//		__HAL_TIM_SET_COMPARE(&htim8,TIM_CHANNEL_3,Moto_dat[41]);
+//		__HAL_TIM_SET_COMPARE(&htim8,TIM_CHANNEL_4,Moto_dat[42]);
+//		
+//	}
 }
 
 void PWM_get(void)
