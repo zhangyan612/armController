@@ -26,7 +26,7 @@ class CH9329:
 ch9329 = CH9329("COM10", 9600, timeout=1, screenx=1920, screeny=1080)
 
 # 自定义发送按键, 最多支持6个按键,modifiers为控制键,可选
-# ch9329.keyboard.send(("ctrl", "alt", "del", "", "", ""), modifiers=[])
+ch9329.keyboard.send(("ctrl", "alt", "del", "", "", ""), modifiers=[])
 # ch9329.keyboard.send(("alt", "del", "", "", "", ""), modifiers=["ctrl"])
 
 # 按下单个按键, modifiers为控制键,可选,不释放则为长按
