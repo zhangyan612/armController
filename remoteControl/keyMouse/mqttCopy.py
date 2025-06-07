@@ -73,7 +73,11 @@ def on_press(key):
         k = key.char
     except AttributeError:
         k = key.name
-    send_event('keyboard', {'key': k, 'action': 'press'})
+
+    command = k.upper() * 2
+    send_event('keyboard', {'key': command, 'action': 'press'})
+    keyboard_dev.send_data(command)
+
 
 def on_release(key):
     try:
@@ -81,6 +85,7 @@ def on_release(key):
     except AttributeError:
         k = key.name
     send_event('keyboard', {'key': k, 'action': 'release'})
+    keyboard_dev.release()
 
 # Start listeners
 
