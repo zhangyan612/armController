@@ -140,12 +140,12 @@ def on_scroll(x, y, dx, dy):
     mouse_dev.send_data_absolute(int(x), int(y))
     
     # Handle vertical scrolling
-    if dy > 0:
-        # Scroll up
-        mouse_dev.send_data_relatively(0, 0, 'WU')  # Assuming 'WU' for wheel up
-    elif dy < 0:
-        # Scroll down  
-        mouse_dev.send_data_relatively(0, 0, 'WD')  # Assuming 'WD' for wheel down
+    # if dy > 0:
+    #     # Scroll up
+    #     mouse_dev.send_data_relatively(0, 0, 'WU')  # Assuming 'WU' for wheel up
+    # elif dy < 0:
+    #     # Scroll down  
+    #     mouse_dev.send_data_relatively(0, 0, 'WD')  # Assuming 'WD' for wheel down
 
 # Enhanced keyboard callbacks
 def on_press(key):

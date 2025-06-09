@@ -161,10 +161,13 @@ def on_press(key):
 
         if command == '\x03\x03':
             print("Ctrl+C detected")
-            keyboard_dev.send_data('','0x03') # 同时按下ctrl+shift
+            keyboard_dev.send_multiple_keys(("L_CTRL", "CC", "", "", "", ""))
+            # keyboard_dev.send_data('','0x03') # 同时按下ctrl+shift
         elif command == '\x16\x16':
             print("Ctrl+V detected")
-            keyboard_dev.send_data('','0x16')
+            # keyboard_dev.send_data('','0x16')
+            keyboard_dev.send_multiple_keys(("L_CTRL", "VV", "", "", "", ""))
+
         elif command == '\x01\x01':
             print("Ctrl+A detected")
             keyboard_dev.send_data('','0x01')

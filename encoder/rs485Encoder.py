@@ -3,7 +3,7 @@ import time
 
 # 配置串口
 ser = serial.Serial(
-    port='COM3',     # 替换为您的实际串口
+    port='COM5',     # 替换为您的实际串口
     baudrate=115200, # 波特率
     parity=serial.PARITY_NONE,
     stopbits=serial.STOPBITS_ONE,
@@ -18,7 +18,7 @@ def calculate_crc(cf, sf, df0, df1):
 # 发送指令帧
 def send_command(command, repeat=1):
     for _ in range(repeat):
-        print(f"Sent: {command}")  
+        # print(f"Sent: {command}")  
         ser.write(command)
         time.sleep(0.0008) # 时间间隔 >= 600微秒
 

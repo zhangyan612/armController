@@ -149,26 +149,102 @@ class MotorController:
             else:
                 print("等待数据中...")
 
+
+    def send_precise_control(self, p, v, kp, kd, t, can_id=0x01):
+        """
+        发送基于位置、速度、Kp、Kd、力矩的控制指令。
+        :param p: 位置（0.0 ~ 1.0），中点为0.5，范围映射到 0 ~ 0xFFFF
+        :param v: 速度（-1.0 ~ 1.0），范围映射到 0 ~ 0xFFF
+        :param kp: 位置Kp（0.0 ~ 1.0），范围映射到 0 ~ 0xFFF
+        :param kd: 位置Kd（0.0 ~ 1.0），范围映射到 0 ~ 0xFFF
+        :param t: 力矩（-1.0 ~ 1.0），范围映射到 0 ~ 0xFFF
+        """
+        def clamp_and_scale(value, min_val, max_val, scale):
+            value = max(min(value, max_val), min_val)
+            return int((value - min_val) / (max_val - min_val) * scale)
+
+        s_p_int  = clamp_and_scale(p, 0.0, 1.0, 0xFFFF)
+        s_v_int  = clamp_and_scale(v, -1.0, 1.0, 0xFFF)
+        s_kp_int = clamp_and_scale(kp, 0.0, 1.0, 0xFFF)
+        s_kd_int = clamp_and_scale(kd, 0.0, 1.0, 0xFFF)
+        s_c_int  = clamp_and_scale(t, -1.0, 1.0, 0xFFF)
+
+        data = [
+            (s_p_int >> 8) & 0xFF,
+            s_p_int & 0xFF,
+            (s_v_int >> 4) & 0xFF,
+            ((s_v_int & 0xF) << 4) | ((s_kp_int >> 8) & 0xF),
+            s_kp_int & 0xFF,
+            (s_kd_int >> 4) & 0xFF,
+            ((s_kd_int & 0xF) << 4) | ((s_c_int >> 8) & 0xF),
+            s_c_int & 0xFF
+        ]
+
+        msg = can.Message(arbitration_id=can_id, data=bytearray(data), is_extended_id=False)
+
+        try:
+            self.bus.send(msg)
+            print(f"精确控制指令已发送: p={p}, v={v}, kp={kp}, kd={kd}, t={t}")
+        except can.CanError as e:
+            print(f"精确控制发送失败: {e}")
+
+
 # 测试用例
 if __name__ == "__main__":
     mc = MotorController()
     
     # 测试不同模式
     
-    modes = [
-        ('mechanical_zero', 5),
-        ('start_motor', 5),
-        ('position_mode', 3),
-        ('velocity_mode', 3),
-        # ('torque_mode', 3),
-        ('stop_motor', 5)
-    ]
+    # modes = [
+    #     ('mechanical_zero', 3),
+    #     ('start_motor', 3),
+    #     ('position_mode', 3),
+    #     ('velocity_mode', 3),
+    #     # ('torque_mode', 3),
+    #     # ('stop_motor', 5)
+    # ]
     
-    for command, duration in modes:
-        print(f"\n执行命令: {command}")
-        mc.send_command(command)
-        mc.monitor(timeout=duration)
-        time.sleep(1)
+    # for command, duration in modes:
+    #     print(f"\n执行命令: {command}")
+    #     mc.send_command(command)
+    #     mc.monitor(timeout=duration)
+    #     time.sleep(1)
+
+    mc.send_command('start_motor')
+    mc.monitor(timeout=2)
+
+    time.sleep(1)
+
+
+    # mc.send_command('velocity_mode')
+    # mc.monitor(timeout=2)
+    # time.sleep(1)
+
+    # Send control values
+    mc.send_precise_control(
+        p=1,    # Mid-range position (ignored in velocity mode)
+        v=2,   # Normalized velocity (200 RPM)
+        kp=0.0,   # Not needed in velocity mode
+        kd=0.0,   # Not needed in velocity mode
+        t=0.1    # Normalized torque (3A)
+    )
+    mc.monitor(timeout=3)
+    time.sleep(1)
+
+    print("hold motor...")
+    # Send control values
+    mc.send_precise_control(
+        p=1,    # Mid-range position (ignored in velocity mode)
+        v=0,   # Normalized velocity (200 RPM)
+        kp=0.0,   # Not needed in velocity mode
+        kd=0.0,   # Not needed in velocity mode
+        t=0.5    # Normalized torque (3A)
+    )
+    mc.monitor(timeout=3)
+    time.sleep(1)
+
+
+    mc.send_command('stop_motor')
 
     # try:
     #     print("启动每秒一次的stop_motor指令循环...")

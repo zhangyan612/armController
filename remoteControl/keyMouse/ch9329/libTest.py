@@ -26,17 +26,21 @@ class CH9329:
 ch9329 = CH9329("COM10", 9600, timeout=1, screenx=1920, screeny=1080)
 
 # 自定义发送按键, 最多支持6个按键,modifiers为控制键,可选
-ch9329.keyboard.send(("ctrl", "alt", "del", "", "", ""), modifiers=[])
+# ch9329.keyboard.send(("ctrl", "alt", "del", "", "", ""), modifiers=[])
 # ch9329.keyboard.send(("alt", "del", "", "", "", ""), modifiers=["ctrl"])
 
-# 按下单个按键, modifiers为控制键,可选,不释放则为长按
-# ch9329.keyboard.press("a", modifiers=["shift"])
 
-# # 释放所有按键
+ch9329.keyboard.press_and_release("v")
+
+
+# # 按下单个按键, modifiers为控制键,可选,不释放则为长按
+# ch9329.keyboard.press("a", modifiers=["ctrl"])
+
+# # # 释放所有按键
 # ch9329.keyboard.release()
 
 # # 按下后自动释放按键, min_interval和max_interval为释放延迟, 默认0.02秒到0.06秒
-# ch9329.keyboard.press_and_release("a", modifiers="shift", min_interval=0.02, max_interval=0.06)
+# ch9329.keyboard.press_and_release("a", modifiers="ctrl", min_interval=0.02, max_interval=0.06)
 
 # # 和send一样,多了个校验,确保不超出6个
 # ch9329.keyboard.trigger_keys(["ctrl", "alt", "del", "", "", ""], modifiers=[])
@@ -53,4 +57,4 @@ ch9329.keyboard.send(("ctrl", "alt", "del", "", "", ""), modifiers=[])
 # ch9329.keyboard.longpress("e")
 
 # 绝对移动
-ch9329.mouse.absolute_move(1458, 544)
+ch9329.mouse.absolute_move(111, 333)
