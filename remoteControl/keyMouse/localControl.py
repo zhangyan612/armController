@@ -4,7 +4,7 @@ import ch9329Comm
 import serial
 
 # Setup serial and ch9329
-serial.ser = serial.Serial('COM10', 9600)
+serial.ser = serial.Serial('COM13', 9600)
 mouse_dev = ch9329Comm.mouse.DataComm(1920, 1080)
 keyboard_dev = ch9329Comm.keyboard.DataComm()
 
@@ -126,7 +126,11 @@ def send_keyboard_action(key, action):
 def on_move(x, y):
     global current_pos, last_sent_pos
     current_pos = {'x': int(x), 'y': int(y)}
-    
+    if x < 0:
+        x = 0
+    if y < 0:
+        y = 0
+
     # Calculate distance moved
     dx = abs(current_pos['x'] - last_sent_pos['x'])
     dy = abs(current_pos['y'] - last_sent_pos['y'])
@@ -134,10 +138,15 @@ def on_move(x, y):
     # Only send if movement exceeds threshold
     if dx >= MOVE_THRESHOLD or dy >= MOVE_THRESHOLD:
         print(f"Sending absolute mouse position: ({current_pos['x']}, {current_pos['y']})")
-        mouse_dev.send_data_absolutely(current_pos['x'], current_pos['y'])
+        mouse_dev.send_data_absolute(current_pos['x'], current_pos['y'])
         last_sent_pos = current_pos.copy()
 
 def on_click(x, y, button, pressed):
+    if x < 0:
+        x = 0
+    if y < 0:
+        y = 0
+
     button_name = button.name
     action = 'down' if pressed else 'up'
     print(f"Mouse {button_name} {action} at ({int(x)}, {int(y)})")

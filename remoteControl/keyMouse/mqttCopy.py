@@ -66,7 +66,7 @@ KEY_MAPPING = {
 }
 
 # Setup serial and ch9329
-serial.ser = serial.Serial('COM10', 9600)
+serial.ser = serial.Serial('COM13', 9600)
 
 mouse_dev = ch9329Comm.mouse.DataComm(1920, 1080)
 keyboard_dev = ch9329Comm.keyboard.DataComm()
@@ -93,6 +93,12 @@ def distance(p1, p2):
 # Mouse callbacks
 def on_move(x, y):
     global current_pos, last_sent_pos
+
+    if x < 0:
+        x = 0
+    if y < 0:
+        y = 0
+
     current_pos = {'x': int(x), 'y': int(y)}
     if distance(current_pos, last_sent_pos) >= MOVE_THRESHOLD:
         # print(f"Mouse moved to: {current_pos}")
@@ -133,6 +139,11 @@ def send_mouse_scroll(direction, delta):
 
 
 def on_click(x, y, button, pressed):
+    if x < 0:
+        x = 0
+    if y < 0:
+        y = 0
+
     send_event('mouse', {
         'x': int(x),
         'y': int(y),
