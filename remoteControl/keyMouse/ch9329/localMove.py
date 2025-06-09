@@ -51,7 +51,34 @@ pressed_modifiers = set()
 
 def send_event(event_type, data):
     payload = {'type': event_type, **data}
-    print(payload)
+    if payload['type'] == 'keyboard':
+        print('keyboard event')
+        print(payload)
+        if payload['key'] == '\x01':
+            print('ctrl A pressed')
+            ch9329.keyboard.press("a", modifiers=['ctrl'])
+        elif payload['key'] == '\x03':
+            print('ctrl C pressed')
+            ch9329.keyboard.press("c", modifiers=['ctrl'])
+        elif payload['key'] == '\x16':
+            print('ctrl V pressed')
+            ch9329.keyboard.press("v", modifiers=['ctrl'])
+        elif payload['key'] == '\x1a':
+            print('ctrl Z pressed')
+            ch9329.keyboard.press("z", modifiers=['ctrl'])
+        elif payload['key'] == '\x18':
+            print('ctrl X pressed')
+            ch9329.keyboard.press("x", modifiers=['ctrl'])
+        elif payload['key'] == '\x06':
+            print('ctrl F pressed')
+            ch9329.keyboard.press("f", modifiers=['ctrl'])
+        elif payload['key'] == '\x13':
+            print('ctrl S pressed')
+            ch9329.keyboard.press("s", modifiers=['ctrl'])
+        elif payload['key'] == None:
+            ch9329.keyboard.press("/", modifiers=['ctrl_right'])
+        else:
+            ch9329.keyboard.press(payload['key'])
 
 def send_move(event_type, data):
     payload = {'type': event_type, **data}
@@ -119,8 +146,7 @@ def on_scroll(x, y, dx, dy):
     })
     
     # Update mouse position first
-    ch9329.mouse.absolute_move(int(x), int(y))
-
+    ch9329.mouse.wheel(dx)
 
 
 # Keyboard callbacks
@@ -131,13 +157,13 @@ def on_press(key):
         k = key.char
         print(f"Key pressed: {k}")
         # Send as normal key
-        # send_event('keyboard', {'key': command, 'action': 'press'})
-        if k == '→':
-            print('modifier key pressed')
-            print(f'current modifer {current_modifier}')
-            ch9329.keyboard.press("c", modifiers=[current_modifier])
-        else:
-            ch9329.keyboard.press(k)
+        send_event('keyboard', {'key': k, 'action': 'press'})
+        # if k == '→':
+        #     print('modifier key pressed')
+        #     print(f'current modifer {current_modifier}')
+        #     ch9329.keyboard.press("c", modifiers=[current_modifier])
+        # else:
+        #     ch9329.keyboard.press(k)
 
     except AttributeError:
         # Handle special keys
@@ -154,13 +180,14 @@ def on_press(key):
 def on_release(key):
     # Always release - this clears any held modifier keys
     ch9329.keyboard.release()
-    
+    # send_event('keyboard', {'key': k, 'action': 'release'} 'release')
+
     # Optional: you might want to track which keys are being released
     try:
-        k = key.char if key.char else key.name
+        k = key.char
         print(f"Key released: {k}")
     except AttributeError:
-        print(f"Special key released: {key.name}")
+        print(f"Special key released: {key}")
         current_modifier = ''
 
 
