@@ -51,9 +51,10 @@ pressed_modifiers = set()
 
 def send_event(event_type, data):
     payload = {'type': event_type, **data}
+    print(payload)
+
     if payload['type'] == 'keyboard':
         print('keyboard event')
-        print(payload)
         if payload['key'] == '\x01':
             print('ctrl A pressed')
             ch9329.keyboard.press("a", modifiers=['ctrl'])
@@ -146,7 +147,7 @@ def on_scroll(x, y, dx, dy):
     })
     
     # Update mouse position first
-    ch9329.mouse.wheel(dx)
+    ch9329.mouse.wheel(dy)
 
 
 # Keyboard callbacks
