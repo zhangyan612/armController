@@ -93,6 +93,16 @@ def reset_position():
 
     print("清零操作完成")
 
+def get_position():
+    angle, status, response = read_position()
+    if angle is not None and status is not None:
+        print(f"角度: {angle}, 运行状态: {status}")
+        return angle, status
+    else:
+        print("读取位置失败")
+        return None, None
+    
+    
 # 持续输出位置信号并每秒打印一次
 def continuous_output():
     try:
@@ -100,6 +110,8 @@ def continuous_output():
             angle, status, response = read_position()
             if angle is not None and status is not None:
                 print(f"角度: {angle}, 运行状态: {status}")
+                if status == 0x08:
+                    return angle
             # time.sleep(1)  # 每秒打印一次
     except KeyboardInterrupt:
         print("停止输出位置信号")
