@@ -48,7 +48,7 @@ def moveToTargetPosition(mc, encoder, target_position, max_velocity=5.0, thresho
             velocity_command *= 0.7  # Reduce speed near target
 
         # 4. Match command duration to control period (50ms)
-        mc.send_precise_control(p=1, v=velocity_command, kp=0.0, kd=0.0, t=0.05)
+        mc.send_precise_control(p=1, v=velocity_command, kp=0.0, kd=0.0, t=0.1)
         time.sleep(0.05)
 
     stopMotor(mc)
@@ -60,7 +60,7 @@ if __name__ == "__main__":
         angle, _ = encoder.get_position()
         print(f"Initial Encoder value: {angle}")
         if angle is not None:
-            target_position = 2000  
+            target_position = 10000  
             moveToTargetPosition(mc, encoder, target_position, 
                                 max_velocity=5.0, 
                                 threshold=100)
