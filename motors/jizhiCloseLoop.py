@@ -19,7 +19,7 @@ def stopMotor(mc):
     mc.send_command('stop_motor')
     mc.monitor(timeout=0.05)
 
-def moveToTargetPosition(mc, encoder, target_position, max_velocity=5.0, threshold=10, resolution=16384):
+def moveToTargetPosition(mc, encoder, target_position, max_velocity=8.0, threshold=10, resolution=16384):
     startVelocityMotor(mc)
     print("Moving to target position:", target_position)
 
@@ -60,7 +60,8 @@ if __name__ == "__main__":
         angle, _ = encoder.get_position()
         print(f"Initial Encoder value: {angle}")
         if angle is not None:
-            target_position = 10000  
+            # max 16384
+            target_position = 8000  
             moveToTargetPosition(mc, encoder, target_position, 
                                 max_velocity=5.0, 
                                 threshold=100)

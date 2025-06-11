@@ -3,10 +3,10 @@ import time
 import struct
 
 class MotorController:
-    def __init__(self, interface='pcan', can_channel='PCAN_USBBUS1', bitrate=1000000):
+    def __init__(self, interface='pcan', channel='PCAN_USBBUS1', bitrate=1000000):
         self.bus = can.interface.Bus(
             interface=interface,
-            channel=can_channel,
+            channel=channel,
             bitrate=bitrate,
         )
         
@@ -221,15 +221,15 @@ if __name__ == "__main__":
     time.sleep(1)
 
     # Send control values
-    # mc.send_precise_control(
-    #     p=1,    # Mid-range position (ignored in velocity mode)
-    #     v=5,   # Normalized velocity (200 RPM)
-    #     kp=0.0,   # Not needed in velocity mode
-    #     kd=0.0,   # Not needed in velocity mode
-    #     t=0.1    # Normalized torque (3A)
-    # )
-    # mc.monitor(timeout=3)
-    # time.sleep(1)
+    mc.send_precise_control(
+        p=1,    # Mid-range position (ignored in velocity mode)
+        v=5,   # Normalized velocity (200 RPM)
+        kp=0.0,   # Not needed in velocity mode
+        kd=0.0,   # Not needed in velocity mode
+        t=0.1    # Normalized torque (3A)
+    )
+    mc.monitor(timeout=3)
+    time.sleep(1)
 
     # print("hold motor...")
     # # Send control values
