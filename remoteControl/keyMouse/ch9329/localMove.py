@@ -37,7 +37,7 @@ class CH9329:
         self.ser.close()
 
 
-ch9329 = CH9329("COM13", 9600, timeout=1, screenx=1920, screeny=1080)
+ch9329 = CH9329("COM12", 9600, timeout=1, screenx=1920, screeny=1080)
 
 # ch9329.mouse.absolute_move(111, 333)
 
@@ -51,10 +51,10 @@ pressed_modifiers = set()
 
 def send_event(event_type, data):
     payload = {'type': event_type, **data}
-    print(payload)
 
     if payload['type'] == 'keyboard':
         print('keyboard event')
+        print(payload)
         if payload['key'] == '\x01':
             print('ctrl A pressed')
             ch9329.keyboard.press("a", modifiers=['ctrl'])
@@ -139,12 +139,12 @@ def on_click(x, y, button, pressed):
 
 def on_scroll(x, y, dx, dy):
     """Handle mouse scroll events"""
-    send_event('scroll', {
-        'x': int(x),
-        'y': int(y),
-        'dx': int(dx),
-        'dy': int(dy)
-    })
+    # send_event('scroll', {
+    #     'x': int(x),
+    #     'y': int(y),
+    #     'dx': int(dx),
+    #     'dy': int(dy)
+    # })
     
     # Update mouse position first
     ch9329.mouse.wheel(dy)
@@ -191,7 +191,7 @@ def on_release(key):
         print(f"Special key released: {key}")
         current_modifier = ''
 
-
+    
 # Start listeners
 mouse_listener = mouse.Listener(
     on_move=on_move, 
