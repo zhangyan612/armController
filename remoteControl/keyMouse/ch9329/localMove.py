@@ -76,6 +76,13 @@ def send_event(event_type, data):
         elif payload['key'] == '\x13':
             print('ctrl S pressed')
             ch9329.keyboard.press("s", modifiers=['ctrl'])
+        elif payload['key'] == 'f1':
+            print('f1 pressed event')
+        elif payload['key'] == 'f2':
+            print('f2 pressed event')
+        elif payload['key'] == 'f3':
+            print('f3 pressed event')
+
         elif payload['key'] == None:
             ch9329.keyboard.press("/", modifiers=['ctrl_right'])
         else:
@@ -175,7 +182,17 @@ def on_press(key):
             # ch9329.keyboard.press(command)
         else:
             print(f"Special key pressed: {k}")
-            ch9329.keyboard.press(k)
+            if k == 'f1':
+                print('f1 pressed')
+                ch9329.keyboard.send(("ctrl", "alt", "del", "", "", ""), modifiers=[])
+            elif k == 'f2':
+                print('f2 pressed')
+                ch9329.keyboard.write("906120")
+            elif k == 'f3':
+                print('f3 pressed')
+                ch9329.keyboard.write("ZYmeng94")
+            else:
+                ch9329.keyboard.press(k)
         
 
 def on_release(key):
