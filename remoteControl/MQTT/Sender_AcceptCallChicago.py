@@ -35,7 +35,7 @@ def left_click():
 def video_call_accept():
     # china desktop call control
     # accept call
-    target_x, target_y = 1582, 955  # Define the target position
+    target_x, target_y = 1862, 971  # Define the target position
     move_mouse(target_x, target_y)
 
     time.sleep(1)
@@ -44,20 +44,16 @@ def video_call_accept():
 
 def accept_control():
     # accept control
-    target_x, target_y = 998, 541  # Define the target position
+    target_x, target_y = 1091, 564  # Define the target position
     move_mouse(target_x, target_y)
 
     time.sleep(1)
     left_click()
 
 
-def full_accept():
-    video_call_accept()
-
-    time.sleep(5)
-
+def share_screen():
     # share screen
-    target_x, target_y = 821, 883  # Define the target position
+    target_x, target_y = 912, 904  # Define the target position
     move_mouse(target_x, target_y)  
 
     time.sleep(1)
@@ -66,14 +62,17 @@ def full_accept():
     time.sleep(5)
 
     # choose screen
-    target_x, target_y = 485, 419  # Define the target position
+    target_x, target_y = 615, 443  # Define the target position
     move_mouse(target_x, target_y)
 
     time.sleep(1)
     left_click()
 
-    time.sleep(10)
 
+def full_accept():
+    video_call_accept()
+    time.sleep(5)
+    share_screen()
 
 # Keep MQTT alive
 while True:
@@ -82,6 +81,8 @@ while True:
     user_input = input("Type 'v' to accept call, c for control, f for all control: ")
     if user_input.strip().lower() == "v":
         video_call_accept()
+    elif user_input.strip().lower() == "s":
+        share_screen()
     elif user_input.strip().lower() == "c":
         accept_control()
     elif user_input.strip().lower() == "f":
