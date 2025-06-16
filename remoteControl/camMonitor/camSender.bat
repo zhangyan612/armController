@@ -1,0 +1,1 @@
+C:/Users/yan/.conda/envs/vllm/python.exe c:/Users/yan/repos/armController/remoteControl/camMonitor/camNotifier.py
