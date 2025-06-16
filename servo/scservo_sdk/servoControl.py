@@ -123,7 +123,7 @@ class FeetechServoController:
 
 def press(controller, servo_id):
     try:
-        position = 490
+        position = 500 #1 - 490  2-500
         comm_result, error = controller.move_to_position(servo_id, position)
         if comm_result == COMM_SUCCESS and error == 0:
             print(f"舵机 {servo_id} 成功移动到位置: {position}")
@@ -243,6 +243,6 @@ def clickServo(controller, servo_id):
 
 if __name__ == "__main__":
     controller = FeetechServoController(port='COM10', baudrate=1000000)
-    clickServo(controller, 1)
-    # clickServo(controller, 2)
+    # clickServo(controller, 1)
+    clickServo(controller, 2)
     # clickServo(controller, 3)

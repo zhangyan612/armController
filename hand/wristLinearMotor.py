@@ -3,7 +3,7 @@ import serial
 
 # Create a serial object
 ser = serial.Serial(
-    port='COM9',  # replace with your port
+    port='COM10',  # replace with your port
     baudrate=115200,
     parity=serial.PARITY_NONE,
     stopbits=serial.STOPBITS_ONE,
@@ -188,32 +188,32 @@ if __name__ == "__main__":
     # 5v大概是2420的样子
     # 2300 大概 3.6v
 
-    motor_commands = [
-        ('11', 3000, 5),  
-        ('12', 0, 5),
-    ]
+    # motor_commands = [
+    #     ('1', 0, 5),  
+    #     # ('12', 0, 5),
+    # ]
 
-    message = construct_multi_message(motor_commands)
-    print(f"Sending message: {message}")
-    ser.write(message)
+    # message = construct_multi_message(motor_commands)
+    # print(f"Sending message: {message}")
+    # ser.write(message)
 
-    time.sleep(0.01)  # Brief delay
+    # time.sleep(0.01)  # Brief delay
 
     # 停止电机
     # stop_message = construct_stop_command(['01','02'])  # 停止电机
     # print(f"Sending stop command: {stop_message}")
     # ser.write(stop_message)
 
-    # timeChange = 5
-    # id_value = '01'
-    # pwm_value = 1700  # 拉  -6
+    timeChange = 5
+    id_value = '01'
+    pwm_value = 3000  # 拉  -6
     # pwm_value = 2016  # 拉  -6
     # pwm_value = 0  # 松
     # pwm_value = 2300  # 拉  6
     
-    # time_value = timeChange
-    # Move_Motor(id_value, pwm_value, time_value)
-    # time.sleep(0.01)
+    time_value = timeChange
+    Move_Motor(id_value, pwm_value, time_value)
+    time.sleep(0.01)
 
     # timeChange = 10
     # id_value = '02'
