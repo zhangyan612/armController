@@ -102,12 +102,78 @@ M3 X 45
 脚裸
 
 
+控制系统
+电位器路数
+头 2
+腰 1
+
+手 10
+臂 7
+腿 5
+
+22 * 2 = 44+3 = 47
+
+目前
+32+ 32 = 64
+
+比较好的路数
+18 + 18 +18 = 54
 
 
+
+控制手套
+M3 X 14 
+M3 X 10
+
+轴承 
+内径3外经6
+内径6外经10 
+
+
+线 
+1.25 
+1.25 转 2.54 
+
+
+西班牙电位器
+电位器帽
+M2x10圆柱销
+缠带
 
 
 20000 / 12 /5
 
+
+52 电机
+
+M2.5 X 35 or 40 
+
+M2 * 2 + 3
+M2 * 4
+
+轴承
+
+固定
+M2.5 X 12
+
+旋转
+M2 X  15
+
+
+手腕
+3 x 2 磁铁
+
+小臂旋转
+M2 x 10
+M4 x 10
+
+M3 x 35
+
+
+
+eyes
+2 x 6mm Self Tapping  Screws
+1.5 x 7mm Self Tapping  Screws
 
 
 把人类从体力劳动中解放出来
@@ -122,3 +188,4 @@ Seed program
 take sunshine and soil as input, grow into a tree as a software. 
 
 different robot will grow different trees depending on their tasks assigned 
+
