@@ -14,15 +14,32 @@ Open a terminal and navigate to /etc/udev/rules.d:
 Code
 
      sudo cd /etc/udev/rules.d
+
 Create a new rule file. For example, COM5.rules: 
 Code
 
-     sudo nano COM5.rules
+     sudo nano 99-arm1.rules
+     
+     sudo nano gripper1.rules
+
+
+
+existing
+Bus 001 Device 009: ID 1a86:7523 QinHeng Electronics HL-340 USB-Serial adapter
+Bus 001 Device 022: ID 1a86:7523 QinHeng Electronics HL-340 USB-Serial adapter
+
+new
+Bus 001 Device 032: ID 1a86:7523 QinHeng Electronics HL-340 USB-Serial adapter
+
+
 Add the UDEV rule:
+
 In the file, add a line that specifies the device's vendor and product IDs, along with the desired COM port name. For example: 
 Code
 
      SUBSYSTEM=="tty", ATTRS{idVendor}=="067b", ATTRS{idProduct}=="2303", SYMLINK+="COM5"
+
+
 Replace "067b" and "2303" with the actual vendor and product IDs from your lsusb output.
 Replace "COM5" with the desired COM port name (e.g., COM1, COM2, etc.).
 Reload UDEV rules:
@@ -31,6 +48,7 @@ Code
 
      sudo udevadm control --reload-rules
      sudo udevadm trigger
+
 1. Reboot (optional):
 A reboot may be necessary for the changes to take effect, but it's often not required.
 2. Test:

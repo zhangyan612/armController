@@ -71,8 +71,8 @@ class ServoController:
 
 # Example usage
 if __name__ == "__main__":
-    port = 'COM10'
-    # port = '/dev/servo1'
+    # port = 'COM10'
+    port = '/dev/servo1'
 
     servo = ServoController(port=port)
     # servo.reset_to_center(1)
