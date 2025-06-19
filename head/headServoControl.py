@@ -71,19 +71,41 @@ class ServoController:
 
 # Example usage
 if __name__ == "__main__":
-    # port = 'COM10'
-    port = '/dev/servo1'
+    port = 'COM10'
+    # port = '/dev/servo1'
 
     servo = ServoController(port=port)
     # servo.reset_to_center(1)
     # time.sleep(1)
     # servo.reset_to_center(2)
 
-    servo.move_servo(1, 1100, 1000)
-    # time.sleep(1)
+    servo.restore_torque(1)
+    servo.restore_torque(2)
 
-    servo.move_servo(2, 1100, 1000)
     time.sleep(1)
+
+    servo.move_servo(1, 850, 1000)  # center
+    time.sleep(2)
+
+    # servo.move_servo(1, 800, 1000)
+    # time.sleep(2)
+    # servo.move_servo(1, 1000, 2000)
+    # time.sleep(2)
+
+    servo.move_servo(2, 1000, 1000) # center
+    time.sleep(2)
+
+
+    # servo.move_servo(2, 900, 1000)
+    # time.sleep(2)
+    # servo.move_servo(2, 1000, 1000)
+    # time.sleep(2)
+    # servo.move_servo(2, 1100, 1000)
+    # time.sleep(2)
+
+
+    # servo.move_servo(2, 1050, 1000)
+    # time.sleep(1)
 
     position = servo.read_position(1)
     print(f"📍 Current position of servo 1 : {position}")
@@ -92,5 +114,7 @@ if __name__ == "__main__":
     print(f"📍 Current position of servo 2 : {position}")
     servo.release_torque(1)
     servo.release_torque(2)
+
+    time.sleep(2)
 
     servo.close()

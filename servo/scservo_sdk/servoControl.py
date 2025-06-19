@@ -121,18 +121,16 @@ class FeetechServoController:
         self.port_handler.closePort()
         print("串口连接已关闭")
 
-def press(controller, servo_id):
+def press(controller, servo_id, position=500):
     try:
-        position = 500 #1 - 490  2-500
         comm_result, error = controller.move_to_position(servo_id, position)
         if comm_result == COMM_SUCCESS and error == 0:
             print(f"舵机 {servo_id} 成功移动到位置: {position}")
     except ValueError:
         print(f"舵机 {servo_id} 下压出错")
 
-def lift(controller, servo_id):
+def lift(controller, servo_id, position=600):
     try:
-        position = 600
         comm_result, error = controller.move_to_position(servo_id, position)
         if comm_result == COMM_SUCCESS and error == 0:
             print(f"舵机 {servo_id} 成功移动到位置: {position}")
@@ -234,7 +232,15 @@ def main():
 
 
 def clickServo(controller, servo_id):
-    press(controller, servo_id)
+    position = 490
+    if servo_id == 1:
+        position = 490 #1 - 490  2-500
+    if servo_id == 2:
+        position = 500 #1 - 490  2-500
+    if servo_id == 3:
+        position = 430
+
+    press(controller, servo_id, position)
     time.sleep(0.5)
     lift(controller, servo_id)
     time.sleep(1)
@@ -244,5 +250,9 @@ def clickServo(controller, servo_id):
 if __name__ == "__main__":
     controller = FeetechServoController(port='COM10', baudrate=1000000)
     # clickServo(controller, 1)
-    clickServo(controller, 2)
-    # clickServo(controller, 3)
+    # clickServo(controller, 2)        
+    clickServo(controller, 3)
+
+    # while True:
+    #     clickServo(controller, 3)
+    #     time.sleep(5)

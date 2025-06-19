@@ -66,7 +66,9 @@ def resetServo(id):
     moveCommand = f"#{id}PSCK!" #'#002P1500T0316!'
     ser.write(moveCommand.encode())
 
-moveHeadServo('002', 1500, 100)
+moveHeadServo('001', 1400, 100)
+
+# moveHeadServo('002', 1000, 100)
 
 time.sleep(1)
 
