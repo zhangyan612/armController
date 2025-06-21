@@ -146,10 +146,11 @@ M2x10圆柱销
 
 52 电机
 
-M2.5 X 35 or 40 
+M2.5 X 35 or 40  OR 38
 
-M2 * 2 + 3
+M2 * 2 + 3 
 M2 * 4
+M3 x 6 
 
 轴承
 
@@ -172,9 +173,24 @@ M3 x 35
 
 
 eyes
-2 x 6mm Self Tapping  Screws
-1.5 x 7mm Self Tapping  Screws
+M2 x 6mm Self Tapping  Screws
+M1.5 x 7mm Self Tapping  Screws
 
+
+
+
+Purchase 
+
+Screws SET
+M2    4-10
+M2.5  4-10
+M3    6-16
+
+Single
+M2 15 16
+M2.5 X 12 38
+M3  5 35 45
+M3.5 X 60
 
 把人类从体力劳动中解放出来
 
