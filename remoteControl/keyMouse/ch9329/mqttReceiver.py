@@ -4,9 +4,20 @@ import paho.mqtt.client as mqtt
 from serial import Serial
 from ch9329 import Keyboard, Mouse
 import os
+import logging
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.StreamHandler()
+    ]
+)
+logger = logging.getLogger('input_receiver')
 
 # MQTT Configuration
-TOPIC = "remote_keyboard_mouse"
+TOPIC = "input_events"
 MQTT_CONFIG_PATH = "mqtt_config.json"
 
 # Key mapping for special keys
@@ -22,97 +33,172 @@ KEY_MAPPING = {
 
 class CH9329Controller:
     def __init__(self, port="COM12", baudrate=9600, screenx=1920, screeny=1080):
-        self.ser = Serial(port, baudrate, timeout=1)
-        self.keyboard = Keyboard(self.ser)
-        self.mouse = Mouse(self.ser, screenx, screeny)
-        self.current_pos = {'x': 0, 'y': 0}
+        try:
+            self.ser = Serial(port, baudrate, timeout=1)
+            self.keyboard = Keyboard(self.ser)
+            self.mouse = Mouse(self.ser, screenx, screeny)
+            self.current_pos = {'x': 0, 'y': 0}
+            logger.info(f"CH9329 initialized on {port}")
+        except Exception as e:
+            logger.error(f"Failed to initialize CH9329: {str(e)}")
+            raise
         
     def handle_mouse_move(self, data):
-        self.mouse.absolute_move(data['x'], data['y'])
-        self.current_pos = {'x': data['x'], 'y': data['y']}
+        try:
+            self.mouse.absolute_move(data['x'], data['y'])
+            self.current_pos = {'x': data['x'], 'y': data['y']}
+            logger.debug(f"Mouse moved to ({data['x']}, {data['y']})")
+        except Exception as e:
+            logger.error(f"Mouse move error: {str(e)}")
     
     def handle_mouse_click(self, data):
-        button = data['button']
-        action = data['action']
-        
-        if button == 'left':
-            if action == 'down': self.mouse.press("left")
-            else: self.mouse.release()
-        elif button == 'right':
-            if action == 'down': self.mouse.press("right")
-            else: self.mouse.release()
-        elif button == 'middle':
-            if action == 'down': self.mouse.press("center")
-            else: self.mouse.release()
+        try:
+            button = data['button']
+            action = data['action']
+            
+            if button == 'left':
+                if action == 'down': 
+                    self.mouse.press("left")
+                    logger.debug("Left mouse button pressed")
+                else: 
+                    self.mouse.release()
+                    logger.debug("Mouse button released")
+            elif button == 'right':
+                if action == 'down': 
+                    self.mouse.press("right")
+                    logger.debug("Right mouse button pressed")
+                else: 
+                    self.mouse.release()
+                    logger.debug("Mouse button released")
+            elif button == 'middle':
+                if action == 'down': 
+                    self.mouse.press("center")
+                    logger.debug("Middle mouse button pressed")
+                else: 
+                    self.mouse.release()
+                    logger.debug("Mouse button released")
+        except Exception as e:
+            logger.error(f"Mouse click error: {str(e)}")
     
     def handle_mouse_scroll(self, data):
-        self.mouse.wheel(data['dy'])
+        try:
+            self.mouse.wheel(data['dy'])
+            logger.debug(f"Mouse scrolled: dy={data['dy']}")
+        except Exception as e:
+            logger.error(f"Mouse scroll error: {str(e)}")
     
     def handle_key_press(self, data):
-        key = data['key']
-        
-        # Handle special key combinations
-        special_combos = {
-            '\x01': ("a", ['ctrl']),  # Ctrl+A
-            '\x03': ("c", ['ctrl']),  # Ctrl+C
-            '\x16': ("v", ['ctrl']),  # Ctrl+V
-            '\x1a': ("z", ['ctrl']),  # Ctrl+Z
-            '\x18': ("x", ['ctrl']),  # Ctrl+X
-            '\x06': ("f", ['ctrl']),  # Ctrl+F
-            '\x13': ("s", ['ctrl']),  # Ctrl+S
-        }
-        
-        if key in special_combos:
-            k, mods = special_combos[key]
-            self.keyboard.press(k, modifiers=mods)
-        elif key == 'f1':
-            self.keyboard.send(("ctrl", "alt", "del", "", "", ""), modifiers=[])
-        elif key == 'f2':
-            self.keyboard.write("906120")
-        elif key == 'f3':
-            self.keyboard.write("ZYmeng94")
-        else:
-            # Map special keys
-            mapped_key = KEY_MAPPING.get(key, key)
-            self.keyboard.press(mapped_key)
+        try:
+            key = data['key']
+            latency_ms = (time.time() - data['timestamp']) * 1000
+            
+            # Handle special key combinations
+            special_combos = {
+                '\x01': ("a", ['ctrl']),  # Ctrl+A
+                '\x03': ("c", ['ctrl']),  # Ctrl+C
+                '\x16': ("v", ['ctrl']),  # Ctrl+V
+                '\x1a': ("z", ['ctrl']),  # Ctrl+Z
+                '\x18': ("x", ['ctrl']),  # Ctrl+X
+                '\x06': ("f", ['ctrl']),  # Ctrl+F
+                '\x13': ("s", ['ctrl']),  # Ctrl+S
+            }
+            
+            if key in special_combos:
+                k, mods = special_combos[key]
+                self.keyboard.press(k, modifiers=mods)
+                logger.info(f"Key combo: Ctrl+{k.upper()} (Latency: {latency_ms:.2f}ms)")
+            elif key == 'f1':
+                self.keyboard.send(("ctrl", "alt", "del", "", "", ""), modifiers=[])
+                logger.info(f"Special: Ctrl+Alt+Del (Latency: {latency_ms:.2f}ms)")
+            elif key == 'f2':
+                self.keyboard.write("906120")
+                logger.info(f"Typed '906120' (Latency: {latency_ms:.2f}ms)")
+            elif key == 'f3':
+                self.keyboard.write("ZYmeng94")
+                logger.info(f"Typed 'ZYmeng94' (Latency: {latency_ms:.2f}ms)")
+            else:
+                # Map special keys
+                mapped_key = KEY_MAPPING.get(key, key)
+                self.keyboard.press(mapped_key)
+                logger.info(f"Key pressed: {mapped_key} (Latency: {latency_ms:.2f}ms)")
+        except Exception as e:
+            logger.error(f"Key press error: {str(e)}")
     
     def handle_key_release(self, data):
-        self.keyboard.release()
+        try:
+            latency_ms = (time.time() - data['timestamp']) * 1000
+            self.keyboard.release()
+            logger.info(f"Key released: {data['key']} (Latency: {latency_ms:.2f}ms)")
+        except Exception as e:
+            logger.error(f"Key release error: {str(e)}")
 
 def on_message(client, userdata, msg):
     try:
         data = json.loads(msg.payload.decode())
         controller = userdata["controller"]
+        event_type = data['type']
         
-        if data['type'] == 'mouse_move':
+        # Calculate latency
+        current_time = time.time()
+        latency_ms = (current_time - data['timestamp']) * 1000
+        
+        logger.debug(f"Received {event_type} event (Latency: {latency_ms:.2f}ms)")
+        
+        if event_type == 'mouse_move':
             controller.handle_mouse_move(data)
-        elif data['type'] == 'mouse_click':
+        elif event_type == 'mouse_click':
             controller.handle_mouse_click(data)
-        elif data['type'] == 'mouse_scroll':
+        elif event_type == 'mouse_scroll':
             controller.handle_mouse_scroll(data)
-        elif data['type'] == 'key_press':
+        elif event_type == 'key_press':
             controller.handle_key_press(data)
-        elif data['type'] == 'key_release':
+        elif event_type == 'key_release':
             controller.handle_key_release(data)
             
     except Exception as e:
-        print(f"Error handling message: {str(e)}")
+        logger.error(f"Message handling error: {str(e)}")
 
 def load_config():
-    with open(MQTT_CONFIG_PATH, "r") as f:
-        return json.load(f)
+    try:
+        with open(MQTT_CONFIG_PATH, "r") as f:
+            return json.load(f)
+    except Exception as e:
+        logger.error(f"Failed to load config: {str(e)}")
+        raise
 
 if __name__ == "__main__":
-    # Setup CH9329 controller
-    controller = CH9329Controller()
-    
-    # MQTT Setup
-    cfg = load_config()
-    client = mqtt.Client(userdata={"controller": controller})
-    client.on_message = on_message
-    
-    client.connect(cfg["broker"], cfg["port"], 60)
-    client.subscribe(TOPIC)
-    
-    print("Input receiver started. Listening for events...")
-    client.loop_forever()
+    try:
+        logger.info("Starting input receiver...")
+        
+        # Setup CH9329 controller
+        controller = CH9329Controller()
+        
+        # MQTT Setup
+        cfg = load_config()
+        client = mqtt.Client(userdata={"controller": controller})
+        client.on_message = on_message
+        
+        # Connection callbacks
+        def on_connect(client, userdata, flags, rc):
+            if rc == 0:
+                client.subscribe(TOPIC)
+                logger.info("Connected to MQTT broker and subscribed")
+            else:
+                logger.error(f"Connection failed with code {rc}")
+                
+        def on_disconnect(client, userdata, rc):
+            if rc != 0:
+                logger.warning(f"Unexpected disconnection (rc={rc}), reconnecting...")
+                client.reconnect()
+                
+        client.on_connect = on_connect
+        client.on_disconnect = on_disconnect
+        
+        client.connect(cfg["broker"], cfg["port"], 60)
+        
+        logger.info("Input receiver started. Listening for events...")
+        client.loop_forever()
+    except KeyboardInterrupt:
+        logger.info("\nReceiver stopped by user")
+    except Exception as e:
+        logger.error(f"Critical error: {str(e)}")
