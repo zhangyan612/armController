@@ -5,6 +5,7 @@ from serial import Serial
 from ch9329 import Keyboard, Mouse
 import os
 import logging
+import ssl
 
 # Configure logging
 logging.basicConfig(
@@ -17,7 +18,7 @@ logging.basicConfig(
 logger = logging.getLogger('input_receiver')
 
 # MQTT Configuration
-TOPIC = "remote_keyboard_mouse"
+TOPIC = "input_events"
 MQTT_CONFIG_PATH = "mqtt_config.json"
 
 # Key mapping for special keys
@@ -184,15 +185,41 @@ if __name__ == "__main__":
                 client.subscribe(TOPIC)
                 logger.info("Connected to MQTT broker and subscribed")
             else:
-                logger.error(f"Connection failed with code {rc}")
+                reasons = {
+                    1: "unacceptable protocol version",
+                    2: "identifier rejected",
+                    3: "server unavailable",
+                    4: "bad username or password",
+                    5: "not authorized"
+                }
+                reason = reasons.get(rc, f"unknown error (code {rc})")
+                logger.error(f"Connection failed: {reason}")
                 
         def on_disconnect(client, userdata, rc):
             if rc != 0:
-                logger.warning(f"Unexpected disconnection (rc={rc}), reconnecting...")
+                reasons = {
+                    1: "unacceptable protocol version",
+                    2: "identifier rejected",
+                    3: "server unavailable",
+                    4: "bad username or password",
+                    5: "not authorized"
+                }
+                reason = reasons.get(rc, f"unknown error (code {rc})")
+                logger.warning(f"Unexpected disconnection: {reason}, reconnecting...")
                 client.reconnect()
                 
         client.on_connect = on_connect
         client.on_disconnect = on_disconnect
+        
+        # Add TLS configuration if using secure connection
+        if cfg.get("tls", False) or cfg["port"] == 8883:
+            logger.info("Configuring TLS connection")
+            client.tls_set(tls_version=ssl.PROTOCOL_TLS)
+            client.tls_insecure_set(True)  # For testing only
+        
+        # Set credentials if provided
+        if "username" in cfg and "password" in cfg:
+            client.username_pw_set(cfg["username"], cfg["password"])
         
         client.connect(cfg["broker"], cfg["port"], 60)
         
