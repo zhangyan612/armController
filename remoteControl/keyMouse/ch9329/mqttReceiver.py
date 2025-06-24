@@ -17,7 +17,7 @@ logging.basicConfig(
 logger = logging.getLogger('input_receiver')
 
 # MQTT Configuration
-TOPIC = "input_events"
+TOPIC = "remote_keyboard_mouse"
 MQTT_CONFIG_PATH = "mqtt_config.json"
 
 # Key mapping for special keys

@@ -17,7 +17,7 @@ logging.basicConfig(
 logger = logging.getLogger('input_publisher')
 
 # MQTT Configuration
-TOPIC = "input_events"
+TOPIC = "remote_keyboard_mouse"
 MQTT_CONFIG_PATH = "mqtt_config.json"
 
 # Position cache and thresholds
