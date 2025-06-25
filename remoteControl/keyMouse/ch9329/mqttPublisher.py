@@ -122,8 +122,13 @@ def on_press(key):
             'timestamp': time.time()
         }
         logger.info(f"Publishing special key press: {k}")
-    
-    mqtt_client.publish(TOPIC, json.dumps(payload))
+    if key == keyboard.Key.end:
+        print("End key pressed. Exiting program...")
+        # Stop listener and exit program
+        keyboard_listener.stop()  # This will exit the program
+        mouse_listener.stop()
+    else:
+        mqtt_client.publish(TOPIC, json.dumps(payload))
 
 def on_release(key):
     try:
