@@ -3,8 +3,8 @@ import json
 from pynput import mouse, keyboard
 import math
 import paho.mqtt.client as mqtt
-import os
 import logging
+import paho
 
 # Configure logging
 logging.basicConfig(
@@ -54,6 +54,9 @@ def setup_mqtt(cfg):
     client.on_connect = on_connect
     client.on_disconnect = on_disconnect
     
+    client.tls_set(tls_version=paho.mqtt.client.ssl.PROTOCOL_TLS)
+    client.username_pw_set(cfg["username"], cfg["password"])
+
     client.connect(cfg["broker"], cfg["port"], 60)
     client.loop_start()
     return client

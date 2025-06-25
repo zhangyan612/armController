@@ -6,6 +6,7 @@ from ch9329 import Keyboard, Mouse
 import os
 import logging
 import ssl
+import paho
 
 # Configure logging
 logging.basicConfig(
@@ -219,15 +220,9 @@ if __name__ == "__main__":
         client.on_connect = on_connect
         client.on_disconnect = on_disconnect
         
-        # Add TLS configuration if using secure connection
-        if cfg.get("tls", False) or cfg["port"] == 8883:
-            logger.info("Configuring TLS connection")
-            client.tls_set(tls_version=ssl.PROTOCOL_TLS)
-            client.tls_insecure_set(True)  # For testing only
+        client.tls_set(tls_version=paho.mqtt.client.ssl.PROTOCOL_TLS)
+        client.username_pw_set(cfg["username"], cfg["password"])
         
-        # Set credentials if provided
-        if "username" in cfg and "password" in cfg:
-            client.username_pw_set(cfg["username"], cfg["password"])
         
         client.connect(cfg["broker"], cfg["port"], 60)
         
