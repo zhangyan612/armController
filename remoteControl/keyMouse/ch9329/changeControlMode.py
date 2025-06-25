@@ -50,12 +50,8 @@ def publish_mode(mode):
         client.disconnect()
 
 if __name__ == "__main__":
-    # 检查命令行参数
-    if len(sys.argv) != 2 or sys.argv[1] not in ["local", "remote"]:
-        print("Usage: python control_switcher.py [local|remote]")
-        print("  local  - Switch to local control mode")
-        print("  remote - Switch to remote control mode")
-        sys.exit(1)
     
-    mode = sys.argv[1]
+    # mode ='local'
+    mode ='remote'
+
     publish_mode(mode)
