@@ -1,103 +1,57 @@
+import time
 import json
 import paho.mqtt.client as mqtt
-from pynput import mouse, keyboard
-import os
 import paho
+import os 
+
+TOPIC = "latency_test"
+MQTT_CONFIG_PATH = "mqtt_config.json"
 
 def load_config():
-    script_dir = os.path.dirname(os.path.abspath(__file__))
-    root_dir = os.path.abspath(os.path.join(script_dir, "..", ".."))
-    config_path = os.path.join(root_dir, "mqtt_config.json")
-    with open(config_path, "r") as f:
-        return json.load(f)
-
-# cfg = load_config()
-# MQTT Configuration
-# MQTT_BROKER = cfg["broker"]
-# MQTT_PORT = 1883
-
-TOPIC = "remote_keyboard_mouse"
-
-# Initialize MQTT client
-# client = mqtt.Client()
-# client.connect(MQTT_BROKER, MQTT_PORT, 60)
-# client.loop_start()
-
-
-cfg = load_config()
-client = mqtt.Client()
-# client.on_connect = on_connect
-# client.on_disconnect = on_disconnect
-
-client.tls_set(tls_version=paho.mqtt.client.ssl.PROTOCOL_TLS)
-client.username_pw_set(cfg["username"], cfg["password"])
-client.connect(cfg["broker"], cfg["port"], 60)
-client.loop_start()  # Start background thread
-
-
-# Mouse event handlers
-def on_move(x, y):
-    client.publish(TOPIC, json.dumps({'type': 'mouse_move', 'x': x, 'y': y}))
-
-def on_click(x, y, button, pressed):
-    action = 'down' if pressed else 'up'
-    client.publish(TOPIC, json.dumps({
-        'type': 'mouse_click',
-        'x': x,
-        'y': y,
-        'button': button.name,
-        'action': action
-    }))
-
-def on_scroll(x, y, dx, dy):
-    client.publish(TOPIC, json.dumps({
-        'type': 'mouse_scroll',
-        'dx': dx,
-        'dy': dy
-    }))
-
-# Keyboard event handlers
-def on_press(key):
     try:
-        k = key.char
-    except AttributeError:
-        k = key.name
-    client.publish(TOPIC, json.dumps({
-        'type': 'keyboard',
-        'key': k,
-        'action': 'press'
-    }))
+        with open(MQTT_CONFIG_PATH, "r") as f:
+            return json.load(f)
+    except Exception as e:
+        print(f"Failed to load config: {str(e)}")
+        raise
 
-def on_release(key):
+def on_connect(client, userdata, flags, rc):
+    if rc == 0:
+        print("Receiver connected to MQTT broker")
+        client.subscribe(TOPIC)
+    else:
+        print(f"Receiver connection failed with error code {rc}")
+
+def on_disconnect(client, userdata, rc):
+    print(f"Receiver disconnected (rc={rc})")
+    if rc != 0:
+        print("Reconnecting receiver...")
+        client.reconnect()
+
+def on_message(client, userdata, msg):
     try:
-        k = key.char
-    except AttributeError:
-        k = key.name
-    client.publish(TOPIC, json.dumps({
-        'type': 'keyboard',
-        'key': k,
-        'action': 'release'
-    }))
+        print('got message')
+        data = json.loads(msg.payload.decode())
+        receive_time = time.time()
+        latency = (receive_time - data['timestamp']) * 1000  # Convert to ms
+        print(f"Message {data['count']} - Latency: {latency:.2f} ms")
+    except Exception as e:
+        print(f"Error processing message: {str(e)}")
 
-# Start listeners
-mouse_listener = mouse.Listener(
-    on_move=on_move, 
-    on_click=on_click,
-    on_scroll=on_scroll
-)
-keyboard_listener = keyboard.Listener(
-    on_press=on_press, 
-    on_release=on_release
-)
+def main():
+    cfg = load_config()
+    
+    client = mqtt.Client()
+    client.on_connect = on_connect
+    client.on_disconnect = on_disconnect
+    client.on_message = on_message
+    
+    client.tls_set(tls_version=paho.mqtt.client.ssl.PROTOCOL_TLS)
+    client.username_pw_set(cfg["username"], cfg["password"])
+    client.connect(cfg["broker"], cfg["port"], 60)
+    
+    client.loop_forever()
 
-mouse_listener.start()
-keyboard_listener.start()
+if __name__ == "__main__":
+    main()
 
-print("Publisher started. Press Ctrl+C to exit.")
-try:
-    while True:
-        pass
-except KeyboardInterrupt:
-    mouse_listener.stop()
-    keyboard_listener.stop()
-    client.loop_stop()

@@ -10,7 +10,7 @@ import paho
 
 # Configure logging
 logging.basicConfig(
-    level=logging.INFO,
+    level=logging.DEBUG,
     format='%(asctime)s - %(levelname)s - %(message)s',
     handlers=[
         logging.StreamHandler()
@@ -147,7 +147,7 @@ def on_message(client, userdata, msg):
         current_time = time.time()
         latency_ms = (current_time - data['timestamp']) * 1000
         
-        logger.debug(f"Received {event_type} event (Latency: {latency_ms:.2f}ms)")
+        logger.info(f"Received {event_type} event (Latency: {latency_ms:.2f}ms)")
         
         if controller is None:
             logger.error("Controller not initialized - cannot process event")
@@ -222,7 +222,6 @@ if __name__ == "__main__":
         
         client.tls_set(tls_version=paho.mqtt.client.ssl.PROTOCOL_TLS)
         client.username_pw_set(cfg["username"], cfg["password"])
-        
         
         client.connect(cfg["broker"], cfg["port"], 60)
         

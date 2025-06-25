@@ -73,8 +73,8 @@ def on_move(x, y):
             'y': current_pos['y'],
             'timestamp': time.time()  # Add timestamp for latency measurement
         }
-        logger.info(f"Publishing mouse move: ({current_pos['x']}, {current_pos['y']})")
-        mqtt_client.publish(TOPIC, json.dumps(payload))
+        # logger.info(f"Publishing mouse move: ({current_pos['x']}, {current_pos['y']})")
+        # mqtt_client.publish(TOPIC, json.dumps(payload))
         last_sent_pos = current_pos.copy()
 
 def on_click(x, y, button, pressed):
