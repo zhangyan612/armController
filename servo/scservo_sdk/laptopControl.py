@@ -33,3 +33,4 @@ print("\nMatching Ports:", matching_ports)
 # if len(matching_ports)  > 0:
 controller = FeetechServoController(port='COM14', baudrate=1000000)
 clickServo(controller, 2) # laptop 
+

@@ -234,7 +234,7 @@ def main():
 def clickServo(controller, servo_id):
     position = 490
     if servo_id == 1:
-        position = 490 #1 - 490  2-500
+        position = 450 #1 - 490  2-500
     if servo_id == 2:
         position = 450 #1 - 490  2-500
     if servo_id == 3:
@@ -248,7 +248,7 @@ def clickServo(controller, servo_id):
 
 
 if __name__ == "__main__":
-    controller = FeetechServoController(port='COM10', baudrate=1000000)
+    controller = FeetechServoController(port='COM14', baudrate=1000000)
     # clickServo(controller, 1)
     clickServo(controller, 2) # laptop 
     # clickServo(controller, 3)
