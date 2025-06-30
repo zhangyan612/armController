@@ -65,7 +65,7 @@ class CH9329:
             logger.info("Serial port closed")
 
 # Initialize CH9329 controller
-ch9329 = CH9329("COM12", 9600, timeout=1, screenx=1920, screeny=1080)
+ch9329 = CH9329("COM3", 9600, timeout=1, screenx=1920, screeny=1080)
 
 def distance(p1, p2):
     return math.hypot(p1['x'] - p2['x'], p1['y'] - p2['y'])

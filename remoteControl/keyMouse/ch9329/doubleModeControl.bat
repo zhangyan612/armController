@@ -1,3 +1,4 @@
-cd c:/Users/yan/repos/armController
-C:/Users/yan/.conda/envs/vllm/python.exe c:/Users/yan/repos/armController/remoteControl/keyMouse/ch9329/local_remote_control.py
+D:
+cd D:\Robot\armController
+C:/Users/dell-pc/AppData/Local/Programs/Python/Python313/python.exe d:/Robot/armController/remoteControl/keyMouse/ch9329/local_remote_control.py 
 pause

@@ -37,7 +37,7 @@ class CH9329:
         self.ser.close()
 
 
-ch9329 = CH9329("COM12", 9600, timeout=1, screenx=1920, screeny=1080)
+ch9329 = CH9329("COM3", 9600, timeout=1, screenx=1920, screeny=1080)
 
 # ch9329.mouse.absolute_move(111, 333)
 

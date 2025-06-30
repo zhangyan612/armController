@@ -4,7 +4,7 @@ import ch9329Comm
 import serial
 
 # Setup serial and ch9329
-serial.ser = serial.Serial('COM13', 9600)
+serial.ser = serial.Serial('COM3', 9600)
 mouse_dev = ch9329Comm.mouse.DataComm(1920, 1080)
 keyboard_dev = ch9329Comm.keyboard.DataComm()
 
