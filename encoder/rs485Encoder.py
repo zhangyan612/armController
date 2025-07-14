@@ -17,9 +17,13 @@ def calculate_crc(cf, sf, df0, df1):
 
 # 发送指令帧
 def send_command(command, repeat=1):
+    # 循环repeat次
     for _ in range(repeat):
+        # 打印发送的命令
         # print(f"Sent: {command}")  
+        # 发送命令
         ser.write(command)
+        # 等待0.0008秒
         time.sleep(0.0008) # 时间间隔 >= 600微秒
 
 # 读取单圈绝对位置
@@ -110,9 +114,9 @@ def continuous_output():
             angle, status, response = read_position()
             if angle is not None and status is not None:
                 print(f"角度: {angle}, 运行状态: {status}")
-                if status == 0x08:
-                    return angle
-            # time.sleep(1)  # 每秒打印一次
+                # if status == 0x08:
+                #     return angle
+            time.sleep(1)  # 每秒打印一次
     except KeyboardInterrupt:
         print("停止输出位置信号")
 
