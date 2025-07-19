@@ -19,17 +19,16 @@ ser = serial.Serial(PORT, BAUDRATE, bytesize=BYTESIZE, parity=PARITY, stopbits=S
 
 
 # 构造 Modbus-RTU 请求帧
-def modbus_request(slave_id, function_code, start_reg, data=None):
-    if data is None:
-        # 读操作（如 0x03）
-        msg = struct.pack('>BBHH', slave_id, function_code, start_reg, 1)
+def modbus_request(slave_id, function_code, start_reg, count=1):
+    if function_code == 0x03:
+        # 读输入寄存器
+        msg = struct.pack('>BBHH', slave_id, function_code, start_reg, count)
+    elif function_code == 0x06:
+        # 写单个寄存器
+        value = count  # 这里 count 表示写入的值
+        msg = struct.pack('>BBHH', slave_id, function_code, start_reg, value)
     else:
-        # 写操作（如 0x06）
-        if function_code == 0x06:
-            value = data
-            msg = struct.pack('>BBHH', slave_id, function_code, start_reg, value)
-        else:
-            raise ValueError("不支持的功能码")
+        raise ValueError("不支持的功能码")
 
     crc = crc16(msg)
     request = msg + struct.pack('<H', crc)
@@ -59,7 +58,7 @@ def read_single_position():
 
 # 读取多圈位置（地址15-16）
 def read_multi_position():
-    request = modbus_request(SLAVE_ID, 0x03, 15, data=2)
+    request = modbus_request(SLAVE_ID, 0x03, 15, count=2)
     response = send_request(request)
 
     if len(response) >= 7:
@@ -69,7 +68,6 @@ def read_multi_position():
     else:
         print("读取多圈位置失败")
         return None
-
 
 # 读取单圈角度（地址22）
 def read_single_angle():
@@ -81,7 +79,7 @@ def read_single_angle():
 
 # 读取多圈角度（地址20-21）
 def read_multi_angle():
-    request = modbus_request(SLAVE_ID, 0x03, 20, data=2)
+    request = modbus_request(SLAVE_ID, 0x03, 20, count=2)
     response = send_request(request)
 
     if len(response) >= 7:
@@ -186,34 +184,66 @@ def get_slave_address():
             return address
     return None
 
+def set_position_zero():
+    """
+    向寄存器地址 11 写入值 1，触发位置置零操作。
+    使用 Modbus 功能码 0x06（写单个寄存器）
+    """
+    request = modbus_request(SLAVE_ID, 0x06, 11, 1)  # 地址11，写入值1
+    response = send_request(request)
+
+    if response and len(response) >= 6 and response[1] == 0x06:
+        print("位置置零命令已发送成功")
+        return True
+    else:
+        print("位置置零命令发送失败，未收到有效响应")
+        return False
+
 
 # 接收主动输出帧（串口监听）
 def listen_for_active_output():
     print("开始监听主动输出数据（按 Ctrl+C 停止）...")
-    while True:
-        data = ser.read(5)
-        if len(data) == 5 and data[0] == 0xFF and data[1] == 0x81:
-            high_byte = data[2]
-            low_byte = data[3]
-            checksum = data[4]
-            calculated_checksum = (high_byte + low_byte) & 0xFF
-            if calculated_checksum == checksum:
-                angle_raw = (high_byte << 8) | low_byte
-                angle = angle_raw / 65536.0 * 360
-                print(f"主动输出角度: {angle:.2f}°")
-            else:
-                print("校验失败")
-        time.sleep(0.01)
+    buffer = bytearray()
 
+    while True:
+        data = ser.read(100)
+        if data:
+            buffer.extend(data)
+
+            while len(buffer) >= 5:
+                if buffer[0] == 0xFF and buffer[1] == 0x81:
+                    high = buffer[2]
+                    low = buffer[3]
+                    checksum = buffer[4]
+                    angle_raw = (high << 8) | low
+                    angle_deg = angle_raw / 65536.0 * 360
+
+                    # ✅ 直接输出角度，跳过校验
+                    print(f"主动输出角度: {angle_deg:.2f}°")
+
+                    # 移除已处理的帧
+                    buffer = buffer[5:]
+                else:
+                    buffer.pop(0)  # 丢弃无效字节
+        time.sleep(0.01)
 
 # 示例主程序
 if __name__ == "__main__":
     try:
-        # print("单圈位置:", read_single_position())
-        # print("多圈位置:", read_multi_position())
+        print("单圈位置:", read_single_position())
+        print("多圈位置:", read_multi_position())
         # print("单圈角度:", read_single_angle())
         # print("多圈角度:", read_multi_angle())
         # print("转速:", read_speed())
+
+        # success = set_position_zero()
+        # if success:
+        #     print("编码器位置已置零")
+        # else:
+        #     print("置零失败，请检查连接或地址配置")
+        # time.sleep(1)
+        # print("单圈位置:", read_single_position())
+        # print("多圈位置:", read_multi_position())
 
         # 示例：获取模块地址
         # address=get_slave_address()
@@ -225,7 +255,7 @@ if __name__ == "__main__":
         # set_baud_rate(3)  # 19200
 
         # 示例：启用主动输出
-        # enable_active_output(True)
+        # enable_active_output(False) 
 
         # 示例：监听主动输出
         # listen_for_active_output()
