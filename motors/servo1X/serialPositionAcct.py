@@ -200,8 +200,24 @@ def clear_error(ser: serial.Serial, slave_id: int) -> bool:
         print("❌ 清错失败")
         return False
 
-# 读取实时数据
-def read_realtime_data(ser: serial.Serial, slave_id: int) -> Dict[str, float]:
+# 读取实时数据（优化版，只读取位置）
+def read_realtime_data_fast(ser: serial.Serial, slave_id: int) -> Dict[str, float]:
+    """优化的实时数据读取，只读取位置"""
+    data = {}
+
+    # 实际位置（地址44、45）
+    request = build_modbus_request(slave_id, 0x03, 44, 2)
+    registers, error = send_modbus_request(ser, request)
+    if registers and len(registers) == 2:
+        combined = (registers[0] << 16) | registers[1]
+        if combined >= 0x80000000:  # 负数
+            combined -= 0x100000000
+        data["位置"] = combined
+
+    return data
+
+# 读取实时数据（完整版，用于初始和最终读取）
+def read_realtime_data_full(ser: serial.Serial, slave_id: int) -> Dict[str, float]:
     data = {}
 
     # 实时电流（地址40、41）
@@ -311,15 +327,16 @@ def set_target_position(ser: serial.Serial, slave_id: int, position: int) -> boo
     print("❌ 目标位置设置验证失败")
     return False
 
-# 等待位置到达
+# 等待位置到达（优化版，使用快速读取）
 def wait_for_position(ser: serial.Serial, slave_id: int, target_position: int, tolerance: int = 10, timeout: float = 10.0) -> bool:
     """等待电机到达目标位置"""
     start_time = time.time()
     print(f"⏳ 等待位置到达 {target_position} ±{tolerance}...")
     
+    last_print_time = 0
     while time.time() - start_time < timeout:
-        # 读取实际位置
-        data = read_realtime_data(ser, slave_id)
+        # 使用优化方法读取位置
+        data = read_realtime_data_fast(ser, slave_id)
         current_position = data.get("位置")
         
         if current_position is None:
@@ -327,14 +344,22 @@ def wait_for_position(ser: serial.Serial, slave_id: int, target_position: int, t
             return False
         
         # 检查是否到达目标位置
-        if abs(current_position - target_position) <= tolerance:
+        position_diff = abs(current_position - target_position)
+        if position_diff <= tolerance:
             print(f"✅ 已到达目标位置 {target_position} (实际位置: {current_position})")
             return True
         
-        # 打印当前位置
-        print(f"当前位置: {current_position}, 目标: {target_position}, 差值: {abs(current_position - target_position)}")
-        time.sleep(0.2)  # 避免过度查询
+        # 控制打印频率，每0.3秒打印一次
+        current_time = time.time()
+        if current_time - last_print_time > 0.3:
+            print(f"当前位置: {current_position}, 目标: {target_position}, 差值: {position_diff}")
+            last_print_time = current_time
+        
+        time.sleep(0.05)  # 短暂等待，减少查询频率
     
+    # 超时后再读取一次位置
+    data = read_realtime_data_fast(ser, slave_id)
+    current_position = data.get("位置", "未知")
     print(f"⏰ 等待位置超时 (目标: {target_position}, 当前: {current_position})")
     return False
 
@@ -368,7 +393,7 @@ def set_32bit_parameter(
     print("❌ 32位参数设置验证失败")
     return False
 
-# 位置控制主函数（添加轨迹参数设置）
+# 位置控制主函数（优化版）
 def position_control_demo(
     port: str = "COM22",
     baudrate: int = 38400,
@@ -388,6 +413,7 @@ def position_control_demo(
         return
 
     print("✅ 串口已打开")
+    motor_enabled = False  # 跟踪电机使能状态
 
     try:
         # 1. 读取并清除错误
@@ -407,8 +433,8 @@ def position_control_demo(
                 else:
                     print("✅ 无错误")
         
-        # 2. 读取实时数据
-        realtime_data = read_realtime_data(ser, slave_id)
+        # 2. 读取实时数据（完整版）
+        realtime_data = read_realtime_data_full(ser, slave_id)
         print("📊 初始实时数据：")
         for k, v in realtime_data.items():
             print(f" - {k}: {v:.3f}" if k in ["电流", "速度", "电压", "温度"] else f" - {k}: {v}")
@@ -442,6 +468,7 @@ def position_control_demo(
         if not set_control_word(ser, slave_id, 0xF):
             print("❌ 设置控制字失败，无法继续")
             return
+        motor_enabled = True  # 标记电机已使能
         
         # 6. 设置目标位置为0
         if not set_target_position(ser, slave_id, 0):
@@ -451,20 +478,20 @@ def position_control_demo(
         # 7. 等待到达位置0
         if not wait_for_position(ser, slave_id, 0, tolerance=50, timeout=15.0):
             print("❌ 未能到达位置0")
-            # return
+            # 继续执行后续操作
         
         # 8. 设置目标位置为10000
-        if not set_target_position(ser, slave_id, 100000):
+        if not set_target_position(ser, slave_id, 10000):
             print("❌ 设置目标位置失败，无法继续")
             return
         
         # 9. 等待到达位置10000
-        if not wait_for_position(ser, slave_id, 100000, tolerance=50, timeout=15.0):
+        if not wait_for_position(ser, slave_id, 10000, tolerance=50, timeout=15.0):
             print("❌ 未能到达位置10000")
-            # return
+            # 继续执行后续操作
         
-        # 10. 读取最终位置
-        final_data = read_realtime_data(ser, slave_id)
+        # 10. 读取最终位置（完整版）
+        final_data = read_realtime_data_full(ser, slave_id)
         print("📊 最终实时数据：")
         for k, v in final_data.items():
             print(f" - {k}: {v:.3f}" if k in ["电流", "速度", "电压", "温度"] else f" - {k}: {v}")
@@ -474,8 +501,17 @@ def position_control_demo(
     except Exception as e:
         print(f"❌ 异常发生: {str(e)}")
     finally:
-        ser.close()
-        print("🔌 串口已关闭")
+        try:
+            # 11. 运行结束后去除使能
+            if motor_enabled:
+                print("🛑 去除电机使能...")
+                set_control_word(ser, slave_id, 0x6)  # 松轴命令
+                time.sleep(0.1)  # 等待命令执行
+        except Exception as e:
+            print(f"⚠️ 去除使能时发生错误: {e}")
+        finally:
+            ser.close()
+            print("🔌 串口已关闭")
 
 # 示例调用
 if __name__ == "__main__":
