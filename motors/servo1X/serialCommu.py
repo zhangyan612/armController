@@ -200,7 +200,7 @@ def read_realtime_data(ser: serial.Serial, slave_id: int) -> Dict[str, float]:
 
 # 主函数：读取错误状态并获取实时数据
 def read_and_clear_errors_and_get_data(
-    port: str = "COM25",
+    port: str = "COM22",
     baudrate: int = 38400,
     slave_id: int = 1,
     timeout: float = 2

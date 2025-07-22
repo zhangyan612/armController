@@ -338,7 +338,37 @@ def wait_for_position(ser: serial.Serial, slave_id: int, target_position: int, t
     print(f"⏰ 等待位置超时 (目标: {target_position}, 当前: {current_position})")
     return False
 
-# 位置控制主函数
+# 设置32位参数（用于梯形速度/加速度/减速度）
+def set_32bit_parameter(
+    ser: serial.Serial,
+    slave_id: int,
+    start_address: int,
+    value: int
+) -> bool:
+    """设置32位参数（需要写入两个连续的寄存器）"""
+    # 将32位值拆分为两个16位寄存器值
+    high_word = (value >> 16) & 0xFFFF
+    low_word = value & 0xFFFF
+    values = [high_word, low_word]
+    
+    request = build_modbus_request_write_multiple(slave_id, start_address, values)
+    print(f"📤 设置地址 {start_address} 为 {value} (高位:0x{high_word:X}, 低位:0x{low_word:X}): {request.hex()}")
+    registers, error = send_modbus_request(ser, request)
+    
+    if error:
+        print(f"❌ 设置32位参数失败: {error}")
+        return False
+    
+    # 验证设置是否成功
+    if registers and len(registers) >= 2:
+        if registers[0] == start_address and registers[1] == 2:  # 起始地址和寄存器数量
+            print(f"✅ 32位参数设置成功 (地址:{start_address}, 值:{value})")
+            return True
+    
+    print("❌ 32位参数设置验证失败")
+    return False
+
+# 位置控制主函数（添加轨迹参数设置）
 def position_control_demo(
     port: str = "COM22",
     baudrate: int = 38400,
@@ -383,43 +413,63 @@ def position_control_demo(
         for k, v in realtime_data.items():
             print(f" - {k}: {v:.3f}" if k in ["电流", "速度", "电压", "温度"] else f" - {k}: {v}")
         
-        # 3. 设置工作模式为位置模式 (7)
-        if not set_work_mode(ser, slave_id, 7):
+        # 3. 设置轨迹参数 (梯形速度/加速度/减速度)
+        trapezoidal_speed = 10000 
+        trapezoidal_accel = 1000 
+        trapezoidal_decel = 1000
+        
+        print(f"⚙️ 设置梯形速度: {trapezoidal_speed} (原始值:10000)")
+        if not set_32bit_parameter(ser, slave_id, 222, trapezoidal_speed):
+            print("❌ 设置梯形速度失败")
+            return
+            
+        print(f"⚙️ 设置梯形加速度: {trapezoidal_accel} (原始值:1000)")
+        if not set_32bit_parameter(ser, slave_id, 224, trapezoidal_accel):
+            print("❌ 设置梯形加速度失败")
+            return
+            
+        print(f"⚙️ 设置梯形减速度: {trapezoidal_decel} (原始值:1000)")
+        if not set_32bit_parameter(ser, slave_id, 226, trapezoidal_decel):
+            print("❌ 设置梯形减速度失败")
+            return
+        
+        # 4. 设置工作模式为轨迹位置模式 (1)
+        if not set_work_mode(ser, slave_id, 1):  # 模式1 = 轨迹位置模式
             print("❌ 设置工作模式失败，无法继续")
             return
         
-        # 4. 使能电机 (控制字 0xF = 15)
+        # 5. 使能电机 (控制字 0xF = 15)
         if not set_control_word(ser, slave_id, 0xF):
             print("❌ 设置控制字失败，无法继续")
             return
         
-        # 5. 设置目标位置为0
+        # 6. 设置目标位置为0
         if not set_target_position(ser, slave_id, 0):
             print("❌ 设置目标位置失败，无法继续")
             return
         
-        # 6. 等待到达位置0
+        # 7. 等待到达位置0
         if not wait_for_position(ser, slave_id, 0, tolerance=50, timeout=15.0):
             print("❌ 未能到达位置0")
-            return
+            # return
         
-        # 7. 设置目标位置为6000
-        if not set_target_position(ser, slave_id, 10000):
+        # 8. 设置目标位置为10000
+        if not set_target_position(ser, slave_id, 100000):
             print("❌ 设置目标位置失败，无法继续")
             return
         
-        # 8. 等待到达位置6000
-        if not wait_for_position(ser, slave_id, 10000, tolerance=50, timeout=15.0):
-            print("❌ 未能到达位置6000")
-            return
+        # 9. 等待到达位置10000
+        if not wait_for_position(ser, slave_id, 100000, tolerance=50, timeout=15.0):
+            print("❌ 未能到达位置10000")
+            # return
         
-        # 9. 读取最终位置
+        # 10. 读取最终位置
         final_data = read_realtime_data(ser, slave_id)
         print("📊 最终实时数据：")
         for k, v in final_data.items():
             print(f" - {k}: {v:.3f}" if k in ["电流", "速度", "电压", "温度"] else f" - {k}: {v}")
         
-        print("🎯 位置控制完成")
+        print("🎯 轨迹位置控制完成")
 
     except Exception as e:
         print(f"❌ 异常发生: {str(e)}")
@@ -429,8 +479,4 @@ def position_control_demo(
 
 # 示例调用
 if __name__ == "__main__":
-    # 原函数调用
-    # read_and_clear_errors_and_get_data(slave_id=1)
-    
-    # 位置控制演示
     position_control_demo(slave_id=1)

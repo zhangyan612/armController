@@ -7,7 +7,7 @@ import crcmod
 crc16 = crcmod.mkCrcFun(0x18005, rev=True, initCrc=0xFFFF, xorOut=0x0000)
 
 # 配置参数
-PORT = 'COM5'  # 修改为你使用的串口号
+PORT = 'COM6'  # 修改为你使用的串口号
 BAUDRATE = 115200
 PARITY = serial.PARITY_NONE
 BYTESIZE = serial.EIGHTBITS
@@ -231,7 +231,7 @@ def listen_for_active_output():
 if __name__ == "__main__":
     try:
         print("单圈位置:", read_single_position())
-        print("多圈位置:", read_multi_position())
+        # print("多圈位置:", read_multi_position())
         # print("单圈角度:", read_single_angle())
         # print("多圈角度:", read_multi_angle())
         # print("转速:", read_speed())
@@ -245,7 +245,7 @@ if __name__ == "__main__":
         # print("单圈位置:", read_single_position())
         # print("多圈位置:", read_multi_position())
 
-        # 示例：获取模块地址
+        # # 示例：获取模块地址
         # address=get_slave_address()
         # print(f"当前模块地址: {address}")
         # 示例：设置新地址
@@ -255,7 +255,7 @@ if __name__ == "__main__":
         # set_baud_rate(3)  # 19200
 
         # 示例：启用主动输出
-        # enable_active_output(False) 
+        # enable_active_output(False)
 
         # 示例：监听主动输出
         # listen_for_active_output()

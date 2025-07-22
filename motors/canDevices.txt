@@ -1,0 +1,67 @@
+Kvaser canlib is unavailable.
+socket.CMSG_SPACE not available on this platform
+uptime library not available, timestamps are relative to boot time and not to Epoch UTC
+Cannot load IXXAT vcinpl library: Could not find module 'vcinpl.dll' (or one of its dependencies). Try using the full path with constructor syntax.
+Cannot load IXXAT vcinpl library: Could not find module 'vcinpl2.dll' (or one of its dependencies). Try using the full path with constructor syntax.
+Failed to load NI-CAN driver: Could not find module 'nican' (or one of its dependencies). Try using the full path with constructor syntax.
+Failed to load IS-CAN driver: Could not find module 'iscandrv' (or one of its dependencies). Try using the full path with constructor syntax.
+You won't be able to use the ICS neoVI can backend without the python-ics module installed!: No module named 'ics'
+Could not import vxlapi: Vector XL library not found: vxlapi64
+Cannot load SYSTEC ucan library: Could not find module 'usbcan64.dll' (or one of its dependencies). Try using the full path with constructor syntax..
+The SYSTEC ucan library has not been initialized.
+The CANtact module is not installed. Install it using `pip install cantact`
+Could not import nixnet: No module named 'nixnet'
+[{'interface': 'serial', 'channel': 'COM10'}, {'interface': 'virtual', 'channel': 'channel-207'}]
+
+
+(voxposer-env) PS D:\Robot\armController> & C:/Users/yanzh/.conda/envs/voxposer-env/python.exe d:/Robot/armController/motors/canPort.py
+Kvaser canlib is unavailable.
+socket.CMSG_SPACE not available on this platform
+uptime library not available, timestamps are relative to boot time and not to Epoch UTC
+Cannot load IXXAT vcinpl library: Could not find module 'vcinpl.dll' (or one of its dependencies). Try using the full path with constructor syntax.
+Cannot load IXXAT vcinpl library: Could not find module 'vcinpl2.dll' (or one of its dependencies). Try using the full path with constructor syntax.
+Failed to load NI-CAN driver: Could not find module 'nican' (or one of its dependencies). Try using the full path with constructor syntax.
+Failed to load IS-CAN driver: Could not find module 'iscandrv' (or one of its dependencies). Try using the full path with constructor syntax.
+You won't be able to use the ICS neoVI can backend without the python-ics module installed!: No module named 'ics'
+Could not import vxlapi: Vector XL library not found: vxlapi64
+Cannot load SYSTEC ucan library: Could not find module 'usbcan64.dll' (or one of its dependencies). Try using the full path with constructor syntax..
+The SYSTEC ucan library has not been initialized.
+The CANtact module is not installed. Install it using `pip install cantact`
+Could not import nixnet: No module named 'nixnet'
+[{'interface': 'serial', 'channel': 'COM10'}, {'interface': 'virtual', 'channel': 'channel-2970'}]
+
+
+(voxposer-env) PS D:\Robot\armController> & C:/Users/yanzh/.conda/envs/voxposer-env/python.exe d:/Robot/armController/motors/canPort.py
+Kvaser canlib is unavailable.
+socket.CMSG_SPACE not available on this platform
+uptime library not available, timestamps are relative to boot time and not to Epoch UTC
+Cannot load IXXAT vcinpl library: Could not find module 'vcinpl.dll' (or one of its dependencies). Try using the full path with constructor syntax.
+Cannot load IXXAT vcinpl library: Could not find module 'vcinpl2.dll' (or one of its dependencies). Try using the full path with constructor syntax.
+Failed to load NI-CAN driver: Could not find module 'nican' (or one of its dependencies). Try using the full path with constructor syntax.
+Failed to load IS-CAN driver: Could not find module 'iscandrv' (or one of its dependencies). Try using the full path with constructor syntax.
+You won't be able to use the ICS neoVI can backend without the python-ics module installed!: No module named 'ics'
+Could not import vxlapi: Vector XL library not found: vxlapi64
+Cannot load SYSTEC ucan library: Could not find module 'usbcan64.dll' (or one of its dependencies). Try using the full path with constructor syntax..
+The SYSTEC ucan library has not been initialized.
+The CANtact module is not installed. Install it using `pip install cantact`
+Could not import nixnet: No module named 'nixnet'
+[{'interface': 'serial', 'channel': 'COM13'}, {'interface': 'pcan', 'channel': 'PCAN_USBBUS1', 'supports_fd': False, 'controller_number': 0, 'device_features': 0, 'device_id': 255, 'device_name': 'PCAN-USB', 'device_type': 5, 'channel_condition': 1}, {'interface': 'virtual', 'channel': 'channel-794'}]
+
+i 
+
+
+(voxposer-env) PS D:\Robot\armController> & C:/Users/yanzh/.conda/envs/voxposer-env/python.exe d:/Robot/armController/motors/canPort.py
+Kvaser canlib is unavailable.
+socket.CMSG_SPACE not available on this platform
+uptime library not available, timestamps are relative to boot time and not to Epoch UTC
+Cannot load IXXAT vcinpl library: Could not find module 'vcinpl.dll' (or one of its dependencies). Try using the full path with constructor syntax.
+Cannot load IXXAT vcinpl library: Could not find module 'vcinpl2.dll' (or one of its dependencies). Try using the full path with constructor syntax.
+Failed to load NI-CAN driver: Could not find module 'nican' (or one of its dependencies). Try using the full path with constructor syntax.
+Failed to load IS-CAN driver: Could not find module 'iscandrv' (or one of its dependencies). Try using the full path with constructor syntax.
+You won't be able to use the ICS neoVI can backend without the python-ics module installed!: No module named 'ics'
+Could not import vxlapi: Vector XL library not found: vxlapi64
+Cannot load SYSTEC ucan library: Could not find module 'usbcan64.dll' (or one of its dependencies). Try using the full path with constructor syntax..
+The SYSTEC ucan library has not been initialized.
+The CANtact module is not installed. Install it using `pip install cantact`
+Could not import nixnet: No module named 'nixnet'
+[{'interface': 'serial', 'channel': 'COM12'}, {'interface': 'virtual', 'channel': 'channel-6011'}]
