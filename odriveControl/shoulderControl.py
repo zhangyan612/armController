@@ -146,7 +146,7 @@ class MotorController:
 
 # 使用示例
 if __name__ == "__main__":
-    mc = MotorController(port='COM6')
+    mc = MotorController(port='COM22')
     try:
         mc.motor_enable(True)
         mc.set_reduction_ratio(80)

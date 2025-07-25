@@ -7,7 +7,7 @@
 
 | 类型   | 指令                          | 说明                                      |
 |--------|------------------------------|-------------------------------------------|
-| 基础指令 | `dump_errors(drv0)`          | 打印所有的错误信息                        |
+| 基础指令 | `dump_errors(odrv0)`          | 打印所有的错误信息                        |
 |        | `odrv0.clear_errors()`       | 清除所有的错误信息                        |
 |        | `odrv0.save_configuration()` | 在修改过参数，或电机自动识别参数较改准后，请务必执行此指令存储修改，否则断电后丢失所有修改。 |
 |        | `odrv0.reboot()`             | 重新驱动器                                |
@@ -55,6 +55,7 @@
 
 
 3. 1. 3. 2 实战：上电校准
+
 用户第一次使用微电机时，需要对电机以及编码器进行校准。在校准之前，请固定好电机，
 或用手握紧，输出轴空载，校准过程如下：
 解释如下：
@@ -62,15 +63,23 @@
 测量电机的相电阻和相电感，会听到尖利的“嘀”一声。相电阻和相电感的测量结果可通过下
 述指令查看：
  第二步：查看错误码
-odrv 0 .axis 0 .motor.config.phase_resistance
-odrv 0 .axis 0 .motor.config.phase_inductance
-odrv 0 .axis 0 .requested_state=AXIS_STATE_MOTOR_CALIBRATION
-dump_errors(odrv 0 )
-odrv 0 .axis 0 .requested_state=AXIS_STATE_ENCODER_OFFSET_CALIBRATION
-dump_errors(odrv 0 )
-odrv 0 .axis 0 .motor.config.pre_calibrated= 1
-odrv 0 .axis 0 .encoder.config.pre_calibrated= 1
-odrv 0 .save_configuration()
+
+odrv0.axis0.motor.config.phase_resistance
+odrv0.axis0.motor.config.phase_inductance
+odrv0.axis0.requested_state=AXIS_STATE_MOTOR_CALIBRATION
+dump_errors(odrv0)
+
+odrv 0.axis0.requested_state=AXIS_STATE_ENCODER_OFFSET_CALIBRATION
+dump_errors(odrv0)
+
+
+odrv0.clear_errors()
+odrv0.axis0.requested_state=4
+odrv0.axis0.requested_state=7
+
+odrv0.axis0.motor.config.pre_calibrated= 1
+odrv0.axis0.encoder.config.pre_calibrated= 1
+odrv0.save_configuration()
 查看第一步过后的系统错误码，如果出现任何的红色错误码，则需要重启电机，然后重试，
 或者报告售后。
  第三步：编码器校准
@@ -194,7 +203,9 @@ CAN 通信采用标准帧格式。数据帧，11 位 ID，8 字节数据。如�
 | 分段     | Bit10 ~ Bit5    | Bit4 ~ Bit0    |
 | 描述     | node_id         | cmd_id         | 通信数据 |
 
-- **node_id**: 代表这个电机在线总线上的唯一 ID。可在 odrivetool 中用 odrv0.axis0.config.can.node_id 读取和设置。
+- **node_id**: 代表这个电机在线总线上的唯一 ID。可在 odrivetool 中用 
+odrv0.axis0.config.can.node_id 读取和设置。
+
 - **cmd_id**: 指令编码，表示协议的消息类型。请参见本节余下内容。
 - **通信数据**: 8 个字节。每一个消息中携带的参数会被编码成数据或浮点数。字节序为小端 (small endian)，其中浮点数是按照 IEEE 754 标准进行编码 (可通过网站 [https://www.h-schmidt.net/FloatConverter/IEEE754.html](https://www.h-schmidt.net/FloatConverter/IEEE754.html) 测试编码)。
 
@@ -533,7 +544,9 @@ CMD ID: 0x01F（主机→电机）
 
 ## 4.1.5 周期消息
 
-用户可配置电机向上位机周期性发送消息，而不用上位机向电机发送请求消息。可通过 odrv0.axis0.config.can 下的一系列配置来打开/关闭周期消息（值为 0 表示关闭，为其他值表示周期时间，单位为 ms），如下表所示：
+用户可配置电机向上位机周期性发送消息，而不用上位机向电机发送请求消息。
+可通过 odrv0.axis0.config.can 下的一系列配置来打开/关闭周期消息
+（值为 0 表示关闭，为其他值表示周期时间，单位为 ms），如下表所示：
 
 | 消息 | odrivetool 配置 | 默认值 |
 |------|----------------|--------|
@@ -548,7 +561,8 @@ CMD ID: 0x01F（主机→电机）
 | Get_Sensorless_Estimates | odrv0.axis0.config.can.sensorless_rate_ms | 0 |
 | Get_Bus_Voltage_Current | odrv0.axis0.config.can.bus_vi_rate_ms | 0 |
 
-默认情况下，前两种周期消息在出厂时打开，所以当用户监控 CAN 总线时，会看到两种消息以设定周期进行广播。用户可通过下述指令关闭它们：
+默认情况下，前两种周期消息在出厂时打开，所以当用户监控 CAN 总线时，会看到两种消息以设定周期进行广播。
+用户可通过下述指令关闭它们：
 
 ```python
 odrv0.axis0.config.can.heartbeat_rate_ms = 0

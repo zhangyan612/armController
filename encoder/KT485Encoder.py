@@ -7,7 +7,7 @@ import crcmod
 crc16 = crcmod.mkCrcFun(0x18005, rev=True, initCrc=0xFFFF, xorOut=0x0000)
 
 # 配置参数
-PORT = 'COM6'  # 修改为你使用的串口号
+PORT = 'COM5'  # 修改为你使用的串口号
 BAUDRATE = 115200
 PARITY = serial.PARITY_NONE
 BYTESIZE = serial.EIGHTBITS
