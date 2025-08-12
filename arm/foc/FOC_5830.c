@@ -184,6 +184,7 @@ float electricalAngle(void)
     return _normalizeAngle((shaft_angle + sensor_offset) * pole_pairs - zero_electric_angle);
 }
 
+
 void setPhaseVoltage(float Uq, float Ud, float angle_el)
 {
     float Uout;               // ï¿½ï¿½ï¿½ï¿½ï¿½Ñ¹ï¿½Ä¹ï¿½Ò»ï¿½ï¿½ï¿½ï¿½Öµ
