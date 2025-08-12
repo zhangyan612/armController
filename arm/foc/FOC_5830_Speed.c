@@ -8,23 +8,23 @@
 #include "foc_utils.h"
 #include "pid.h"
 #include "Kalman.h"
-#include "pid.h"
-#include "main.h"
 #include "usart.h"
 
 // Global variables
 extern float setSpeed;          // Target speed value
-extern float setCurrent;         // Target current value
-extern float setPosition ;       // Target position value
+extern float setCurrent;        // Target current value
+extern float setPosition;       // Target position value
 
 extern ADC_HandleTypeDef hadc1;
 
-float shaft_angle,sensor_offset,zero_electric_angle,electrical_angle;
-int pole_pairs=1,pattern=0;
-char sensor_direction=1;
+float target_angle = 0.0f;      // Global target angle variable
+
+float shaft_angle, sensor_offset, zero_electric_angle, electrical_angle;
+int pole_pairs = 1, pattern = 0;
+signed char sensor_direction = 1;
 long angle_data, angle_data_prev; // Current and previous angle values
 float full_rotation_offset;      // Full rotation offset for angle unwrapping
-extern uint8_t isRunning ;       // Motor running status flag
+extern uint8_t isRunning;        // Motor running status flag
 
 DQVoltage_s voltage;             // DQ voltage values
 Kalman kalman_current_Iq_Filter;
@@ -39,11 +39,30 @@ volatile uint8_t motor_enabled = 0;  // Motor enable flag
 #define ENCODER_MAX_COUNT 65535
 int32_t rotation_count = 0;     // Rotation counter
 int16_t last_count = 0;         // Previous encoder count
-float shaft_angle = 0.0f;       // Current shaft angle
-float Target_speed,shaft_velocity,full_rotation_offset;
+float Target_speed, shaft_velocity;
 int MGT_angle;
-char MGT_angle_rx_flag=0;
+char MGT_angle_rx_flag = 0;
 char feedback_send_flag;
+
+// Trajectory velocity mode constants
+#define TRAJECTORY_MODE 6
+
+// Trajectory velocity mode parameter structure
+typedef struct {
+    float target_speed;       // Target speed (rad/s)
+    float acceleration;       // Acceleration (rad/s²)
+    float target_revolutions; // Target revolutions (relative to current position)
+    float start_angle;        // Start position (rad)
+    float target_angle;       // Absolute target position (rad)
+    float current_speed;      // Current speed (rad/s)
+    float distance_covered;   // Distance moved (rad)
+    float total_distance;     // Total distance to move (rad)
+    uint8_t active;           // Whether trajectory is active
+    int8_t direction;         // Movement direction (1:forward, -1:reverse)
+    uint8_t phase;            // Current phase (0:acceleration, 1:constant, 2:deceleration)
+} TrajectoryProfile;
+
+TrajectoryProfile trajectory = {0}; // Trajectory control structure
 
 // Structure for ADC readings
 typedef struct{
@@ -58,13 +77,13 @@ adc_1011 _readADCVoltageInline()
 {	
     adc_1011 adc_;
     HAL_ADC_Start(&hadc1);
-    HAL_ADC_PollForConversion(&hadc1,50);
-    adc_.adc_10=(float)HAL_ADC_GetValue(&hadc1)*33/40960;
+    HAL_ADC_PollForConversion(&hadc1, 50);
+    adc_.adc_10 = (float)HAL_ADC_GetValue(&hadc1) * 33 / 40960;
     
     HAL_ADC_Start(&hadc1);
-    HAL_ADC_PollForConversion(&hadc1,50);
-    adc_.adc_11=(float)HAL_ADC_GetValue(&hadc1)*33/40960;
-    HAL_ADC_Stop (&hadc1);
+    HAL_ADC_PollForConversion(&hadc1, 50);
+    adc_.adc_11 = (float)HAL_ADC_GetValue(&hadc1) * 33 / 40960;
+    HAL_ADC_Stop(&hadc1);
     
     return adc_;
 }
@@ -73,9 +92,9 @@ adc_1011 _readADCVoltageInline()
 PhaseCurrent_s getPhaseCurrents(void)
 {
     PhaseCurrent_s current;
-    ADC_1011=_readADCVoltageInline();
-    current.a = (ADC_1011.adc_10 - 1.65)*10;  // amps
-    current.b = (ADC_1011.adc_11 - 1.67)*10;  // amps
+    ADC_1011 = _readADCVoltageInline();
+    current.a = (ADC_1011.adc_10 - 1.65) * 10;  // amps
+    current.b = (ADC_1011.adc_11 - 1.67) * 10;  // amps
     current.c = 0;  // amps
     
     return current;
@@ -86,7 +105,7 @@ DQCurrent_s getFOCCurrents(float angle_el)
 {
     PhaseCurrent_s current;
     float i_alpha, i_beta;
-    float ct,st;
+    float ct, st;
     DQCurrent_s ret;
     
     // Read current phase currents
@@ -116,8 +135,8 @@ DQCurrent_s getFOCCurrents(float angle_el)
     ret.q = i_beta * ct - i_alpha * st;
     
     // Filter Q current
-    ret.q=Kalman_Filter(&kalman_current_Iq_Filter,ret.q);
-    ret.q= Slid_Filter(&Filter_ret_q,ret.q,40);
+    ret.q = Kalman_Filter(&kalman_current_Iq_Filter, ret.q);
+    ret.q = Slid_Filter(&Filter_ret_q, ret.q, 40);
 
     return ret;
 }
@@ -132,7 +151,7 @@ float Position_PID(float reality, float target)
     static float Bias, Pwm, Last_Bias, Integral_bias = 0;
     
     Bias = target - reality;              // Calculate error
-    Integral_bias += Bias;	            // Integrate error
+    Integral_bias += Bias;	              // Integrate error
     
     // Anti-windup clamping
     if(Integral_bias > 5) Integral_bias = 5;
@@ -164,6 +183,89 @@ float Incremental_PID(float reality, float target)
     // Constrain output
     Pwm = _constrain(Pwm, -3, 3);
     return Pwm;
+}
+
+// Initialize trajectory velocity mode
+void initTrajectoryMode(float speed, float accel, float revs)
+{
+    trajectory.target_speed = fabs(speed);  // Always use absolute value for calculations
+    trajectory.acceleration = fabs(accel); // Always positive acceleration
+    trajectory.target_revolutions = revs;
+    trajectory.start_angle = shaft_angle;
+    trajectory.distance_covered = 0.0f;
+    trajectory.total_distance = fabs(revs) * _2PI;
+    trajectory.direction = (revs >= 0) ? 1 : -1;
+    trajectory.current_speed = 0.0f;
+    trajectory.phase = 0; // Start from acceleration phase
+    trajectory.active = 1;
+    
+    // Calculate absolute target position
+    trajectory.target_angle = trajectory.start_angle + 
+                             trajectory.direction * trajectory.total_distance;
+    
+    printf("Trajectory mode started:\r\n");
+    printf("  Speed: %.2f rad/s\r\n", trajectory.target_speed);
+    printf("  Accel: %.2f rad/s²\r\n", trajectory.acceleration);
+    printf("  Revolutions: %.2f\r\n", trajectory.target_revolutions);
+    printf("  Start angle: %.2f rad\r\n", trajectory.start_angle);
+    printf("  Target angle: %.2f rad\r\n", trajectory.target_angle);
+    printf("  Total distance: %.2f rad\r\n", trajectory.total_distance);
+}
+
+// Update trajectory velocity mode
+void updateTrajectoryMode()
+{
+    if (!trajectory.active) return;
+    
+    const float dt = 0.001f; // Control period 1ms
+    float remaining = trajectory.total_distance - trajectory.distance_covered;
+    
+    // Calculate deceleration distance needed
+    float decel_distance = (trajectory.current_speed * trajectory.current_speed) / 
+                          (2.0f * trajectory.acceleration);
+    
+    // Check if need to switch to deceleration phase
+    if (trajectory.phase != 2 && decel_distance >= remaining) {
+        trajectory.phase = 2; // Enter deceleration phase
+        printf("Entering deceleration phase\r\n");
+    }
+    
+    // Update speed based on current phase
+    switch (trajectory.phase) {
+        case 0: // Acceleration phase
+            trajectory.current_speed += trajectory.acceleration * dt;
+            if (trajectory.current_speed >= trajectory.target_speed) {
+                trajectory.current_speed = trajectory.target_speed;
+                trajectory.phase = 1; // Enter constant speed phase
+                printf("Entering constant speed phase\r\n");
+            }
+            break;
+            
+        case 1: // Constant speed phase
+            // Maintain constant speed
+            trajectory.current_speed = trajectory.target_speed;
+            break;
+            
+        case 2: // Deceleration phase
+            trajectory.current_speed -= trajectory.acceleration * dt;
+            if (trajectory.current_speed <= 0) {
+                trajectory.current_speed = 0.0f;
+                trajectory.active = 0; // Trajectory complete
+                pattern = 4; // Switch back to position mode
+                printf("Trajectory completed\r\n");
+            }
+            break;
+    }
+    
+    // Update distance covered
+    trajectory.distance_covered += trajectory.current_speed * dt;
+    
+    // Calculate current position
+    float current_angle = trajectory.start_angle + 
+                         trajectory.direction * trajectory.distance_covered;
+    
+    // Set target position for position loop
+    target_angle = current_angle;
 }
 
 // Calculate electrical angle
@@ -265,7 +367,7 @@ float getAngle(void)
 {
     float d_angle; // Angle change value
 
-    angle_data =  MGT_angle ; // Get current angle value
+    angle_data = MGT_angle; // Get current angle value
 
     // Calculate angle change and handle full rotations
     d_angle = angle_data - angle_data_prev;
@@ -301,6 +403,8 @@ char motion_complete = 0;
 char test_flag;
 float total_target_angle = 8.0f * (float)_PI; // 8 rotations in rad
 float desired_speed = 2.0f * (float)_PI;      // 2 rad/s
+
+
 #define CONTROL_PERIOD 0.1f
 
 // Command states
@@ -323,7 +427,6 @@ typedef enum {
 volatile char cmd_buffer[CMD_BUFFER_SIZE];
 volatile uint8_t cmd_idx = 0;
 volatile CommandType received_command = CMD_NONE;
-volatile float target_angle = 0.0f;
 volatile int reduction_ratio = 1;
 volatile uint8_t command_ready = 0; // Command ready flag
 
@@ -393,7 +496,6 @@ void motorDisable(void)
 }
 
 // Main motor control function
-extern float Bias_buf;
 void run()
 {    
     // Initialize on first run
@@ -402,15 +504,15 @@ void run()
         voltage.q = 0;
         voltage.d = 0;
 
-        PID_current_q.P =  0.08;
-        PID_current_q.I =  0.05;
-        PID_current_q.D =  0;
+        PID_current_q.P = 0.08;
+        PID_current_q.I = 0.05;
+        PID_current_q.D = 0;
         PID_current_q.limit = 2;
         
-        pole_pairs=7;  
+        pole_pairs = 7;  
         
-        zero_electric_angle =2.5;
-        pattern=4;
+        zero_electric_angle = 2.5;
+        pattern = 4;
         HAL_UART_Receive_IT(&huart1, &rx_byte, 1);
         HAL_UART_Receive_IT(&huart2, &rx_byte_uart2, 1);
     }
@@ -443,10 +545,10 @@ void run()
             motor_enabled = 1;
             
             // Forward rotation
-            for(int i=0; i<=500; i++)
+            for(int i = 0; i <= 500; i++)
             {
                 angle = _3PI_2 + _2PI * i / 500.0;
-                setPhaseVoltage(1, 0,  angle);
+                setPhaseVoltage(1, 0, angle);
                 Send_Request();
                 HAL_Delay(2);
                 printf("i=%d, angle=%.3f, MGT_angle=%d, getAngle=%.3f\n", i, angle, MGT_angle, getAngle());
@@ -456,10 +558,10 @@ void run()
             mid_angle = getAngle();
 
             // Reverse rotation
-            for(int i=500; i>=0; i--)
+            for(int i = 500; i >= 0; i--)
             {
                 angle = _3PI_2 + _2PI * i / 500.0;
-                setPhaseVoltage(1, 0,  angle);
+                setPhaseVoltage(1, 0, angle);
                 Send_Request();
                 HAL_Delay(2);
             }
@@ -469,46 +571,46 @@ void run()
             setPhaseVoltage(0, 0, 0);
             HAL_Delay(200);
 
-            printf("mid_angle=%.4f\r\n",mid_angle);
-            printf("end_angle=%.4f\r\n",end_angle);
+            printf("mid_angle=%.4f\r\n", mid_angle);
+            printf("end_angle=%.4f\r\n", end_angle);
             
             // Determine sensor direction
-            moved =  fabs(mid_angle - end_angle);
-            if((mid_angle == end_angle)||(moved < 0.02))
+            moved = fabs(mid_angle - end_angle);
+            if((mid_angle == end_angle) || (moved < 0.02))
             {
-                printf("MOT: Failed to notice movement------------------------------------- \r\n");				
+                printf("MOT: Failed to notice movement\r\n");				
             }
             else if(mid_angle < end_angle)
             {
                 printf("MOT: sensor_direction==CCW\r\n");
-                sensor_direction=CCW;
+                sensor_direction = 1;  // Use 1 instead of CCW
             }
             else
             {
                 printf("MOT: sensor_direction==CW\r\n");
-                sensor_direction=CW;
+                sensor_direction = -1; // Use -1 instead of CW
             }
             
             // Set zero position
-            setPhaseVoltage(1, 0,  _3PI_2);
+            setPhaseVoltage(1, 0, _3PI_2);
             HAL_Delay(700);
             printf("end_angle--------_3PI_2 =%.4f\r\n", getAngle());
 
-            zero_electric_angle = _normalizeAngle(sensor_direction* getAngle() * 7 );
+            zero_electric_angle = _normalizeAngle(sensor_direction * getAngle() * 7);
             HAL_Delay(20);
             printf("MOT: Zero elec. angle:");
-            printf("%.4f\r\n",zero_electric_angle);
+            printf("%.4f\r\n", zero_electric_angle);
             
             setPhaseVoltage(0, 0, 0);
             HAL_Delay(200);
             
-            pattern=3;
+            pattern = 3;
             break;
             
         case 3:
             // Basic voltage control mode
-            voltage.q =0.5;
-            voltage.d =0;
+            voltage.q = 0.5;
+            voltage.d = 0;
             break;
             
         case 4:
@@ -537,6 +639,17 @@ void run()
             
             // Use integrated angle for control
             electrical_angle = openLoopAngle;
+            break;
+            
+        case TRAJECTORY_MODE:  // Trajectory velocity mode (new)
+            // Update trajectory state
+            updateTrajectoryMode();
+            
+            // Use position loop to track trajectory-generated position
+            P_angle.P = 5;
+            P_angle.I = 0;
+            P_angle.D = 0.1; // Add derivative term to help tracking
+            voltage.q = PIDoperator(&P_angle, (shaft_angle - target_angle));
             break;
     }
     
@@ -595,7 +708,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
             uart2_doutntime_rx = 300;
             cmd_state = CMD_STATE_IDLE;
             cmd_idx = 0;
-            for(int i=0; i<10; i++) cmd_buffer[i] = 0;
+            for(int i = 0; i < 10; i++) cmd_buffer[i] = 0;
             HAL_UART_Receive_IT(&huart2, &rx_byte_uart2, 1);
             
             // Clear overrun flag
@@ -611,6 +724,8 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
     if (huart->Instance == USART1)
     {
         // Encoder data protocol
+        uint8_t calculated_checksum; // Declare at the beginning
+        
         switch(current_state)
         {
             case WAIT_FOR_START:
@@ -635,7 +750,7 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
             case WAIT_FOR_CHECKSUM:
                 received_bytes[2] = rx_byte;
                 // Verify checksum
-                uint8_t calculated_checksum = 0x02 ^ 0x08 ^ received_bytes[0] ^ received_bytes[1];
+                calculated_checksum = 0x02 ^ 0x08 ^ received_bytes[0] ^ received_bytes[1];
                 if (rx_byte == calculated_checksum)
                 {
                     // Valid frame - update angle
@@ -665,7 +780,8 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
                     received_char == 'B' || received_char == 'b' ||
                     received_char == 'E' || received_char == 'e' ||
                     received_char == 'Q' || received_char == 'q' ||
-                    received_char == 'S' || received_char == 's') // New open-loop speed command
+                    received_char == 'S' || received_char == 's' ||
+                    received_char == 'T' || received_char == 't') // New trajectory command
                 {
                     cmd_buffer[0] = received_char;
                     cmd_idx = 1;
@@ -696,18 +812,44 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
                         case 'E': case 'e': cmd_state = CMD_STATE_RECEIVE_DATA_E; break;
                         case 'Q': case 'q': cmd_state = CMD_STATE_RECEIVE_DATA_Q; break;
                         case 'S': case 's': cmd_state = CMD_STATE_RECEIVE_DATA_A; break; // Use same parser as angle
+                        case 'T': case 't': cmd_state = CMD_STATE_RECEIVE_DATA_A; break; // Use same parser as angle
                     }
                 }
                 else
                 {
                     cmd_state = CMD_STATE_IDLE;
                     cmd_idx = 0;
-                    for(int i=0; i<10; i++) cmd_buffer[i] = 0;
+                    for(int i = 0; i < 10; i++) cmd_buffer[i] = 0;
                 }
                 break;
 
             case CMD_STATE_RECEIVE_DATA_A:
-                if (received_char == ';' && cmd_idx >= 3) 
+                if (received_char == ')' && cmd_idx > 5 && (cmd_buffer[0] == 'T' || cmd_buffer[0] == 't')) 
+                {
+                    cmd_buffer[cmd_idx] = '\0';
+                    
+                    // Parse trajectory parameters: T=(speed,accel,revolutions)
+                    float speed = 0.0f, accel = 0.0f, revolutions = 0.0f;
+                    int parsed = sscanf((const char*)cmd_buffer, "T=(%f,%f,%f", 
+                                       &speed, &accel, &revolutions);
+                    
+                    if (parsed == 3) {
+                        // Parameter validation
+                        if (speed <= 0 || accel <= 0) {
+                            printf("Error: Speed and acceleration must be positive\r\n");
+                        } else {
+                            // Initialize trajectory mode
+                            initTrajectoryMode(speed, accel, revolutions);
+                            pattern = TRAJECTORY_MODE;
+                        }
+                    } else {
+                        printf("Error parsing trajectory parameters\r\n");
+                    }
+                    
+                    cmd_state = CMD_STATE_IDLE;
+                    cmd_idx = 0;
+                }
+                else if (received_char == ';' && cmd_idx >= 3) 
                 {
                     cmd_buffer[cmd_idx] = '\0';
                     
@@ -734,12 +876,13 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
                     {
                         // Angle command
                         target_angle = value * reduction_ratio;
+                        pattern = 4; // Switch to position mode
                         printf("Set Target Angle: %.3f rad\r\n", target_angle);
                         command_ready = 1;
                     }
                     else if(cmd_buffer[0] == 'S' || cmd_buffer[0] == 's')
                     {
-                        // Open-loop speed command (new)
+                        // Open-loop speed command
                         setSpeedOpenLoop = value;
                         pattern = OPEN_LOOP_SPEED_MODE; // Switch to open-loop mode
                         printf("Set OpenLoop Speed: %.2f rad/s\r\n", setSpeedOpenLoop);
@@ -750,81 +893,81 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
                 }
                 else
                 {
-                    if (cmd_idx < (CMD_BUFFER_SIZE_A - 1))
+                    if (cmd_idx < (CMD_BUFFER_SIZE - 1))
                     {
                         cmd_buffer[cmd_idx++] = received_char;
                     }
                 }
                 break;
 
-case CMD_STATE_RECEIVE_DATA_B:
-                            if (received_char == ';') 
+            case CMD_STATE_RECEIVE_DATA_B:
+                if (received_char == ';') 
+                {
+                    cmd_buffer[cmd_idx++] = received_char;
+                    cmd_buffer[cmd_idx] = '\0'; // Null terminate
+
+                    // Manually parse "B=1234;" format
+                    if (cmd_idx >= 4 && cmd_buffer[0] == 'B' && cmd_buffer[1] == '=') 
+                    {
+                        uint32_t ratio = 0;
+                        uint8_t digit_count = 0;
+                        
+                        // Start reading digits after 'B='
+                        for (uint8_t i = 2; i < cmd_idx - 1; i++) 
+                        {
+                            char c = cmd_buffer[i];
+                            if (c >= '0' && c <= '9') 
                             {
-                                    cmd_buffer[cmd_idx++] = received_char;
-                                    cmd_buffer[cmd_idx] = '\0'; // Null terminate
-
-                                    // Manually parse "B=1234;" format
-                                    if (cmd_idx >= 4 && cmd_buffer[0] == 'B' && cmd_buffer[1] == '=') 
-                                    {
-                                            uint32_t ratio = 0;
-                                            uint8_t digit_count = 0;
-                                            
-                                            // Start reading digits after 'B='
-                                            for (uint8_t i = 2; i < cmd_idx - 1; i++) 
-                                            {
-                                                    char c = cmd_buffer[i];
-                                                    if (c >= '0' && c <= '9') 
-                                                    {
-                                                            ratio = ratio * 10 + (c - '0');
-                                                            digit_count++;
-                                                    }
-                                                    else 
-                                                    {
-                                                            printf("Invalid digit in ratio\r\n");
-                                                            goto reset_state; // Invalid character, reset
-                                                    }
-                                            }
-
-                                            if (digit_count > 0) 
-                                            {
-                                                    // Apply limits
-                                                    if (ratio < 1) ratio = 1;
-                                                    if (ratio > 1000) ratio = 1000;
-
-                                                    reduction_ratio = ratio;
-                                                    printf("Set Reduction Ratio: %d\r\n", reduction_ratio);
-                                                    command_ready = 1;
-                                            }
-                                            else 
-                                            {
-                                                    printf("No valid digits after B=\r\n");
-                                            }
-                                    }
-                                    else 
-                                    {
-                                            printf("Invalid B command format (expected 'B=...;')\r\n");
-                                    }
-
-                    reset_state:
-                                    // Reset state machine
-                                    cmd_state = CMD_STATE_IDLE;
-                                    cmd_idx = 0;
+                                ratio = ratio * 10 + (c - '0');
+                                digit_count++;
                             }
                             else 
                             {
-                                    // Check buffer space
-                                    if (cmd_idx < (CMD_BUFFER_SIZE_B - 1)) 
-                                    {
-                                            cmd_buffer[cmd_idx++] = received_char;
-                                    }
-                                    else 
-                                    {
-                                            printf("Error: Command too long\r\n");
-                                            cmd_state = CMD_STATE_IDLE;
-                                            cmd_idx = 0;
-                                    }
+                                printf("Invalid digit in ratio\r\n");
+                                goto reset_state; // Invalid character, reset
                             }
-                            break;
+                        }
+
+                        if (digit_count > 0) 
+                        {
+                            // Apply limits
+                            if (ratio < 1) ratio = 1;
+                            if (ratio > 1000) ratio = 1000;
+
+                            reduction_ratio = ratio;
+                            printf("Set Reduction Ratio: %d\r\n", reduction_ratio);
+                            command_ready = 1;
+                        }
+                        else 
+                        {
+                            printf("No valid digits after B=\r\n");
+                        }
+                    }
+                    else 
+                    {
+                        printf("Invalid B command format (expected 'B=...;')\r\n");
+                    }
+
+                    reset_state:
+                    // Reset state machine
+                    cmd_state = CMD_STATE_IDLE;
+                    cmd_idx = 0;
+                }
+                else 
+                {
+                    // Check buffer space
+                    if (cmd_idx < (CMD_BUFFER_SIZE_B - 1)) 
+                    {
+                        cmd_buffer[cmd_idx++] = received_char;
+                    }
+                    else 
+                    {
+                        printf("Error: Command too long\r\n");
+                        cmd_state = CMD_STATE_IDLE;
+                        cmd_idx = 0;
+                    }
+                }
+                break;
 
             case CMD_STATE_RECEIVE_DATA_E:
                 if (received_char == ';' && cmd_idx == 3) 
@@ -857,32 +1000,33 @@ case CMD_STATE_RECEIVE_DATA_B:
                     }
                 }
                 break;
+                
             case CMD_STATE_RECEIVE_DATA_Q:
                 if (received_char == ';') {
-                        cmd_buffer[cmd_idx] = '\0'; // ?????
-                        if (cmd_idx > 2) { // ??? Q=123;
-                                char *data_start = (char *)&cmd_buffer[2]; 
-                                if (*data_start == '=') { 
-                                        data_start++; 
-                                        int32_t new_count = atoi(data_start);
-                                        rotation_count = new_count;
-                                        full_rotation_offset = rotation_count * _2PI;
-                                        printf("Q:%ld\r\n", rotation_count); 
-                                } else {
-                                        printf("ERROR: Invalid Q format\r\n");
-                                }
-                        } else { // ??? Q;
-                                printf("Q:%ld\r\n", rotation_count);
+                    cmd_buffer[cmd_idx] = '\0'; // Null terminate
+                    if (cmd_idx > 2) { // Check for Q=123;
+                        char *data_start = (char *)&cmd_buffer[2]; 
+                        if (*data_start == '=') { 
+                            data_start++; 
+                            int32_t new_count = atoi(data_start);
+                            rotation_count = new_count;
+                            full_rotation_offset = rotation_count * _2PI;
+                            printf("Q:%ld\r\n", rotation_count); 
+                        } else {
+                            printf("ERROR: Invalid Q format\r\n");
                         }
+                    } else { // Just Q;
+                        printf("Q:%ld\r\n", rotation_count);
+                    }
+                    cmd_state = CMD_STATE_IDLE;
+                    cmd_idx = 0;
+                } else {
+                    if (cmd_idx < CMD_BUFFER_SIZE) {
+                        cmd_buffer[cmd_idx++] = received_char;
+                    } else {
                         cmd_state = CMD_STATE_IDLE;
                         cmd_idx = 0;
-                } else {
-                        if (cmd_idx < CMD_BUFFER_SIZE) {
-                                cmd_buffer[cmd_idx++] = received_char;
-                        } else {
-                                cmd_state = CMD_STATE_IDLE;
-                                cmd_idx = 0;
-                        }
+                    }
                 }
                 break;
 
@@ -894,3 +1038,4 @@ case CMD_STATE_RECEIVE_DATA_B:
         HAL_UART_Receive_IT(&huart2, &rx_byte_uart2, 1);
     }
 }
+
