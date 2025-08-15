@@ -16,7 +16,7 @@ def calculate_crc(cf, sf, df0, df1):
     return cf ^ sf ^ df0 ^ df1
 
 # 发送指令帧
-def send_command(command, repeat=1):
+def send_command(command, repeat=1): 
     # 循环repeat次
     for _ in range(repeat):
         # 打印发送的命令

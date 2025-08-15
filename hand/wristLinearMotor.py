@@ -3,7 +3,7 @@ import serial
 
 # Create a serial object
 ser = serial.Serial(
-    port='COM10',  # replace with your port
+    port='COM21',  # replace with your port
     baudrate=115200,
     parity=serial.PARITY_NONE,
     stopbits=serial.STOPBITS_ONE,
@@ -205,8 +205,8 @@ if __name__ == "__main__":
     # ser.write(stop_message)
 
     timeChange = 5
-    id_value = '01'
-    pwm_value = 3000  # 拉  -6
+    id_value = '12'
+    pwm_value = 0  # 拉  -6
     # pwm_value = 2016  # 拉  -6
     # pwm_value = 0  # 松
     # pwm_value = 2300  # 拉  6

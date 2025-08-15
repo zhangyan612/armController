@@ -14,7 +14,8 @@ class MotorController:
         self.data_file = "motor_data.json"
         self.lock = Lock()  # 用于线程同步
         self.response_received = False  # 标记是否收到响应
-        
+        self.encoder_angle = 0  # 编码器角度
+
         self.load_q_value()
         self.receive_thread = Thread(target=self._receive_data)
         self.receive_thread.start()
@@ -146,29 +147,118 @@ class MotorController:
 
 # 使用示例
 if __name__ == "__main__":
-    mc = MotorController(port='COM22')
+    mc = MotorController(port='COM32')
     try:
-        mc.motor_enable(True)
-        mc.set_reduction_ratio(80)
+        # mc.motor_enable(False) 
+        # mc.set_reduction_ratio(80)
 
         # TODO: 设置关节限位
-        mc.set_angle(0)    # 度数 0 - 360
+        # mc.set_angle(0)    # 度数 0 - 360
         # print("Current Q:", mc.query_rotation())
         # mc.set_angle(-540)    # 反转1.5圈
         a = mc.query_encoder_angle()
         print(a)
 
-        time.sleep(0.1)
-        a = mc.query_encoder_angle()
-        print(a)
+        # time.sleep(0.1)
+        # a = mc.query_encoder_angle()
+        # print(a)
 
-        time.sleep(1.5)
-        a = mc.query_encoder_angle()
-        print(a)
+        # time.sleep(1.5)
+        # a = mc.query_encoder_angle()
+        # print(a)
 
-        q = mc.query_rotation()
-        print(q)
+        # q = mc.query_rotation()
+        # print(q)
 
     finally:
         mc.motor_enable(False)
         mc.close()
+
+
+
+
+
+
+
+
+
+
+
+
+
+        
+
+# [2025-08-12 22:08:26.776]# RECV HEX>
+# 3C DB 76 7F DF FF 
+
+# [2025-08-12 22:08:27.491]# SEND ASCII>
+# C;
+
+
+
+# [2025-08-12 22:08:28.547]# SEND ASCII>
+# C;
+
+
+
+# [2025-08-12 22:08:28.605]# RECV HEX>
+# 41 6E 36 DF 9B BF 
+
+# [2025-08-12 22:08:29.165]# SEND ASCII>
+# C;
+
+
+
+# [2025-08-12 22:08:29.219]# RECV HEX>
+# 41 EE 3E BF FF 7F 7E 7D BB EF FF F7 3F EF 
+
+# [2025-08-12 22:08:29.943]# SEND ASCII>
+# C;
+
+
+
+# [2025-08-12 22:08:29.996]# RECV HEX>
+# 43 EF 3F FB B7 FF FB FF 7F E7 EF F7 EF 
+
+# [2025-08-12 22:08:30.450]# SEND ASCII>
+# C;
+
+
+
+# [2025-08-12 22:08:30.514]# RECV HEX>
+# 43 EF 76 
+
+# [2025-08-12 22:08:31.659]# SEND ASCII>
+# C;
+
+
+
+# [2025-08-12 22:08:31.717]# RECV HEX>
+# D8 FB 3F FF B7 77 EF 
+
+# [2025-08-12 22:08:33.518]# SEND ASCII>
+# C;
+
+
+
+# [2025-08-12 22:08:33.579]# RECV HEX>
+# 43 EF 3F FF FE BF AF 7F D7 FB B9 B7 3F 
+
+
+
+
+# [2025-08-12 22:12:37.489]# SEND ASCII>
+# C;
+
+
+
+# [2025-08-12 22:12:37.542]# RECV HEX>
+# 41 6E 67 6C 65 3A 20 2D 33 2E 31 36 37 38 36 34 20 72 61 64 2C 20 52 61 77 3A 20 2D 38 32 36 30 2C 20 52 6F 74 61 74 69 6F 6E 3A 20 30 0D 0A 
+
+# [2025-08-12 22:12:38.857]# SEND ASCII>
+# C;
+
+
+
+# [2025-08-12 22:12:38.908]# RECV HEX>
+# 41 6E 67 6C 65 3A 20 2D 33 2E 31 36 37 34 38 30 20 72 61 64 2C 20 52 61 77 3A 20 2D 38 32 35 39 2C 20 52 6F 74 61 74 69 6F 6E 3A 20 30 0D 0A 

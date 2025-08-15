@@ -1,0 +1,32 @@
+
+zero pos
+
+right back motor   = -2.5
+max  -2.03
+min -2.7
+
+odrv0.axis0.config.can.node_id = 2
+
+
+
+-4.7
+
+-6.15
+
+
+
+
+odrv0.axis0.config.can.node_id = 3
+
+-4.6
+mid -5.1
+-6.7
+
+
+left leg
+min -3.4
+
+mid -4.6
+
+max -5.5
+
