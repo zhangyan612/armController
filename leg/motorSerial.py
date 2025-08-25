@@ -75,13 +75,13 @@ class SerialMotorController:
         print("Enabling motor...")
         self.send_hex_command("41 54 18 07 e8 0c 08 00 00 00 00 00 00 00 00 0d 0a")
     
-    def move_to_10_rad(self):
-        """移动到10 rad位置 (完全复制日志中的命令)"""
-        print("Moving to 10 rad...")
-        # 发送三个命令序列 (日志中的121-123行)
-        self.send_hex_command("41 54 90 07 e8 0c 08 24 70 00 00 00 00 20 41 0d 0a")
-        self.send_hex_command("41 54 90 07 e8 0c 08 25 70 00 00 00 00 20 41 0d 0a")
-        self.send_hex_command("41 54 90 07 e8 0c 08 16 70 00 00 00 00 20 41 0d 0a")
+    def move_to_0_5_rad(self):
+        """移动到0.5 rad位置 (根据日志中0.5 rad的命令)"""
+        print("Moving to 0.5 rad...")
+        # 发送三个命令序列 (日志中的273-275行)
+        self.send_hex_command("41 54 90 07 e8 0c 08 24 70 00 00 00 00 80 3f 0d 0a")
+        self.send_hex_command("41 54 90 07 e8 0c 08 25 70 00 00 00 00 80 3f 0d 0a")
+        self.send_hex_command("41 54 90 07 e8 0c 08 16 70 00 00 00 00 00 3f 0d 0a")
     
     def move_to_0_rad(self):
         """移动到0 rad位置 (完全复制日志中的命令)"""
@@ -113,11 +113,15 @@ def main():
         controller.enable_motor()
         time.sleep(1)
         
-        # 移动到10 rad
-        controller.move_to_10_rad()
+        # 移动到0位
+        controller.move_to_0_rad()
         time.sleep(3)  # 等待移动完成
         
-        # 移动到0 rad
+        # 移动到0.5 rad (修改点)
+        controller.move_to_0_5_rad()
+        time.sleep(3)  # 等待移动完成
+        
+        # 回到0位
         controller.move_to_0_rad()
         time.sleep(3)  # 等待移动完成
         
@@ -134,6 +138,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-
-

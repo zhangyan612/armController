@@ -5,6 +5,8 @@ import can
 import time
 import struct
 import argparse
+import platform  
+import threading
 
 # Function to send CAN frame and handle response
 def send_can_frame(bus, arbitration_id, data, block_receive=1):
@@ -554,6 +556,209 @@ def disable_can(bus, motor_id):
     send_can_frame(bus, arbitration_id, data, block_receive=0)
     print(f'CAN disabled for motor {motor_id}. Motor will reboot.')
 
+# CAN bus initialization with platform detection
+def init_can_bus():
+    if platform.system() == 'Windows':
+        # Windows configuration
+        interface = 'pcan'
+        channel = 'PCAN_USBBUS1'
+        bitrate = 500000
+    else:
+        # Linux configuration
+        interface = 'socketcan'
+        channel = 'can0'
+        bitrate = 500000
+    
+    try:
+        bus = can.interface.Bus(
+            interface=interface,
+            channel=channel,
+            bitrate=bitrate
+        )
+        print(f"Connected to {channel} at {bitrate} bps")
+        return bus
+    except Exception as e:
+        print(f"CAN bus initialization failed: {e}")
+        return None
+
+def get_encoder_estimates_safe(bus, motor_id):
+    """
+    Safely get encoder estimates by temporarily entering position mode
+    and restoring the original state afterward.
+    
+    Args:
+        bus: CAN bus object
+        motor_id: Motor ID
+        
+    Returns:
+        tuple: (position, velocity) estimates
+    """
+    # Get current state
+    _, current_state, _, _, _ = get_heartbeat(bus, motor_id)
+    
+    try:
+        # Temporarily set to position mode
+        set_controller_mode(bus, motor_id, control_mode=3, input_mode=3)
+        set_closed_loop_state(bus, motor_id)
+        time.sleep(0.1)  # Allow state transition
+        
+        # Now get accurate encoder estimates
+        return get_encoder_estimates(bus, motor_id)
+        
+    finally:
+        # Always restore original state
+        if current_state is not None:
+            # Convert back to original state
+            set_axis_state(bus, motor_id, current_state)
+            time.sleep(0.1)
+
+def move_relative_safely(bus, motor_id, offset_revs, move_time=5.0):
+    """
+    Move motor relative to its current position safely
+    
+    Args:
+        bus: CAN bus object
+        motor_id: Motor ID
+        offset_revs: Position change in revolutions
+        move_time: Time for movement in seconds
+    """
+    # 1. Calibrate motor if needed
+    #_, axis_state, _, _, _ = get_heartbeat(bus, motor_id)
+    #if axis_state < 6:  # Not calibrated
+    #    print(f"Calibrating motor {motor_id}...")
+    #    calibrate_motor(bus, motor_id)
+    
+    # 2. Temporarily enable position mode
+    set_controller_mode(bus, motor_id, control_mode=3, input_mode=3)
+    set_closed_loop_state(bus, motor_id)
+    time.sleep(0.1)  # Allow state transition
+    
+    # 3. Get actual current position
+    current_pos, _ = get_encoder_estimates(bus, motor_id)
+    print(f"Actual current position: {current_pos:.3f} rev")
+    
+    # 4. Calculate and move to new position
+    target_pos = current_pos + offset_revs
+    print(f"Moving {offset_revs:.2f} rev to {target_pos:.3f} rev")
+    set_position(bus, motor_id, target_pos)
+    
+    # 5. Wait for movement to complete
+    time.sleep(move_time)
+    
+    # 6. Release motor (set to idle)
+    set_axis_state(bus, motor_id, 1)  # AXIS_STATE_IDLE
+    print(f"Movement complete, motor released")
+
+
+# Continuous position monitoring
+def monitor_positions(bus, active_motors):
+    """Continuously display encoder positions for active motors"""
+    print("\nStarting position monitoring... (Ctrl+C to stop)")
+    print("Motor | Position (rev) | Velocity (rev/s)")
+    print("------+----------------+-----------------")
+    
+    try:
+        while True:
+            for motor_id in active_motors:
+                try:
+                    pos, vel = get_encoder_estimates(bus, motor_id)
+                    print(f"{motor_id:5} | {pos:14.3f} | {vel:15.3f}", end='\r')
+                except:
+                    print(f"{motor_id:5} | {'ERROR':14} | {'ERROR':15}", end='\r')
+            time.sleep(0.1)
+    except KeyboardInterrupt:
+        print("\nMonitoring stopped")
+
+# Motor movement function
+def move_motor(bus, motor_id, position):
+    """Move motor to specified position safely"""
+    try:
+        # Prepare for movement
+        set_controller_mode(bus, motor_id, control_mode=3, input_mode=3)
+        time.sleep(0.2)
+        set_closed_loop_state(bus, motor_id)
+        time.sleep(0.2)
+        
+        # Get current position and move
+        current_pos, _ = get_encoder_estimates(bus, motor_id)
+        print(f"Moving motor {motor_id} from {current_pos:.3f} to {position:.3f} rev")
+        set_position(bus, motor_id, position)
+        
+        # Wait for movement
+        time.sleep(2.0)
+        
+        # Release motor
+        set_axis_state(bus, motor_id, 1)  # AXIS_STATE_IDLE
+        print(f"Motor {motor_id} released to idle state")
+        return True
+    except Exception as e:
+        print(f"Movement failed: {e}")
+        return False
+
+
+# Main interactive console
+def main_console():
+    bus = init_can_bus()
+    if not bus:
+        return
+    
+    # Initialize motors 1-6 in closed loop state
+    active_motors = []
+    for motor_id in range(1, 7):
+        try:
+            set_controller_mode(bus, motor_id, control_mode=3, input_mode=3)
+            set_closed_loop_state(bus, motor_id)
+            active_motors.append(motor_id)
+            print(f"Motor {motor_id} initialized for control")
+        except:
+            print(f"Motor {motor_id} initialization failed")
+    
+    # Start monitoring thread
+    monitor_thread = threading.Thread(
+        target=monitor_positions, 
+        args=(bus, active_motors),
+        daemon=True
+    )
+    monitor_thread.start()
+    
+    # Command interface
+    print("\nEnter commands in format: <motor_id> <position>")
+    print("Example: '1 3.5' to move motor 1 to 3.5 revolutions")
+    print("Type 'exit' to quit\n")
+    
+    try:
+        while True:
+            cmd = input(">>> ").strip()
+            if cmd.lower() == 'exit':
+                break
+                
+            try:
+                parts = cmd.split()
+                if len(parts) != 2:
+                    raise ValueError("Invalid command format")
+                
+                motor_id = int(parts[0])
+                position = float(parts[1])
+                
+                if motor_id not in active_motors:
+                    print(f"Error: Motor {motor_id} not active")
+                    continue
+                    
+                # Move motor
+                move_motor(bus, motor_id, position)
+            except ValueError as e:
+                print(f"Invalid input: {e}. Use format: <motor_id> <position>")
+            except Exception as e:
+                print(f"Error: {e}")
+    finally:
+        # Clean up all motors
+        for motor_id in active_motors:
+            try:
+                set_axis_state(bus, motor_id, 1)  # Ensure idle state
+            except:
+                pass
+        bus.shutdown()
+        print("\nAll motors released. CAN bus shut down.")
 
 # Main function with command line arguments
 def main():
@@ -664,7 +869,18 @@ def runMotorTest():
     # sudo ip link set can0 type can bitrate 500000 loopback off
     # sudo ip link set up can0
 
-    bus = can.interface.Bus(interface='socketcan', channel='can0', bitrate=500000) 
+    if platform.system() == 'Windows':
+        interface = 'pcan'
+        channel = 'PCAN_USBBUS1'
+    else:
+        interface = 'socketcan'
+        channel = 'can0'
+
+    bus = can.interface.Bus(
+        interface=interface,
+        channel=channel,
+        bitrate=500000
+    )
     print(f"Connected to can bus")
 
     motorID1 = 0x01      
@@ -679,6 +895,40 @@ def runMotorTest():
     # calibrate_motor(bus,motorID3)      
     # calibrate_motor(bus,motorID4)
     # calibrate_motor(bus,motorID5)
+    #positionControlTest(bus, motorID1, 1)
+
+    #position, velocity = get_encoder_estimates_safe(bus, motor_id=1)
+    #print(f"Current position: {position:.2f} rev, Velocity: {velocity:.2f} rev/s")
+
+    #time.sleep(3)
+
+    #position, velocity = get_encoder_estimates_safe(bus, motor_id=1)
+    #print(f"Current position: {position:.2f} rev, Velocity: {velocity:.2f} rev/s")
+
+    # Usage example
+    #move_relative_safely(bus, motor_id=1, offset_revs=0.5)  # Move 0.5 revolutions
+
+    motorID = 1
+    position = 3
+
+    set_controller_mode(bus, motorID, control_mode=3, input_mode=3)
+    time.sleep(0.5)
+    # Set to closed loop state
+    set_closed_loop_state(bus, motorID)
+    time.sleep(0.5)
+
+    current_pos, _ = get_encoder_estimates(bus, motorID)
+    print(f"Actual current position: {current_pos:.3f} rev")
+
+    # Set position
+    set_position(bus, motorID, current_pos+0.5)
+
+    time.sleep(5)
+    
+    # 6. Release motor (set to idle)
+    set_axis_state(bus, motorID, 1)  # AXIS_STATE_IDLE
+    print(f"Movement complete, motor released")
+
 
     # all motor back to 0 position  pass
     # positionControlTest(bus, motorID1, 0)
@@ -704,5 +954,6 @@ def runMotorTest():
 
 
 if __name__ == "__main__":
-    main()
-    # runMotorTest()
+    #main()
+    #runMotorTest()
+    main_console()
