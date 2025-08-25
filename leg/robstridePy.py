@@ -163,10 +163,7 @@ class RobStrideMotor:
         """
         构建 CAN 帧
         """
-        if self.motor_type == 'left':
-            node_id = self.motor_id
-        else:  # right motor
-            node_id = (self.motor_id << 2) + 0x08  # 右电机计算方式
+        node_id = (self.motor_id << 2) + 0x08
 
         # 根据第二套代码固定的 CAN ID 规则，构造扩展 ID
         ext_id_bytes = bytes([comm_type, 0x07, 0xE8, node_id])
@@ -355,32 +352,32 @@ def main():
     time.sleep(0.2)
 
     # 注意 motor_id 必须是实际 CAN ID
-    left_motor = RobStrideMotor(ser, motor_id=0x14, motor_type='left')  # motor2
-    right_motor = RobStrideMotor(ser, motor_id=0x01, motor_type='right')  # motor1
+    motor1 = RobStrideMotor(ser, motor_id=0x01, motor_type='right')  # motor1
+    motor2 = RobStrideMotor(ser, motor_id=0x02, motor_type='left')  # motor2
 
     try:
-        left_motor.set_position_mode()
-        right_motor.set_position_mode()
+        motor2.set_position_mode()
+        motor1.set_position_mode()
 
-        left_motor.enable_motor()
-        right_motor.enable_motor()
+        motor2.enable_motor()
+        motor1.enable_motor()
         time.sleep(1)
 
-        left_motor.move_to_position(0.0)
-        right_motor.move_to_position(0.0)
+        motor2.move_to_position(0.0)
+        motor1.move_to_position(0.0)
         time.sleep(1)
 
-        left_motor.move_to_position(-0.5)
+        motor2.move_to_position(3)
+        motor1.move_to_position(3)
         time.sleep(1)
 
-        left_motor.move_to_position(0.0)
-        right_motor.move_to_position(0.5)
+        motor2.move_to_position(0.0)
+        motor1.move_to_position(0.0)
         time.sleep(1)
 
-        right_motor.move_to_position(0.0)
 
-        left_motor.disable_motor()
-        right_motor.disable_motor()
+        motor2.disable_motor()
+        motor1.disable_motor()
 
         print("Dual motor control completed successfully.")
 
