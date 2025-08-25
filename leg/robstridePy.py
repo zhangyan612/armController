@@ -161,21 +161,16 @@ class RobStrideMotor:
     
     def build_command(self, comm_type, data_bytes):
         """
-        构建带长度字节的CAN帧 - 与原始代码完全相同
-        
-        Args:
-            comm_type: 通信类型
-            data_bytes: 数据字节
-            
-        Returns:
-            构建好的帧
+        构建 CAN 帧
         """
         if self.motor_type == 'left':
-            node_id = self.motor_id + 0x0B   # 左电机计算方式
+            node_id = self.motor_id
         else:  # right motor
             node_id = (self.motor_id << 2) + 0x08  # 右电机计算方式
-            
+
+        # 根据第二套代码固定的 CAN ID 规则，构造扩展 ID
         ext_id_bytes = bytes([comm_type, 0x07, 0xE8, node_id])
+
         data_len = bytes([len(data_bytes)])
         frame = b"\x41\x54" + ext_id_bytes + data_len + data_bytes + b"\x0d\x0a"
         return frame
@@ -345,7 +340,7 @@ class RobStrideController:
 # 示例用法 - 与原始代码完全相同
 def main():
     print("Starting dual motor control...")
-    
+
     ser = serial.Serial(
         port='COM21',
         baudrate=921600,
@@ -354,47 +349,41 @@ def main():
         bytesize=serial.EIGHTBITS,
         timeout=0.5
     )
-    
-    print("Initializing adapter...")
+
+    # 初始化适配器
     ser.write(bytes.fromhex("41 54 2b 41 54 0d 0a"))
     time.sleep(0.2)
-    
-    # 创建两个电机控制器 - 与原始代码完全相同
-    left_motor = RobStrideMotor(ser, motor_id=0x02, motor_type='left')
-    right_motor = RobStrideMotor(ser, motor_id=0x01, motor_type='right')
-    
+
+    # 注意 motor_id 必须是实际 CAN ID
+    left_motor = RobStrideMotor(ser, motor_id=0x14, motor_type='left')  # motor2
+    right_motor = RobStrideMotor(ser, motor_id=0x01, motor_type='right')  # motor1
+
     try:
-        # 设置模式 - 与原始代码完全相同
         left_motor.set_position_mode()
         right_motor.set_position_mode()
-        
-        # 使能电机 - 与原始代码完全相同
+
         left_motor.enable_motor()
         right_motor.enable_motor()
         time.sleep(1)
-        
-        print("\n--- Moving motors together ---")
-        
-        # 同时移动两个电机 - 与原始代码完全相同
+
         left_motor.move_to_position(0.0)
         right_motor.move_to_position(0.0)
         time.sleep(1)
 
-        # for i in range(5):
         left_motor.move_to_position(-0.5)
         time.sleep(1)
-        
+
         left_motor.move_to_position(0.0)
         right_motor.move_to_position(0.5)
         time.sleep(1)
+
         right_motor.move_to_position(0.0)
 
-        # 禁用电机 - 与原始代码完全相同
         left_motor.disable_motor()
         right_motor.disable_motor()
-        
+
         print("Dual motor control completed successfully.")
-    
+
     except Exception as e:
         print(f"Error: {str(e)}")
         import traceback
@@ -409,31 +398,3 @@ if __name__ == "__main__":
 
 
 
-
-# Initializing left motor ID 2...
-# Sent to ID 2: 41 54 00 07 e8 02 02 01 00 0d 0a
-# Sent to ID 2: 41 54 20 07 e8 02 08 00 c4 00 00 00 00 00 00 0d 0a
-
-# Setting position mode for left motor 2
-# Sent to left motor ID 2: 41 54 90 07 e8 0d 08 05 70 00 00 01 00 00 00 0d 0a
-# Received: 4f4b0d0a
-
-# Enabling left motor 2
-# Sent to left motor ID 2: 41 54 18 07 e8 0d 08 00 00 00 00 00 00 00 00 0d 0a
-
-
-# --- Moving motors together ---
-# Moving left motor 2 to 0.0 rad
-# Sent to left motor ID 2: 41 54 90 07 e8 0d 08 24 70 00 00 00 00 80 3f 0d 0a
-# Sent to left motor ID 2: 41 54 90 07 e8 0d 08 25 70 00 00 00 00 a0 40 0d 0a
-# Sent to left motor ID 2: 41 54 90 07 e8 0d 08 16 70 00 00 00 00 00 00 0d 0a
-# Moving left motor 2 to -0.5 rad
-# Sent to left motor ID 2: 41 54 90 07 e8 0d 08 24 70 00 00 00 00 80 3f 0d 0a
-# Sent to left motor ID 2: 41 54 90 07 e8 0d 08 25 70 00 00 00 00 a0 40 0d 0a
-# Sent to left motor ID 2: 41 54 90 07 e8 0d 08 16 70 00 00 00 00 00 bf 0d 0a
-# Moving left motor 2 to 0.0 rad
-# Sent to left motor ID 2: 41 54 90 07 e8 0d 08 24 70 00 00 00 00 80 3f 0d 0a
-# Sent to left motor ID 2: 41 54 90 07 e8 0d 08 25 70 00 00 00 00 a0 40 0d 0a
-# Sent to left motor ID 2: 41 54 90 07 e8 0d 08 16 70 00 00 00 00 00 00 0d 0a
-# Disabling left motor 2
-# Sent to left motor ID 2: 41 54 20 07 e8 0d 08 01 00 00 00 00 00 00 00 0d 0a
