@@ -210,16 +210,15 @@ class RobStrideMotor:
         self.send_command(frame)
         time.sleep(0.5)
     
-    def move_to_position(self, position_rad, velocity=1.0, acceleration=5.0):
+    def set_velocity_acceleration(self, velocity=1.0, acceleration=5.0):
         """
-        移动到指定位置
+        设置速度和加速度
         
         Args:
-            position_rad: 目标位置（弧度）
             velocity: 速度 (rad/s)
             acceleration: 加速度 (rad/s²)
         """
-        print(f"Moving motor {self.motor_id} to {position_rad} rad with velocity {velocity} rad/s and acceleration {acceleration} rad/s²")
+        print(f"Setting motor {self.motor_id} velocity to {velocity} rad/s and acceleration to {acceleration} rad/s²")
         
         # 设置速度
         vel_data = bytes.fromhex("24 70 00 00") + self.float_to_hex(velocity)
@@ -232,12 +231,38 @@ class RobStrideMotor:
         acc_frame = self.build_command(0x90, acc_data)
         self.send_command(acc_frame)
         time.sleep(0.05)
+    
+    def set_position(self, position_rad):
+        """
+        设置位置
+        
+        Args:
+            position_rad: 目标位置（弧度）
+        """
+        print(f"Setting motor {self.motor_id} position to {position_rad} rad")
         
         # 设置位置
         pos_data = bytes.fromhex("16 70 00 00") + self.float_to_hex(position_rad)
         pos_frame = self.build_command(0x90, pos_data)
         self.send_command(pos_frame)
         time.sleep(0.1)
+    
+    def move_to_position(self, position_rad, velocity=1.0, acceleration=5.0):
+        """
+        移动到指定位置（兼容旧方法）
+        
+        Args:
+            position_rad: 目标位置（弧度）
+            velocity: 速度 (rad/s)
+            acceleration: 加速度 (rad/s²)
+        """
+        print(f"Moving motor {self.motor_id} to {position_rad} rad with velocity {velocity} rad/s and acceleration {acceleration} rad/s²")
+        
+        # 设置速度和加速度
+        self.set_velocity_acceleration(velocity, acceleration)
+        
+        # 设置位置
+        self.set_position(position_rad)
     
     def disable_motor(self):
         """禁用电机 - 与原始代码完全相同"""
@@ -288,6 +313,34 @@ class RobStrideController:
         self.motors[motor_id] = motor
         return motor
     
+    def set_all_velocity_acceleration(self, velocity=1.0, acceleration=5.0):
+        """为所有电机设置相同的速度和加速度"""
+        for motor in self.motors.values():
+            motor.set_velocity_acceleration(velocity, acceleration)
+    
+    def set_all_positions(self, positions):
+        """为所有电机设置位置（可分别设置不同位置）"""
+        for motor_id, position in positions.items():
+            if motor_id in self.motors:
+                self.motors[motor_id].set_position(position)
+    
+    def move_all_to_positions(self, positions, velocity=1.0, acceleration=5.0):
+        """
+        同步移动所有电机到指定位置
+        
+        Args:
+            positions: 电机ID到目标位置的映射
+            velocity: 速度 (rad/s)
+            acceleration: 加速度 (rad/s²)
+        """
+        print(f"Moving all motors to positions with velocity {velocity} rad/s and acceleration {acceleration} rad/s²")
+        
+        # 1. 设置所有电机的速度和加速度
+        self.set_all_velocity_acceleration(velocity, acceleration)
+        
+        # 2. 设置所有电机的位置（几乎同时发送）
+        self.set_all_positions(positions)
+    
     def start_reading(self):
         """开始读取数据"""
         self.running = True
@@ -335,114 +388,60 @@ class RobStrideController:
 
 # 示例用法
 def main():
-    print("Starting dual motor control...")
+    print("Starting multi-motor control with synchronization...")
 
-    ser = serial.Serial(
-        port='COM21',
-        baudrate=921600,
-        parity=serial.PARITY_NONE,
-        stopbits=serial.STOPBITS_ONE,
-        bytesize=serial.EIGHTBITS,
-        timeout=0.5
-    )
-
+    # 初始化控制器
+    controller = RobStrideController(port='COM21')
+    
     # 初始化适配器
-    ser.write(bytes.fromhex("41 54 2b 41 54 0d 0a"))
+    controller.ser.write(bytes.fromhex("41 54 2b 41 54 0d 0a"))
     time.sleep(0.2)
 
-    # 注意 motor_id 必须是实际 CAN ID
-    motor1 = RobStrideMotor(ser, motor_id=0x01)  # motor1
-    motor2 = RobStrideMotor(ser, motor_id=0x02)  # motor2
-    motor3 = RobStrideMotor(ser, motor_id=0x03)  # motor3
-    motor4 = RobStrideMotor(ser, motor_id=0x04)  # motor4
+    # 添加电机
+    motor1 = controller.add_motor(motor_id=0x01)  # motor1
+    motor2 = controller.add_motor(motor_id=0x02)  # motor2
+    motor3 = controller.add_motor(motor_id=0x03)  # motor3
+    motor4 = controller.add_motor(motor_id=0x04)  # motor4
 
     try:
-        motor1.set_position_mode()
-        motor2.set_position_mode()
-        motor3.set_position_mode()
-        motor4.set_position_mode()
-
-        motor1.enable_motor()
-        motor2.enable_motor()
-        motor3.enable_motor()
-        motor4.enable_motor()
-
+        # 设置所有电机为位置模式
+        for motor in controller.motors.values():
+            motor.set_position_mode()
+        
+        # 使能所有电机
+        for motor in controller.motors.values():
+            motor.enable_motor()
+        
         time.sleep(2)
 
-        # 使用可调的速度和加速度参数
-        motor1.move_to_position(0.0, velocity=2.0, acceleration=10.0)
-        motor2.move_to_position(0.0, velocity=2.0, acceleration=10.0)
-        motor3.move_to_position(0.0, velocity=2.0, acceleration=10.0)
-        motor4.move_to_position(0.0, velocity=2.0, acceleration=10.0)
-
+        # 使用同步方法移动所有电机到初始位置
+        initial_positions = {0x01: 0.0, 0x02: 0.0, 0x03: 0.0, 0x04: 0.0}
+        controller.move_all_to_positions(initial_positions, velocity=2.0, acceleration=10.0)
         time.sleep(1)
 
-        motor1.move_to_position(3, velocity=1.5, acceleration=8.0)
-        motor2.move_to_position(3, velocity=1.5, acceleration=8.0)
-        motor3.move_to_position(3, velocity=1.5, acceleration=8.0)
-        motor4.move_to_position(3, velocity=1.5, acceleration=8.0)
-
+        # 移动到不同位置
+        positions_1 = {0x01: 3.0, 0x02: 3.0, 0x03: 3.0, 0x04: 3.0}
+        controller.move_all_to_positions(positions_1, velocity=1.5, acceleration=8.0)
         time.sleep(1)
 
-        motor1.move_to_position(0.0, velocity=2.5, acceleration=5.0)
-        motor2.move_to_position(0.0, velocity=2.5, acceleration=5.0)
-        motor3.move_to_position(0.0, velocity=2.5, acceleration=5.0)
-        motor4.move_to_position(0.0, velocity=2.5, acceleration=5.0)
-
+        # 再次移动回初始位置
+        controller.move_all_to_positions(initial_positions, velocity=2.5, acceleration=5.0)
         time.sleep(1)
 
-        motor1.disable_motor()
-        motor2.disable_motor()
-        motor3.disable_motor()
-        motor4.disable_motor()
+        # 禁用所有电机
+        for motor in controller.motors.values():
+            motor.disable_motor()
 
-        print("Dual motor control completed successfully.")
+        print("Multi-motor control with synchronization completed successfully.")
 
     except Exception as e:
         print(f"Error: {str(e)}")
         import traceback
         traceback.print_exc()
     finally:
-        ser.close()
-        print("Serial connection closed")
+        controller.close()
+        print("Controller closed")
 
 
 if __name__ == "__main__":
     main()
-
-
-
-# Enabling motor 1
-# Sent to motor ID 1: 41 54 18 07 e8 0c 08 00 00 00 00 00 00 00 00 0d 0a
-# 41541807e80c0800000000000000000d0a
-# Enabling motor 2
-# Sent to motor ID 2: 41 54 18 07 e8 14 08 00 00 00 00 00 00 00 00 0d 0a
-# 41541807e8140800000000000000000d0a
-
-# Enabling motor 3
-# Sent to motor ID 3: 41 54 18 07 e8 1c 08 00 00 00 00 00 00 00 00 0d 0a
-# 41541807e81c0800000000000000000d0a
-
-# Enabling motor 4
-# Sent to motor ID 4: 41 54 18 07 e8 24 08 00 00 00 00 00 00 00 00 0d 0a
-# 41541807e8240800000000000000000d0a
-
-
-
-# Disabling motor 1
-# Sent to motor ID 1: 41 54 20 07 e8 0c 08 01 00 00 00 00 00 00 00 0d 0a
-# 实际 41542007e80c0800000000000000000d0a
-
-# Disabling motor 2
-# Sent to motor ID 2: 41 54 20 07 e8 14 08 01 00 00 00 00 00 00 00 0d 0a
-# 实际 41542007e8140800000000000000000d0a
-
-
-# Disabling motor 3
-# Sent to motor ID 3: 41 54 20 07 e8 1c 08 01 00 00 00 00 00 00 00 0d 0a
-# 实际 41542007e81c0800000000000000000d0a
-
-# Disabling motor 4
-# Sent to motor ID 4: 41 54 20 07 e8 24 08 01 00 00 00 00 00 00 00 0d 0a
-
-# 实际 41542007e8240800000000000000000d0a
