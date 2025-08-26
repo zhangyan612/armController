@@ -112,7 +112,7 @@ class MotorSetAll:
 class RobStrideMotor:
     """RobStride 电机控制类"""
     
-    def __init__(self, ser: serial.Serial, motor_id: int, motor_type: str, mit_mode: bool = False, 
+    def __init__(self, ser: serial.Serial, motor_id: int, mit_mode: bool = False, 
                  offset_func: Optional[Callable[[float], float]] = None):
         """
         初始化 RobStride 电机
@@ -120,13 +120,11 @@ class RobStrideMotor:
         Args:
             ser: 串口对象
             motor_id: 电机ID
-            motor_type: 电机类型 ('left' 或 'right')
             mit_mode: 是否使用 MIT 模式
             offset_func: 偏移量校正函数
         """
         self.ser = ser
         self.motor_id = motor_id
-        self.motor_type = motor_type
         self.CAN_ID = motor_id
         self.Master_CAN_ID = 0xFD
         self.MIT_Mode = mit_mode
@@ -145,7 +143,7 @@ class RobStrideMotor:
     
     def initialize_motor(self):
         """初始化电机"""
-        print(f"Initializing {self.motor_type} motor ID {self.motor_id}...")
+        print(f"Initializing motor ID {self.motor_id}...")
         
         # 发送初始化命令1 - 与原始代码完全相同
         init_cmd1 = bytes.fromhex(f"41 54 00 07 e8 {self.motor_id:02x} 02 01 00 0d 0a")
@@ -163,8 +161,8 @@ class RobStrideMotor:
         """
         构建 CAN 帧
         """
-        node_id = (self.motor_id << 2) + 0x08
-
+        # node_id = (self.motor_id << 2) + 0x08
+        node_id = (self.motor_id << 3) | 0x04
         # 根据第二套代码固定的 CAN ID 规则，构造扩展 ID
         ext_id_bytes = bytes([comm_type, 0x07, 0xE8, node_id])
 
@@ -188,7 +186,7 @@ class RobStrideMotor:
         """
         self.ser.write(frame)
         hex_frame = frame.hex(' ')
-        print(f"Sent to {self.motor_type} motor ID {self.motor_id}: {hex_frame}")
+        print(f"Sent to motor ID {self.motor_id}: {hex_frame}")
         time.sleep(0.05)
         response = self.ser.read_all()
         if response:
@@ -198,7 +196,7 @@ class RobStrideMotor:
     
     def set_position_mode(self):
         """设置位置模式 - 与原始代码完全相同"""
-        print(f"Setting position mode for {self.motor_type} motor {self.motor_id}")
+        print(f"Setting position mode for motor {self.motor_id}")
         data = bytes.fromhex("05 70 00 00 01 00 00 00")
         frame = self.build_command(0x90, data)
         self.send_command(frame)
@@ -206,29 +204,31 @@ class RobStrideMotor:
     
     def enable_motor(self):
         """使能电机 - 与原始代码完全相同"""
-        print(f"Enabling {self.motor_type} motor {self.motor_id}")
+        print(f"Enabling motor {self.motor_id}")
         data = bytes.fromhex("00 00 00 00 00 00 00 00")
         frame = self.build_command(0x18, data)
         self.send_command(frame)
         time.sleep(0.5)
     
-    def move_to_position(self, position_rad):
+    def move_to_position(self, position_rad, velocity=1.0, acceleration=5.0):
         """
-        移动到指定位置 - 与原始代码完全相同
+        移动到指定位置
         
         Args:
             position_rad: 目标位置（弧度）
+            velocity: 速度 (rad/s)
+            acceleration: 加速度 (rad/s²)
         """
-        print(f"Moving {self.motor_type} motor {self.motor_id} to {position_rad} rad")
+        print(f"Moving motor {self.motor_id} to {position_rad} rad with velocity {velocity} rad/s and acceleration {acceleration} rad/s²")
         
-        # 设置速度 (1.0 rad/s)
-        vel_data = bytes.fromhex("24 70 00 00") + self.float_to_hex(1.0)
+        # 设置速度
+        vel_data = bytes.fromhex("24 70 00 00") + self.float_to_hex(velocity)
         vel_frame = self.build_command(0x90, vel_data)
         self.send_command(vel_frame)
         time.sleep(0.05)
         
-        # 设置加速度 (5.0 rad/s²)
-        acc_data = bytes.fromhex("25 70 00 00") + self.float_to_hex(5.0)
+        # 设置加速度
+        acc_data = bytes.fromhex("25 70 00 00") + self.float_to_hex(acceleration)
         acc_frame = self.build_command(0x90, acc_data)
         self.send_command(acc_frame)
         time.sleep(0.05)
@@ -241,7 +241,7 @@ class RobStrideMotor:
     
     def disable_motor(self):
         """禁用电机 - 与原始代码完全相同"""
-        print(f"Disabling {self.motor_type} motor {self.motor_id}")
+        print(f"Disabling motor {self.motor_id}")
         data = bytes.fromhex("01 00 00 00 00 00 00 00")
         frame = self.build_command(0x20, data)
         self.send_command(frame)
@@ -271,21 +271,20 @@ class RobStrideController:
         self.running = False
         self.read_thread = None
     
-    def add_motor(self, motor_id: int, motor_type: str, mit_mode: bool = False, 
+    def add_motor(self, motor_id: int, mit_mode: bool = False, 
                   offset_func: Optional[Callable[[float], float]] = None) -> RobStrideMotor:
         """
         添加电机
         
         Args:
             motor_id: 电机ID
-            motor_type: 电机类型 ('left' 或 'right')
             mit_mode: 是否使用 MIT 模式
             offset_func: 偏移量校正函数
             
         Returns:
             电机对象
         """
-        motor = RobStrideMotor(self.ser, motor_id, motor_type, mit_mode, offset_func)
+        motor = RobStrideMotor(self.ser, motor_id, mit_mode, offset_func)
         self.motors[motor_id] = motor
         return motor
     
@@ -334,7 +333,7 @@ class RobStrideController:
         self.ser.close()
 
 
-# 示例用法 - 与原始代码完全相同
+# 示例用法
 def main():
     print("Starting dual motor control...")
 
@@ -352,32 +351,50 @@ def main():
     time.sleep(0.2)
 
     # 注意 motor_id 必须是实际 CAN ID
-    motor1 = RobStrideMotor(ser, motor_id=0x01, motor_type='right')  # motor1
-    motor2 = RobStrideMotor(ser, motor_id=0x02, motor_type='left')  # motor2
+    motor1 = RobStrideMotor(ser, motor_id=0x01)  # motor1
+    motor2 = RobStrideMotor(ser, motor_id=0x02)  # motor2
+    motor3 = RobStrideMotor(ser, motor_id=0x03)  # motor3
+    motor4 = RobStrideMotor(ser, motor_id=0x04)  # motor4
 
     try:
-        motor2.set_position_mode()
         motor1.set_position_mode()
+        motor2.set_position_mode()
+        motor3.set_position_mode()
+        motor4.set_position_mode()
 
-        motor2.enable_motor()
         motor1.enable_motor()
+        motor2.enable_motor()
+        motor3.enable_motor()
+        motor4.enable_motor()
+
+        time.sleep(2)
+
+        # 使用可调的速度和加速度参数
+        motor2.move_to_position(0.0, velocity=2.0, acceleration=10.0)
+        motor1.move_to_position(0.0, velocity=2.0, acceleration=10.0)
+        motor3.move_to_position(0.0, velocity=2.0, acceleration=10.0)
+        motor4.move_to_position(0.0, velocity=2.0, acceleration=10.0)
+
         time.sleep(1)
 
-        motor2.move_to_position(0.0)
-        motor1.move_to_position(0.0)
+        motor2.move_to_position(3, velocity=1.5, acceleration=8.0)
+        motor1.move_to_position(3, velocity=1.5, acceleration=8.0)
+        motor3.move_to_position(3, velocity=1.5, acceleration=8.0)
+        motor4.move_to_position(3, velocity=1.5, acceleration=8.0)
+
         time.sleep(1)
 
-        motor2.move_to_position(3)
-        motor1.move_to_position(3)
+        motor2.move_to_position(0.0, velocity=2.5, acceleration=5.0)
+        motor1.move_to_position(0.0, velocity=2.5, acceleration=5.0)
+        motor3.move_to_position(0.0, velocity=2.5, acceleration=5.0)
+        motor4.move_to_position(0.0, velocity=2.5, acceleration=5.0)
+
         time.sleep(1)
-
-        motor2.move_to_position(0.0)
-        motor1.move_to_position(0.0)
-        time.sleep(1)
-
-
-        motor2.disable_motor()
+        
         motor1.disable_motor()
+        motor2.disable_motor()
+        motor3.disable_motor()
+        motor4.disable_motor()
 
         print("Dual motor control completed successfully.")
 
@@ -392,6 +409,4 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-
 

@@ -4,7 +4,7 @@ import binascii
 import struct
 from enum import Enum
 from typing import Optional, Callable
-import threading
+import threading 
 
 # 常量定义
 P_MIN = -12.5
@@ -146,43 +146,47 @@ class RobStrideMotor:
     def initialize_motor(self):
         """初始化电机"""
         print(f"Initializing {self.motor_type} motor ID {self.motor_id}...")
-
-        # 初始化命令1
-        # Example: 41540007e80201000d0a (假设协议)
-        init_cmd1 = self.build_can_frame(0x00, bytes.fromhex("02 01 00"), fixed_len=3)
+        
+        # 发送初始化命令1 - 与原始代码完全相同
+        init_cmd1 = bytes.fromhex(f"41 54 00 07 e8 {self.motor_id:02x} 02 01 00 0d 0a")
         self.ser.write(init_cmd1)
         print(f"Sent to ID {self.motor_id}: {init_cmd1.hex(' ')}")
         time.sleep(0.1)
-
-        # 初始化命令2
-        # Example: 41542007e80800c400000000000d0a (假设协议)
-        init_cmd2 = self.build_can_frame(0x20, bytes.fromhex("08 00 c4 00 00 00 00 00 00"), fixed_len=9)
+        
+        # 发送初始化命令2 - 与原始代码完全相同
+        init_cmd2 = bytes.fromhex(f"41 54 20 07 e8 {self.motor_id:02x} 08 00 c4 00 00 00 00 00 00 0d 0a")
         self.ser.write(init_cmd2)
         print(f"Sent to ID {self.motor_id}: {init_cmd2.hex(' ')}")
         time.sleep(0.1)
-
     
-    def build_can_frame(self, command_type: int, data: bytes, fixed_len: int) -> bytes:
+    def build_command(self, comm_type, data_bytes):
         """
-        Build CAN frame with correct fixed data length.
+        构建带长度字节的CAN帧 - 与原始代码完全相同
+        
+        Args:
+            comm_type: 通信类型
+            data_bytes: 数据字节
+            
+        Returns:
+            构建好的帧
         """
-        ext_id = bytes([command_type, 0x07, 0xE8, self.CAN_ID])
-        data_len = bytes([fixed_len])
-        frame = b"\x41\x54" + ext_id + data_len + data + b"\x0d\x0a"
+        if self.motor_type == 'left':
+            node_id = self.motor_id + 0x0B   # 左电机计算方式
+        else:  # right motor
+            node_id = (self.motor_id << 2) + 0x08  # 右电机计算方式
+            
+        ext_id_bytes = bytes([comm_type, 0x07, 0xE8, node_id])
+        data_len = bytes([len(data_bytes)])
+        frame = b"\x41\x54" + ext_id_bytes + data_len + data_bytes + b"\x0d\x0a"
         return frame
-
     
     def float_to_hex(self, f):
-        """浮点数转小端十六进制"""
+        """浮点数转小端十六进制 - 与原始代码完全相同"""
         return struct.pack('<f', f)
-    
-    def hex_to_float(self, hex_str):
-        """十六进制转浮点数"""
-        return struct.unpack('<f', bytes.fromhex(hex_str))[0]
     
     def send_command(self, frame):
         """
-        发送帧并读取响应
+        发送帧并读取响应 - 与原始代码完全相同
         
         Args:
             frame: 要发送的帧
@@ -200,59 +204,55 @@ class RobStrideMotor:
             print(f"Received: {hex_response}")
         return response
     
+    def set_position_mode(self):
+        """设置位置模式 - 与原始代码完全相同"""
+        print(f"Setting position mode for {self.motor_type} motor {self.motor_id}")
+        data = bytes.fromhex("05 70 00 00 01 00 00 00")
+        frame = self.build_command(0x90, data)
+        self.send_command(frame)
+        time.sleep(0.2)
+    
     def enable_motor(self):
-        print(f"Enabling {self.motor_type} motor {self.motor_id} in position mode")
-        # First set position mode
-        self.set_position_mode()
-        time.sleep(0.1)
-        # Then enable motor
-        data = bytes.fromhex("14 08 00 00 00 00 00 00 00")
-        frame = self.build_can_frame(0x18, data, fixed_len=0x0e)
+        """使能电机 - 与原始代码完全相同"""
+        print(f"Enabling {self.motor_type} motor {self.motor_id}")
+        data = bytes.fromhex("00 00 00 00 00 00 00 00")
+        frame = self.build_command(0x18, data)
         self.send_command(frame)
         time.sleep(0.5)
     
-    def disable_motor(self):
-        print(f"Disabling {self.motor_type} motor {self.motor_id}")
-        data = bytes.fromhex("14 08 00 00 00 00 00 00 00")
-        frame = self.build_can_frame(0x20, data, fixed_len=0x0e)
-        self.send_command(frame)
-    
-   
-    def set_position_mode(self):
-        print(f"Setting position mode for {self.motor_type} motor {self.motor_id}")
-        data = bytes.fromhex("14 08 05 70 00 00 05 00 00 00")
-        frame = self.build_can_frame(0x90, data, fixed_len=0x0c)
-        self.send_command(frame)
-        time.sleep(0.2)
-
-
-    
-    def set_velocity_limit(self, velocity: float):
-        print(f"Setting velocity limit for {self.motor_type} motor {self.motor_id} to {velocity}")
-        vel_hex = self.float_to_hex(velocity)
-        # Expected: 41549007e81408177000000000803f0d0a
-        data = bytes.fromhex("14 08 17 70 00 00 00") + vel_hex
-        frame = self.build_can_frame(0x90, data, 0x0b)
-        self.send_command(frame)
-            # 打印设置速度限制的信息，包括电机类型和ID
-        time.sleep(0.1)
-    
-    def set_position(self, position: float):
-        print(f"Setting position for {self.motor_type} motor {self.motor_id} to {position}")
-        pos_hex = self.float_to_hex(position)
-        # Expected: 41549007e8140816700000000000400d0a
-        data = bytes.fromhex("14 08 16 70 00 00 00") + pos_hex
-        frame = self.build_can_frame(0x90, data, fixed_len=0x0b)
-        self.send_command(frame)
-        time.sleep(0.1)
+    def move_to_position(self, position_rad):
+        """
+        移动到指定位置 - 与原始代码完全相同
         
-    def set_zero_position(self):
-        print(f"Setting zero position for {self.motor_type} motor {self.motor_id}")
-        # Expected: 41549007e8140816700000000000000d0a
-        data = bytes.fromhex("14 08 16 70 00 00 00 00 00 00 00")
-        frame = self.build_can_frame(0x90, data, 0x0b)
-        self.send_command(frame)
+        Args:
+            position_rad: 目标位置（弧度）
+        """
+        print(f"Moving {self.motor_type} motor {self.motor_id} to {position_rad} rad")
+        
+        # 设置速度 (1.0 rad/s)
+        vel_data = bytes.fromhex("24 70 00 00") + self.float_to_hex(1.0)
+        vel_frame = self.build_command(0x90, vel_data)
+        self.send_command(vel_frame)
+        time.sleep(0.05)
+        
+        # 设置加速度 (5.0 rad/s²)
+        acc_data = bytes.fromhex("25 70 00 00") + self.float_to_hex(5.0)
+        acc_frame = self.build_command(0x90, acc_data)
+        self.send_command(acc_frame)
+        time.sleep(0.05)
+        
+        # 设置位置
+        pos_data = bytes.fromhex("16 70 00 00") + self.float_to_hex(position_rad)
+        pos_frame = self.build_command(0x90, pos_data)
+        self.send_command(pos_frame)
         time.sleep(0.1)
+    
+    def disable_motor(self):
+        """禁用电机 - 与原始代码完全相同"""
+        print(f"Disabling {self.motor_type} motor {self.motor_id}")
+        data = bytes.fromhex("01 00 00 00 00 00 00 00")
+        frame = self.build_command(0x20, data)
+        self.send_command(frame)
 
 
 class RobStrideController:
@@ -317,6 +317,7 @@ class RobStrideController:
                 # 读取数据并解析
                 data = self.ser.read_all()
                 # 这里需要根据实际协议解析数据帧
+                # 由于协议比较复杂，这里只提供框架
                 try:
                     # 假设数据以 "AT" 开头，以 "\r\n" 结尾
                     if data.startswith(b"AT") and data.endswith(b"\r\n"):
@@ -329,8 +330,7 @@ class RobStrideController:
                         can_id = ext_id & 0xFF
                         
                         if can_id in self.motors:
-                            # 这里需要实现解析方法
-                            pass
+                            self.motors[can_id].analysis(payload, ext_id)
                 except Exception as e:
                     print(f"Error parsing data: {e}")
             
@@ -342,13 +342,12 @@ class RobStrideController:
         self.ser.close()
 
 
-# 示例用法 - 使用位置控制模式
+# 示例用法 - 与原始代码完全相同
 def main():
-    print("Starting motor control with position mode...")
+    print("Starting dual motor control...")
     
-    # 初始化串口
     ser = serial.Serial(
-        port='COM21',  # 请根据实际情况修改端口
+        port='COM21',
         baudrate=921600,
         parity=serial.PARITY_NONE,
         stopbits=serial.STOPBITS_ONE,
@@ -357,42 +356,44 @@ def main():
     )
     
     print("Initializing adapter...")
-    # 发送初始化命令
     ser.write(bytes.fromhex("41 54 2b 41 54 0d 0a"))
     time.sleep(0.2)
     
-    # 创建电机控制器 - 使用CAN ID 2
-    motor = RobStrideMotor(ser, motor_id=0x02, motor_type='test')
+    # 创建两个电机控制器 - 与原始代码完全相同
+    left_motor = RobStrideMotor(ser, motor_id=0x02, motor_type='left')
+    right_motor = RobStrideMotor(ser, motor_id=0x01, motor_type='right')
     
     try:
-        # 使能电机（会自动设置为位置模式）
-        motor.enable_motor()
+        # 设置模式 - 与原始代码完全相同
+        left_motor.set_position_mode()
+        right_motor.set_position_mode()
+        
+        # 使能电机 - 与原始代码完全相同
+        left_motor.enable_motor()
+        right_motor.enable_motor()
         time.sleep(1)
         
-        # 设置速度限制为1.0
-        motor.set_velocity_limit(1.0)
-        time.sleep(0.5)
+        print("\n--- Moving motors together ---")
         
-        # 移动到位置2.0
-        motor.set_position(2.0)
-        time.sleep(2)
-        
-        # 移动到位置0.0
-        motor.set_position(0.0)
-        time.sleep(2)
-        
-        # 移动到位置1.0
-        motor.set_position(1.0)
-        time.sleep(2)
-        
-        # 设置零点位置
-        motor.set_zero_position()
+        # 同时移动两个电机 - 与原始代码完全相同
+        left_motor.move_to_position(0.0)
+        right_motor.move_to_position(0.0)
+        time.sleep(1)
+
+        # for i in range(5):
+        left_motor.move_to_position(-0.5)
         time.sleep(1)
         
-        # 禁用电机
-        motor.disable_motor()
+        left_motor.move_to_position(0.0)
+        right_motor.move_to_position(0.5)
+        time.sleep(1)
+        right_motor.move_to_position(0.0)
+
+        # 禁用电机 - 与原始代码完全相同
+        left_motor.disable_motor()
+        right_motor.disable_motor()
         
-        print("Position mode motor control completed successfully.")
+        print("Dual motor control completed successfully.")
     
     except Exception as e:
         print(f"Error: {str(e)}")
@@ -407,40 +408,32 @@ if __name__ == "__main__":
     main()
 
 
-# 代码发送的指令和实际指令还是有所不同
 
-# Setting position mode for test motor 2
-# Sent to test motor ID 2: 41 54 90 07 e8 02 0a 0c 08 05 70 00 00 05 00 00 00 0d 0a
+
+# Initializing left motor ID 2...
+# Sent to ID 2: 41 54 00 07 e8 02 02 01 00 0d 0a
+# Sent to ID 2: 41 54 20 07 e8 02 08 00 c4 00 00 00 00 00 00 0d 0a
+
+# Setting position mode for left motor 2
+# Sent to left motor ID 2: 41 54 90 07 e8 0d 08 05 70 00 00 01 00 00 00 0d 0a
 # Received: 4f4b0d0a
 
-# 实际指令
-# 41549007e8140805700000050000000d0a
+# Enabling left motor 2
+# Sent to left motor ID 2: 41 54 18 07 e8 0d 08 00 00 00 00 00 00 00 00 0d 0a
 
 
-# Sent to test motor ID 2: 41 54 18 07 e8 02 08 08 00 00 00 00 00 00 00 0d 0a
-
-# 实际指令 运行 enable motor
-# 41541807e8140800000000000000000d0a
-
-
-# Setting velocity limit for test motor 2 to 1.0
-# Sent to test motor ID 2: 41 54 90 07 e8 02 0b 14 08 17 70 00 00 00 00 00 80 3f 0d 0a
-
-# 实际指令  41549007e81408177000000000803f0d0a
-
-
-
-# Setting position for test motor 2 to 2.0
-# Sent to test motor ID 2: 41 54 90 07 e8 02 0b 14 08 16 70 00 00 00 00 00 00 40 0d 0a
-
-# 实际指令 41549007e8140816700000000000400d0a
-
-# Setting position for test motor 2 to 0.0
-# Sent to test motor ID 2: 41 54 90 07 e8 02 0b 14 08 16 70 00 00 00 00 00 00 00 0d 0a
-
-# 实际指令 41549007e8140816700000000000000d0a
-
-# Disabling test motor 2
-# Sent to test motor ID 2: 41 54 20 07 e8 02 08 08 00 00 00 00 00 00 00 0d 0a
-
-# 实际指令 41542007e8140800000000000000000d0a
+# --- Moving motors together ---
+# Moving left motor 2 to 0.0 rad
+# Sent to left motor ID 2: 41 54 90 07 e8 0d 08 24 70 00 00 00 00 80 3f 0d 0a
+# Sent to left motor ID 2: 41 54 90 07 e8 0d 08 25 70 00 00 00 00 a0 40 0d 0a
+# Sent to left motor ID 2: 41 54 90 07 e8 0d 08 16 70 00 00 00 00 00 00 0d 0a
+# Moving left motor 2 to -0.5 rad
+# Sent to left motor ID 2: 41 54 90 07 e8 0d 08 24 70 00 00 00 00 80 3f 0d 0a
+# Sent to left motor ID 2: 41 54 90 07 e8 0d 08 25 70 00 00 00 00 a0 40 0d 0a
+# Sent to left motor ID 2: 41 54 90 07 e8 0d 08 16 70 00 00 00 00 00 bf 0d 0a
+# Moving left motor 2 to 0.0 rad
+# Sent to left motor ID 2: 41 54 90 07 e8 0d 08 24 70 00 00 00 00 80 3f 0d 0a
+# Sent to left motor ID 2: 41 54 90 07 e8 0d 08 25 70 00 00 00 00 a0 40 0d 0a
+# Sent to left motor ID 2: 41 54 90 07 e8 0d 08 16 70 00 00 00 00 00 00 0d 0a
+# Disabling left motor 2
+# Sent to left motor ID 2: 41 54 20 07 e8 0d 08 01 00 00 00 00 00 00 00 0d 0a

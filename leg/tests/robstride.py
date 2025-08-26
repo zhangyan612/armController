@@ -478,7 +478,7 @@ def example_usage():
         
         # 创建客户端
         logger.info("Creating motor client...")
-        rs_client = Client(bus, host_can_id=0xAA)
+        rs_client = Client(bus, host_can_id=0x01)
         
         logger.info("Starting motor control example...")
         motor_id = 1

@@ -265,3 +265,173 @@ interface = socketcan
 channel = can0
 You can also configure these manually when creating the can.Bus object in code. For the robstride CLI client you can configure these values with the optional --interface and --channel CLI arguments.
 
+
+
+
+gpt 翻译
+
+RS04 驱动器使用说明书
+1. 控制模式操作指南
+1.1 位置模式控制
+
+切换控制模式为 位置模式
+
+使能电机，进入 motor_mode
+
+设置 速度（可选，默认值运行）
+
+设置 位置指令（目标位置）
+
+点击 停止 → 电机停止运行
+
+1.2 电机位置正弦测试
+
+切换控制模式为 位置模式
+
+电机进入 motor_mode
+
+设置 幅值 和 频率 → 点击启动
+电机将按正弦规律运行
+
+点击 停止 → 电机停止运行
+
+2. 驱动器通信协议
+2.1 通信总览
+
+协议类型：私有协议
+
+通信方式：CAN 2.0
+
+波特率：1 Mbps
+
+帧类型：扩展帧
+
+数据格式：
+
+29-bit ID | 8 Byte Data
+┌─────────┬─────────────┬─────────────┐
+│ Bit28~24│ Bit23~8     │ Bit7~0      │
+│ 通信类型 │ 目标地址    │ 数据内容    │
+└─────────┴─────────────┴─────────────┘
+
+2.2 支持的控制模式
+模式类型	功能说明
+运控模式	提供电机的 5 个运控参数
+电流模式	给定指定 Iq 电流
+速度模式	给定电机指定速度
+位置模式	给定目标位置，电机自动运动到达
+3. 通信类型定义
+3.1 获取设备 ID（通信类型 0）
+
+用途：读取设备 ID 和 64 位 MCU 唯一标识符。
+
+发送帧
+29bit ID: [0x0]
+Byte0-7: 设备请求
+
+应答帧
+29bit ID: [0x0]
+Byte0-7: MCU 唯一 ID
+
+3.2 运控模式电机控制指令（通信类型 1）
+
+功能：向电机发送目标角度、速度、力矩、Kp、Kd。
+
+字节	内容	范围	说明
+0-1	目标角度	0 ~ 65535	对应 -12.57 ~ 12.57 rad
+2-3	目标速度	0 ~ 65535	对应 -15 ~ 15 rad/s
+4-5	Kp	0 ~ 65535	对应 0.0 ~ 5000.0
+6-7	Kd	0 ~ 65535	对应 0.0 ~ 100.0
+
+应答帧：参考通信类型 2。
+
+3.3 电机反馈数据（通信类型 2）
+位段	内容	说明
+Bit8-15	当前电机 CAN ID	
+Bit16	欠压故障	
+Bit17	驱动故障	
+Bit18	过温故障	
+Bit19	编码器故障	
+Bit20	堵转过载	
+Bit21	未标定	
+Bit22-23	模式状态：0=Reset，1=Cali，2=Motor	
+字节	内容	范围	单位
+0-1	当前角度	0~65535	-12.57 ~ 12.57 rad
+2-3	当前速度	0~65535	-15 ~ 15 rad/s
+4-5	当前力矩	0~65535	-120 ~ 120 Nm
+6-7	温度	温度×10	℃
+3.4 电机使能（通信类型 3）
+
+作用：启动电机进入运行状态。
+
+发送帧
+txCanIdEx.mode = 3;
+txCanIdEx.id = 电机ID;
+txCanIdEx.data = master_id;
+can_txd();
+
+
+应答帧：通信类型 2。
+
+3.5 电机停止（通信类型 4）
+
+作用：停止电机运行。
+如需清除故障，Byte[0] = 1。
+
+3.6 设置机械零位（通信类型 6）
+
+设置电机的当前角度为机械零点。
+
+3.7 设置电机 CAN_ID（通信类型 7）
+
+支持修改电机 ID，需重新上电生效。
+
+4. 参数索引表（可读写）
+Index	参数名称	描述	类型	范围	读写
+0x7005	run_mode	模式选择	uint8	0-5	W/R
+0x7006	iq_ref	电流指令	float	-90~90A	W/R
+0x700A	spd_ref	速度指令	float	-20~20rad/s	W/R
+0x7016	loc_ref	位置指令	float	rad	W/R
+0x7017	limit_spd	CSP模式速度限制	float	0~20rad/s	W/R
+0x7018	limit_cur	电流限制	float	0~90A	W/R
+0x701E	loc_kp	位置 Kp	float	默认 80	W/R
+0x701F	spd_kp	速度 Kp	float	默认 6	W/R
+0x7020	spd_ki	速度 Ki	float	默认 0.02	W/R
+5. 电机控制示例
+5.1 使能电机
+void motor_enable(uint8_t id, uint16_t master_id)
+{
+    txCanIdEx.mode = 3;
+    txCanIdEx.id = id;
+    txCanIdEx.data = master_id;
+    txMsg.tx_dlen = 8;
+    can_txd();
+}
+
+5.2 运控模式控制
+void motor_control(uint8_t id, float torque, float pos, float speed, float kp, float kd)
+{
+    txCanIdEx.mode = 1;
+    txCanIdEx.id = id;
+    txCanIdEx.data = float_to_uint(torque, T_MIN, T_MAX, 16);
+    txMsg.tx_dlen = 8;
+
+    txMsg.tx_data[0] = float_to_uint(pos, P_MIN, P_MAX, 16) >> 8;
+    txMsg.tx_data[1] = float_to_uint(pos, P_MIN, P_MAX, 16);
+    txMsg.tx_data[2] = float_to_uint(speed, V_MIN, V_MAX, 16) >> 8;
+    txMsg.tx_data[3] = float_to_uint(speed, V_MIN, V_MAX, 16);
+    txMsg.tx_data[4] = float_to_uint(kp, KP_MIN, KP_MAX, 16) >> 8;
+    txMsg.tx_data[5] = float_to_uint(kp, KP_MIN, KP_MAX, 16);
+    txMsg.tx_data[6] = float_to_uint(kd, KD_MIN, KD_MAX, 16) >> 8;
+    txMsg.tx_data[7] = float_to_uint(kd, KD_MIN, KD_MAX, 16);
+
+    can_txd();
+}
+
+6. 运行模式切换流程
+模式	run_mode 值	指令流程
+运控模式	0	使能 → 控制指令
+位置模式 CSP	5	使能 → 设置 limit_spd → loc_ref
+位置模式 PP	1	使能 → 设置 vel_max → acc_set → loc_ref
+速度模式	2	使能 → 设置 acc_rad → spd_ref
+电流模式	3	使能 → 设置 iq_ref
