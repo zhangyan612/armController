@@ -10,6 +10,8 @@ odrv0.hw_version_minor
 odrv0.axis0.requested_state=4
 dump_errors(odrv0)
 
+odrv0.clear_errors()
+
 # 对编码器进行校准。执行此操作前，请确认电机输出轴没有任何负载，且用手或其他装置固定住电机。此操作执行后，电机会正向和反向旋转一定时间，对编码器进行识别和校准。
 # 在电机停转后，运行dump_errors(odrv0)查看错误，确认没有错误再进行其他后续步骤。
 odrv0.axis0.requested_state=7
@@ -29,7 +31,7 @@ odrv0.axis0.encoder.config.index_offset = odrv0.axis0.encoder.pos_estimate
 odrv0.axis0.controller.config.control_mode=CONTROL_MODE_POSITION_CONTROL
 odrv0.axis0.controller.config.input_mode=INPUT_MODE_POS_FILTER
 odrv0.axis0.requested_state=AXIS_STATE_CLOSED_LOOP_CONTROL
-odrv0.axis0.controller.input_pos=0
+odrv0.axis0.controller.input_pos=10
 
 归零
 odrv0.axis0.controller.input_pos=0
@@ -49,6 +51,381 @@ odrv0.axis0.config.can.node_id = 2
 
 try odrive can 
 
+
+
+elbow motor right 
+
+can id  0x08 
+
+
+troubleshoot
+odrv0.axis0.encoder.pos_estimate
+
+
+odrv0.config.dc_max_positive_current = 50 
+
+
+In [32]: odrv0.axis0.controller.config.vel_gain
+Out[32]: 0.1666666716337204
+
+In [33]: odrv0.axis0.controller.config.vel_integrator_gain
+Out[33]: 0.3333333432674408
+
+In [34]: odrv0.axis0.controller.config.pos_gain
+Out[34]: 20.0
+
+odrv0.axis0.trap_traj.config
+Out[35]:
+accel_limit: 0.5 (float)
+decel_limit: 0.5 (float)
+vel_limit: 2.0 (float)
+
+odrv0.axis0.motor.config.gear_ratio
+
+In [1]: odrv0.axis0.motor.config
+Out[1]:
+I_bus_hard_max: inf (float)
+I_bus_hard_min: -inf (float)
+I_leak_max: 0.10000000149011612 (float)
+R_wL_FF_enable: False (bool)
+acim_autoflux_attack_gain: 10.0 (float)
+acim_autoflux_decay_gain: 1.0 (float)
+acim_autoflux_enable: False (bool)
+acim_autoflux_min_Id: 10.0 (float)
+acim_gain_min_flux: 10.0 (float)
+bEMF_FF_enable: False (bool)
+calibration_current: 2.0 (float)
+current_control_bandwidth: 1000.0 (float)
+current_lim: 30.0 (float)
+current_lim_margin: 8.0 (float)
+dc_calib_tau: 0.20000000298023224 (float)
+gear_ratio: 8.0 (float)
+inverter_temp_limit_lower: 100.0 (float)
+inverter_temp_limit_upper: 120.0 (float)
+motor_type: 0 (uint8)
+phase_inductance: 0.00011037600052077323 (float)
+phase_resistance: 0.3989185392856598 (float)
+pole_pairs: 14 (int32)
+pre_calibrated: True (bool)
+requested_current_range: 60.0 (float)
+resistance_calib_max_voltage: 7.0 (float)
+torque_constant: 0.4300000071525574 (float)
+torque_lim: inf (float)
+
+
+
+
+
+In [12]: odrv0.axis0.controller.config
+Out[12]:
+anticogging:
+  anticogging_enabled: True (bool)
+  calib_anticogging: False (bool)
+  calib_pos_threshold: 1.0 (float)
+  calib_vel_threshold: 1.0 (float)
+  cogging_ratio: 1.0 (float)
+  index: 0 (uint32)
+  pre_calibrated: False (bool)
+axis_to_mirror: 255 (uint8)
+circular_setpoint_range: 1.0 (float)
+circular_setpoints: False (bool)
+control_mode: 3 (uint8)
+electrical_power_bandwidth: 20.0 (float)
+enable_gain_scheduling: False (bool)
+enable_overspeed_error: False (bool)
+enable_torque_mode_vel_limit: False (bool)
+enable_vel_limit: True (bool)
+gain_scheduling_width: 10.0 (float)
+homing_speed: 0.25 (float)
+inertia: 0.5 (float)
+input_filter_bandwidth: 2.0 (float)
+input_mode: 3 (uint8)
+load_encoder_axis: 0 (uint8)
+mechanical_power_bandwidth: 20.0 (float)
+mirror_ratio: 1.0 (float)
+pos_gain: 20.0 (float)
+spinout_electrical_power_threshold: 10.0 (float)
+spinout_mechanical_power_threshold: -10.0 (float)
+steps_per_circular_range: 1024 (int32)
+torque_mirror_ratio: 0.0 (float)
+torque_ramp_rate: 0.009999999776482582 (float)
+vel_gain: 0.1666666716337204 (float)
+vel_integrator_gain: 0.3333333432674408 (float)
+vel_integrator_limit: inf (float)
+vel_limit: 30.0 (float)
+vel_limit_tolerance: 1.2000000476837158 (float)
+vel_ramp_rate: 1.0 (float)
+In [19]: odrv0.config
+Out[19]:
+brake_resistance: 2.0 (float)
+comm_intf_mux: 0 (uint8)
+dc_bus_overvoltage_ramp_end: 64.20000457763672 (float)
+dc_bus_overvoltage_ramp_start: 64.20000457763672 (float)
+dc_bus_overvoltage_trip_level: 64.20000457763672 (float)
+dc_bus_undervoltage_trip_level: 15.0 (float)
+dc_max_negative_current: -10.0 (float)
+dc_max_positive_current: 15.0 (float)
+enable_brake_resistor: False (bool)
+enable_can_a: True (bool)
+enable_dc_bus_overvoltage_ramp: False (bool)
+enable_i2c_a: True (bool)
+enable_swd: False (bool)
+enable_uart_a: True (bool)
+enable_uart_b: False (bool)
+enable_uart_c: False (bool)
+error_gpio_pin: 0 (uint32)
+gpio10_mode: 3 (uint8)
+gpio11_mode: 3 (uint8)
+gpio12_mode: 15 (uint8)
+gpio13_mode: 8 (uint8)
+gpio14_mode: 8 (uint8)
+gpio15_mode: 7 (uint8)
+gpio16_mode: 7 (uint8)
+gpio1_mode: 1 (uint8)
+gpio1_pwm_mapping:
+  endpoint: None (object_ref)
+  max: 0.0 (float)
+  min: 0.0 (float)
+gpio2_mode: 1 (uint8)
+gpio2_pwm_mapping:
+  endpoint: None (object_ref)
+  max: 0.0 (float)
+  min: 0.0 (float)
+gpio3_analog_mapping:
+  endpoint: None (object_ref)
+  max: 0.0 (float)
+  min: 0.0 (float)
+gpio3_mode: 15 (uint8)
+gpio3_pwm_mapping:
+  endpoint: None (object_ref)
+  max: 0.0 (float)
+  min: 0.0 (float)
+gpio4_analog_mapping:
+  endpoint: None (object_ref)
+  max: 0.0 (float)
+  min: 0.0 (float)
+gpio4_mode: 15 (uint8)
+gpio4_pwm_mapping:
+  endpoint: None (object_ref)
+  max: 0.0 (float)
+  min: 0.0 (float)
+gpio5_mode: 15 (uint8)
+gpio6_mode: 10 (uint8)
+gpio7_mode: 1 (uint8)
+gpio8_mode: 3 (uint8)
+gpio9_mode: 3 (uint8)
+max_regen_current: 0.0 (float)
+uart0_protocol: 3 (uint8)
+uart1_protocol: 3 (uint8)
+uart2_protocol: 3 (uint8)
+uart_a_baudrate: 115200 (uint32)
+uart_b_baudrate: 115200 (uint32)
+uart_c_baudrate: 115200 (uint32)
+usb_cdc_protocol: 3 (uint8)
+
+
+
+elbow motor left  
+
+can id  0x09
+
+odrv0.axis0.config.can.node_id
+
+
+odrv0.axis0.requested_state = AXIS_STATE_IDLE
+
+odrv0.config.enable_can_a = True
+odrv0.save_configuration()
+
+In [15]: odrv0.axis0.controller.config.pos_gain
+Out[15]: 20.0
+
+In [16]: odrv0.axis0.controller.config.vel_gain
+Out[16]: 0.1666666716337204
+
+In [17]: odrv0.axis0.controller.config.vel_integrator_gain
+Out[17]: 0.3333333432674408
+
+
+调节 vel_gain ⽅法：
+1) 用速度控制模式转动电机，如果转动不平稳，有抖动或震动，减小vel_gain，直到转动平稳
+2) 接着，每次把 vel_gain 增大 30%左右，直到出现明显的抖动
+3) 此时，将 vel_gain 减小 50%左右，即可稳定
+
+odrv0.axis0.controller.config.control_mode=CONTROL_MODE_VELOCITY_CONTROL
+odrv0.axis0.controller.config.input_mode=INPUT_MODE_VEL_RAMP
+odrv0.axis0.requested_state=AXIS_STATE_CLOSED_LOOP_CONTROL
+odrv0.axis0.controller.input_vel=15
+
+调节 pos_gain ⽅法：
+1) 用位置模式尝试转动电机，如果转动不平稳，有拉动或震动，减小pos_gain，直到转动平稳
+2) 接着，每次把 pos_gain 增大 30%左右，直到位置控制出现明显的过调（即每次位置控制电机会超出目标位置，然后振荡回到目标位置）
+3) 然后，逐渐减小 pos_gain，直到过调现象消失
+
+odrv0.axis0.controller.config.control_mode=CONTROL_MODE_POSITION_CONTROL
+odrv0.axis0.controller.config.input_mode=INPUT_MODE_POS_FILTER
+odrv0.axis0.requested_state=AXIS_STATE_CLOSED_LOOP_CONTROL
+odrv0.axis0.controller.input_pos=10
+
+
+
+ `odrv0.config.dc_bus_undervoltage_trip_level`    | 低电压告警下限 (V)                                                |
+ `odrv0.config.dc_bus_overvoltage_trip_level`     | 超电压告警上限 (V)                                                |
+ `odrv0.config.dc_max_positive_current`           | 线电流最大值 (正值) (A)                                           |
+ `odrv0.config.dc_max_negative_current`           | 线电流反向充电最大值 (负值) (A)    
+
+
+In [17]: odrv0.config.dc_bus_undervoltage_trip_level
+Out[17]: 15.0
+
+In [18]: odrv0.config.dc_bus_overvoltage_trip_level
+Out[18]: 64.20000457763672
+
+
+In [19]: odrv0.config.dc_max_positive_current
+Out[19]: 50.0
+
+odrv0.axis0.motor.config.current_lim = 50
+
+In [1]: odrv0.axis0.motor.config
+Out[1]:
+I_bus_hard_max: inf (float)
+I_bus_hard_min: -inf (float)
+I_leak_max: 0.10000000149011612 (float)
+R_wL_FF_enable: False (bool)
+acim_autoflux_attack_gain: 10.0 (float)
+acim_autoflux_decay_gain: 1.0 (float)
+acim_autoflux_enable: False (bool)
+acim_autoflux_min_Id: 10.0 (float)
+acim_gain_min_flux: 10.0 (float)
+bEMF_FF_enable: False (bool)
+calibration_current: 2.0 (float)
+current_control_bandwidth: 1000.0 (float)
+current_lim: 50.0 (float)
+current_lim_margin: 8.0 (float)
+dc_calib_tau: 0.20000000298023224 (float)
+inverter_temp_limit_lower: 100.0 (float)
+inverter_temp_limit_upper: 120.0 (float)
+motor_type: 0 (uint8)
+phase_inductance: 0.00010678942635422572 (float)
+phase_resistance: 0.3538818359375 (float)
+pole_pairs: 14 (int32)
+pre_calibrated: True (bool)
+requested_current_range: 60.0 (float)
+resistance_calib_max_voltage: 7.0 (float)
+torque_constant: 0.4300000071525574 (float)
+torque_lim: inf (float)
+
+
+odrv0.axis0.controller.config.enable_vel_limit
+
+In [2]: odrv0.axis0.controller.config
+Out[2]:
+anticogging:
+  anticogging_enabled: True (bool)
+  calib_anticogging: False (bool)
+  calib_pos_threshold: 1.0 (float)
+  calib_vel_threshold: 1.0 (float)
+  cogging_ratio: 1.0 (float)
+  index: 0 (uint32)
+  pre_calibrated: False (bool)
+axis_to_mirror: 255 (uint8)
+circular_setpoint_range: 1.0 (float)
+circular_setpoints: False (bool)
+control_mode: 3 (uint8)
+electrical_power_bandwidth: 20.0 (float)
+enable_gain_scheduling: False (bool)
+enable_overspeed_error: False (bool)
+enable_torque_mode_vel_limit: False (bool)
+enable_vel_limit: False (bool)
+gain_scheduling_width: 10.0 (float)
+homing_speed: 0.25 (float)
+inertia: 0.5 (float)
+input_filter_bandwidth: 2.0 (float)
+input_mode: 3 (uint8)
+load_encoder_axis: 0 (uint8)
+mechanical_power_bandwidth: 20.0 (float)
+mirror_ratio: 1.0 (float)
+pos_gain: 20.0 (float)
+spinout_electrical_power_threshold: 10.0 (float)
+spinout_mechanical_power_threshold: -10.0 (float)
+steps_per_circular_range: 1024 (int32)
+torque_mirror_ratio: 0.0 (float)
+torque_ramp_rate: 0.009999999776482582 (float)
+vel_gain: 0.1666666716337204 (float)
+vel_integrator_gain: 0.3333333432674408 (float)
+vel_integrator_limit: inf (float)
+vel_limit: 30.0 (float)
+vel_limit_tolerance: 1.2000000476837158 (float)
+vel_ramp_rate: 1.0 (float)
+
+
+
+In [1]: odrv0.config
+Out[1]:
+brake_resistance: 2.0 (float)
+dc_bus_overvoltage_ramp_end: 64.20000457763672 (float)
+dc_bus_overvoltage_ramp_start: 64.20000457763672 (float)
+dc_bus_overvoltage_trip_level: 64.20000457763672 (float)
+dc_bus_undervoltage_trip_level: 15.0 (float)
+dc_max_negative_current: -10.0 (float)
+dc_max_positive_current: 50.0 (float)
+enable_brake_resistor: False (bool)
+enable_can_a: False (bool)
+enable_dc_bus_overvoltage_ramp: False (bool)
+enable_i2c_a: True (bool)
+enable_uart_a: True (bool)
+enable_uart_b: False (bool)
+enable_uart_c: False (bool)
+error_gpio_pin: 3 (uint32)
+gpio10_mode: 3 (uint8)
+gpio11_mode: 15 (uint8)
+gpio12_mode: 15 (uint8)
+gpio13_mode: 8 (uint8)
+gpio14_mode: 8 (uint8)
+gpio15_mode: 7 (uint8)
+gpio16_mode: 7 (uint8)
+gpio1_mode: 1 (uint8)
+gpio1_pwm_mapping:
+  endpoint: None (object_ref)
+  max: 0.0 (float)
+  min: 0.0 (float)
+gpio2_mode: 1 (uint8)
+gpio2_pwm_mapping:
+  endpoint: None (object_ref)
+  max: 0.0 (float)
+  min: 0.0 (float)
+gpio3_analog_mapping:
+  endpoint: None (object_ref)
+  max: 0.0 (float)
+  min: 0.0 (float)
+gpio3_mode: 2 (uint8)
+gpio3_pwm_mapping:
+  endpoint: None (object_ref)
+  max: 0.0 (float)
+  min: 0.0 (float)
+gpio4_analog_mapping:
+  endpoint: None (object_ref)
+  max: 0.0 (float)
+  min: 0.0 (float)
+gpio4_mode: 3 (uint8)
+gpio4_pwm_mapping:
+  endpoint: None (object_ref)
+  max: 0.0 (float)
+  min: 0.0 (float)
+gpio5_mode: 15 (uint8)
+gpio6_mode: 10 (uint8)
+gpio7_mode: 0 (uint8)
+gpio8_mode: 3 (uint8)
+gpio9_mode: 3 (uint8)
+max_regen_current: 0.0 (float)
+uart0_protocol: 3 (uint8)
+uart1_protocol: 3 (uint8)
+uart2_protocol: 3 (uint8)
+uart_a_baudrate: 115200 (uint32)
+uart_b_baudrate: 115200 (uint32)
+uart_c_baudrate: 115200 (uint32)
+usb_cdc_protocol: 3 (uint8)
 
 
 based on following code and documentation, generate python functions based on CAN for motors
