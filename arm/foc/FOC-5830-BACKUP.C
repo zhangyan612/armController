@@ -21,7 +21,7 @@ float target_angle = 0.0f;      // Global target angle variable
 
 float shaft_angle, sensor_offset, zero_electric_angle, electrical_angle;
 int pole_pairs = 1, pattern = 0;
-signed char sensor_direction = 1;
+signed char sensor_direction = CCW;
 long angle_data, angle_data_prev; // Current and previous angle values
 float full_rotation_offset;      // Full rotation offset for angle unwrapping
 extern uint8_t isRunning;        // Motor running status flag
@@ -383,30 +383,33 @@ void setPhaseVoltage(float Uq, float Ud, float angle_el)
 // Get current angle from encoder
 float getAngle(void)
 {
-    float d_angle; // Angle change value
-
-    angle_data = MGT_angle; // Get current angle value
-
-    // Calculate angle change and handle full rotations
-    d_angle = angle_data - angle_data_prev;
-
-    // Handle full rotation offset
-    if(fabs(d_angle) > (0.8 * 16383)) {
-        if (d_angle > 0) {
-            full_rotation_offset -= _2PI;
-            rotation_count--; 
-        } else {
-            full_rotation_offset += _2PI;
-            rotation_count++; 
-        }
+    int32_t current_angle = MGT_angle; // Get current angle value
+    int32_t raw_diff = current_angle - angle_data_prev;
+    
+    // Handle wrap-around for 14-bit encoder (0-16383)
+    if (raw_diff > 8192) {
+        // Negative wrap-around (e.g., 16383 -> 0 would be a large positive difference)
+        raw_diff -= 16384;
+        rotation_count--;
+    } else if (raw_diff < -8192) {
+        // Positive wrap-around (e.g., 0 -> 16383 would be a large negative difference)
+        raw_diff += 16384;
+        rotation_count++;
     }
-
+    
+    // Calculate angle change in radians
+    float d_angle = raw_diff * (_2PI / 16383.0f);
+    
+    // Update the full rotation offset
+    full_rotation_offset += d_angle;
+    
     // Update previous angle
-    angle_data_prev = angle_data;
-
-    // Return unwrapped angle
-    return (full_rotation_offset + (angle_data * 1.0 / 16383) * _2PI);
+    angle_data_prev = current_angle;
+    
+    // Return the unwrapped angle
+    return full_rotation_offset;
 }
+
 
 // Open-loop speed mode variables
 #define OPEN_LOOP_SPEED_MODE 5  // New mode for open-loop speed control
@@ -527,10 +530,10 @@ void run()
         PID_current_q.D = 0;
         PID_current_q.limit = 3;
         
-        pole_pairs = 11;  
+        pole_pairs = 7;
         
-        zero_electric_angle = 2.5;
-        pattern = 4;
+        zero_electric_angle = 0.48;
+        pattern =2;
         HAL_UART_Receive_IT(&huart1, &rx_byte, 1);
         HAL_UART_Receive_IT(&huart2, &rx_byte_uart2, 1);
     }
@@ -822,7 +825,7 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
                 if (rx_byte == calculated_checksum)
                 {
                     // Valid frame - update angle
-                    MGT_angle = -(received_bytes[0] + (received_bytes[1] << 8));
+                    MGT_angle = (int16_t)(received_bytes[0] | (received_bytes[1] << 8));
                     MGT_angle_rx_flag = 1;
                 }
                 current_state = WAIT_FOR_START;

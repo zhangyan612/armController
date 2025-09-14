@@ -527,9 +527,9 @@ void run()
         PID_current_q.D = 0;
         PID_current_q.limit = 3;
         
-        pole_pairs = 11;  
+        pole_pairs = 11;
         
-        zero_electric_angle = 2.5;
+        zero_electric_angle = 0.48;
         pattern = 4;
         HAL_UART_Receive_IT(&huart1, &rx_byte, 1);
         HAL_UART_Receive_IT(&huart2, &rx_byte_uart2, 1);

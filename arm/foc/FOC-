@@ -1,0 +1,112 @@
+
+C;
+
+C;
+
+C;
+  Direction: CW
+
+E=1;
+Motor Enabled
+Entering constant speed phase
+Entering deceleration phase
+Switching to position stage
+
+E=0;
+Motor Disabled
+
+C;
+Angle: -2.613080 rad, Raw: 38280, Rotation: -1
+
+
+
+C;
+
+Before motor starts:
+C;
+Angle: 3.682208 rad, Raw: 38406, Rotation: 0
+
+
+T=(5,10,10);
+Trajectory mode started:
+  Speed: 5.00 rad/s
+  Accel: 10.00 rad/s�\r
+  Start angle: 3.68 rad
+  Target angle: 10.00 rad
+  Distance to move: 6.32 rad
+  Direction: CW
+
+E=1;
+Motor Enabled
+Entering constant speed phase
+Entering deceleration phase
+Switching to position stage
+
+
+E=0;
+Motor Disabled
+
+After movement complete 
+C;
+Angle: -2.613080 rad, Raw: 38280, Rotation: -1
+
+
+
+
+Before motor starts:
+
+C;
+Angle: 2.553925 rad, Raw: 26638, Rotation: 0
+
+
+T=(5,10,10);
+Trajectory mode started:
+  Speed: 5.00 rad/s
+  Accel: 10.00 rad/s�\r
+  Start angle: 2.55 rad
+  Target angle: 10.00 rad
+  Distance to move: 7.45 rad
+  Direction: CW
+
+E=1;
+Motor Enabled
+Entering constant speed phase
+Entering deceleration phase
+Switching to position stage
+
+E=0;
+Motor Disabled
+
+After movement complete 
+
+C;
+Angle: -12.091693 rad, Raw: 4951, Rotation: -2
+
+
+
+
+
+
+
+Before moving
+C;
+Angle: 0.581963 rad, Raw: 6070, Rotation: 0
+
+T=(-5,10,10);
+Trajectory mode started:
+  Speed: -5.00 rad/s
+  Accel: 10.00 rad/s�\r
+  Start angle: 0.58 rad
+  Target angle: 10.00 rad
+  Distance to move: 9.42 rad
+  Direction: CW
+
+E=1;
+Motor Enabled
+
+Target position reached. Holding position.
+E=0;
+
+After move the position
+C;
+Angle: 19.411577 rad, Raw: 5862, Rotation: 3
