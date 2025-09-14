@@ -1,0 +1,63 @@
+
+
+
+如果连多路板，用串口助手调试 不要用VOFA
+
+
+A=+3.140;
+Set Target Angle: 3.140 rad
+
+RAW_ERR: 2.29, ADJ_ERR: 2.29, Target: 3.14, Actual: 0.85
+RAW_ERR: 1.67, ADJ_ERR: 1.67, Target: 3.14, Actual: 1.47
+RAW_ERR: 0.32, ADJ_ERR: 0.32, Target: 3.14, Actual: 2.82
+RAW_ERR: -0.27, ADJ_ERR: -0.27, Target: 3.14, Actual: 3.41
+RAW_ERR: -0.23, ADJ_ERR: -0.23, Target: 3.14, Actual: 3.37
+
+A=1.5;
+Set Target Angle: 1.500 rad
+RAW_ERR: -1.86, ADJ_ERR: -1.86, Target: 1.50, Actual: 3.36
+RAW_ERR: -1.86, ADJ_ERR: -1.86, Target: 1.50, Actual: 3.36
+
+A=0.2;
+Set Target Angle: 0.200 rad
+RAW_ERR: -3.16, ADJ_ERR: 3.12, Target: 0.20, Actual: 3.36
+RAW_ERR: -3.81, ADJ_ERR: 2.48, Target: 0.20, Actual: 4.01
+RAW_ERR: -4.82, ADJ_ERR: 1.47, Target: 0.20, Actual: 5.02
+RAW_ERR: -4.82, ADJ_ERR: 1.47, Target: 0.20, Actual: 5.02
+RAW_ERR: -5.40, ADJ_ERR: 0.88, Target: 0.20, Actual: 5.60
+
+
+A=+3.140;
+Set Target Angle: 3.140 rad
+RAW_ERR: -3.67, ADJ_ERR: 2.61, Target: 3.14, Actual: 6.81
+RAW_ERR: -4.25, ADJ_ERR: 2.04, Target: 3.14, Actual: 7.39
+RAW_ERR: -5.23, ADJ_ERR: 1.06, Target: 3.14, Actual: 8.37
+
+
+A=+008.280;
+Set Target Angle: 8.280 rad
+RAW_ERR: -1.37, ADJ_ERR: -1.37, Target: 8.28, Actual: 9.65
+RAW_ERR: -1.37, ADJ_ERR: -1.37, Target: 8.28, Actual: 9.65
+
+A=-3.14;
+Set Target Angle: -3.140 rad
+RAW_ERR: -12.79, ADJ_ERR: -6.50, Target: -3.14, Actual: 9.65
+RAW_ERR: -12.79, ADJ_ERR: -6.50, Target: -3.14, Actual: 9.65
+
+A=-3.13;
+RAW_ERR: -12.78, ADJ_ERR: -6.49, Target: -3.13, Actual: 9.65
+RAW_ERR: -12.78, ADJ_ERR: -6.49, Target: -3.13, Actual: 9.65
+
+A=3.14;
+Set Target Angle: 3.140 rad
+RAW_ERR: -6.51, ADJ_ERR: -0.22, Target: 3.14, Actual: 9.65
+RAW_ERR: -6.51, ADJ_ERR: -0.22, Target: 3.14, Actual: 9.65
+
+A=+006.280;
+RAW_ERR: -6.51, ADJ_ERR: -0.22, Target: 3.14, Actual: 9.65
+RAW_ERR: -6.51, ADJ_ERR: -0.22, Target: 3.14, Actual: 9.65
+
+A=0.2;
+Set Target Angle: 0.200 rad
+RAW_ERR: -9.45, ADJ_ERR: -3.16, Target: 0.20, Actual: 9.65
+RAW_ERR: -9.45, ADJ_ERR: -3.16, Target: 0.20, Actual: 9.65
