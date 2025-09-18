@@ -1,10 +1,64 @@
 import serial
 import time
-import binascii
 import struct
+import threading
 from enum import Enum
 from typing import Optional, Callable
-import threading 
+
+# ==================== 电位器读取部分 ====================
+
+def hex_to_percentage(hex_data):
+    percentages = []
+    # 每4个十六进制字符（2字节）解析为一个数值
+    for i in range(0, len(hex_data), 4):
+        high_byte = int(hex_data[i:i+2], 16)
+        low_byte = int(hex_data[i+2:i+4], 16)
+        value = (high_byte << 8) + low_byte
+        percentages.append(value)
+    return percentages
+
+def read_serial_data(ser, expected_bytes):
+    data = b''
+    start_time = time.time()
+    while len(data) < expected_bytes and (time.time() - start_time) < ser.timeout:
+        if ser.in_waiting > 0:
+            data += ser.read(ser.in_waiting)
+    return data.hex()
+
+def process_serial_commands(ser):
+    commands = [0xEE]  # 只使用0xEE命令读取编码器位置
+    
+    try:
+        for command in commands:
+            ser.write(bytes([command]))
+            time.sleep(0.01)  # 添加短暂延迟确保数据接收
+            
+            # 读取足够的数据：12路编码器 × 2字节/路 + 头尾标记
+            # 假设头尾各1字节标记，所以总共需要26字节
+            response = read_serial_data(ser, 26)
+            
+            if command == 0xEE and len(response) >= 26:
+                # 去掉头尾标记（各1字节，即2个十六进制字符）
+                clean_response = response[2:-2]
+                percentages = hex_to_percentage(clean_response)
+                return percentages
+            else:
+                print(f"Invalid response length: {len(response)}")
+                return None
+                
+    except Exception as e:
+        print(f"Serial communication error: {e}")
+        return None
+
+def restrict_range(value, lower=-2, upper=2):
+    """Restricts a number within the range [-2, 2]."""
+    return max(lower, min(value, upper))
+
+def map_to_motor(value, in_min=0, in_max=9940, out_min=0, out_max=6.28):
+    """Maps a value from one range to another."""
+    return (value - in_min) * (out_max - out_min) / (in_max - in_min) + out_min
+
+# ==================== 电机控制部分 ====================
 
 # 常量定义
 P_MIN = -12.5
@@ -145,13 +199,13 @@ class RobStrideMotor:
         """初始化电机"""
         print(f"Initializing motor ID {self.motor_id}...")
         
-        # 发送初始化命令1 - 与原始代码完全相同
+        # 发送初始化命令1
         init_cmd1 = bytes.fromhex(f"41 54 00 07 e8 {self.motor_id:02x} 02 01 00 0d 0a")
         self.ser.write(init_cmd1)
         print(f"Sent to ID {self.motor_id}: {init_cmd1.hex(' ')}")
         time.sleep(0.1)
         
-        # 发送初始化命令2 - 与原始代码完全相同
+        # 发送初始化命令2
         init_cmd2 = bytes.fromhex(f"41 54 20 07 e8 {self.motor_id:02x} 08 00 c4 00 00 00 00 00 00 0d 0a")
         self.ser.write(init_cmd2)
         print(f"Sent to ID {self.motor_id}: {init_cmd2.hex(' ')}")
@@ -161,9 +215,7 @@ class RobStrideMotor:
         """
         构建 CAN 帧
         """
-        # node_id = (self.motor_id << 2) + 0x08
         node_id = (self.motor_id << 3) | 0x04
-        # 根据第二套代码固定的 CAN ID 规则，构造扩展 ID
         ext_id_bytes = bytes([comm_type, 0x07, 0xE8, node_id])
 
         data_len = bytes([len(data_bytes)])
@@ -171,12 +223,12 @@ class RobStrideMotor:
         return frame
     
     def float_to_hex(self, f):
-        """浮点数转小端十六进制 - 与原始代码完全相同"""
+        """浮点数转小端十六进制"""
         return struct.pack('<f', f)
     
     def send_command(self, frame):
         """
-        发送帧并读取响应 - 与原始代码完全相同
+        发送帧并读取响应
         
         Args:
             frame: 要发送的帧
@@ -195,7 +247,7 @@ class RobStrideMotor:
         return response
     
     def set_position_mode(self):
-        """设置位置模式 - 与原始代码完全相同"""
+        """设置位置模式"""
         print(f"Setting position mode for motor {self.motor_id}")
         data = bytes.fromhex("05 70 00 00 01 00 00 00")
         frame = self.build_command(0x90, data)
@@ -203,7 +255,7 @@ class RobStrideMotor:
         time.sleep(0.2)
     
     def enable_motor(self):
-        """使能电机 - 与原始代码完全相同"""
+        """使能电机"""
         print(f"Enabling motor {self.motor_id}")
         data = bytes.fromhex("00 00 00 00 00 00 00 00")
         frame = self.build_command(0x18, data)
@@ -249,7 +301,7 @@ class RobStrideMotor:
     
     def move_to_position(self, position_rad, velocity=1.0, acceleration=5.0):
         """
-        移动到指定位置（兼容旧方法）
+        移动到指定位置
         
         Args:
             position_rad: 目标位置（弧度）
@@ -265,26 +317,39 @@ class RobStrideMotor:
         self.set_position(position_rad)
     
     def disable_motor(self):
-        """禁用电机 - 与原始代码完全相同"""
+        """禁用电机"""
         print(f"Disabling motor {self.motor_id}")
         data = bytes.fromhex("00 00 00 00 00 00 00 00")
         frame = self.build_command(0x20, data)
         self.send_command(frame)
 
+# ==================== 主控制程序 ====================
 
-class RobStrideController:
-    """RobStride 控制器类，用于管理多个电机"""
+class PotentiometerMotorController:
+    """电位器控制电机的主控制器类"""
     
-    def __init__(self, port: str, baudrate: int = 921600):
+    def __init__(self, pot_port='COM9', motor_port='COM21', baudrate=921600):
         """
         初始化控制器
         
         Args:
-            port: 串口端口
-            baudrate: 波特率
+            pot_port: 电位器串口
+            motor_port: 电机控制串口
+            baudrate: 电机控制串口波特率
         """
-        self.ser = serial.Serial(
-            port=port,
+        # 初始化电位器串口
+        self.pot_ser = serial.Serial(
+            port=pot_port,
+            baudrate=115200,
+            bytesize=serial.EIGHTBITS,
+            parity=serial.PARITY_NONE,
+            stopbits=serial.STOPBITS_ONE,
+            timeout=1
+        )
+        
+        # 初始化电机控制串口
+        self.motor_ser = serial.Serial(
+            port=motor_port,
             baudrate=baudrate,
             parity=serial.PARITY_NONE,
             stopbits=serial.STOPBITS_ONE,
@@ -292,156 +357,131 @@ class RobStrideController:
             timeout=0.5
         )
         
-        self.motors = {}
-        self.running = False
-        self.read_thread = None
-    
-    def add_motor(self, motor_id: int, mit_mode: bool = False, 
-                  offset_func: Optional[Callable[[float], float]] = None) -> RobStrideMotor:
-        """
-        添加电机
+        # 初始化适配器
+        self.motor_ser.write(bytes.fromhex("41 54 2b 41 54 0d 0a"))
+        time.sleep(0.2)
         
-        Args:
-            motor_id: 电机ID
-            mit_mode: 是否使用 MIT 模式
-            offset_func: 偏移量校正函数
-            
-        Returns:
-            电机对象
-        """
-        motor = RobStrideMotor(self.ser, motor_id, mit_mode, offset_func)
+        # 存储电机对象
+        self.motors = {}
+        
+        # 电位器到电机的映射关系 (电位器索引: 电机ID)
+        self.pot_motor_mapping = {}
+        
+        # 控制循环运行标志
+        self.running = False
+        self.control_thread = None
+    
+    def add_motor(self, motor_id):
+        """添加电机"""
+        motor = RobStrideMotor(self.motor_ser, motor_id)
         self.motors[motor_id] = motor
         return motor
     
-    def set_all_velocity_acceleration(self, velocity=1.0, acceleration=5.0):
-        """为所有电机设置相同的速度和加速度"""
-        for motor in self.motors.values():
-            motor.set_velocity_acceleration(velocity, acceleration)
+    def set_pot_motor_mapping(self, pot_index, motor_id):
+        """设置电位器到电机的映射关系"""
+        self.pot_motor_mapping[pot_index] = motor_id
+        print(f"Mapped potentiometer {pot_index} to motor {motor_id}")
     
-    def set_all_positions(self, positions):
-        """为所有电机设置位置（可分别设置不同位置）"""
-        for motor_id, position in positions.items():
-            if motor_id in self.motors:
-                self.motors[motor_id].set_position(position)
-    
-    def move_all_to_positions(self, positions, velocity=1.0, acceleration=5.0):
-        """
-        同步移动所有电机到指定位置
-        
-        Args:
-            positions: 电机ID到目标位置的映射
-            velocity: 速度 (rad/s)
-            acceleration: 加速度 (rad/s²)
-        """
-        print(f"Moving all motors to positions with velocity {velocity} rad/s and acceleration {acceleration} rad/s²")
-        
-        # 1. 设置所有电机的速度和加速度
-        self.set_all_velocity_acceleration(velocity, acceleration)
-        
-        # 2. 设置所有电机的位置（几乎同时发送）
-        self.set_all_positions(positions)
-    
-    def start_reading(self):
-        """开始读取数据"""
-        self.running = True
-        self.read_thread = threading.Thread(target=self._read_loop)
-        self.read_thread.daemon = True
-        self.read_thread.start()
-    
-    def stop_reading(self):
-        """停止读取数据"""
-        self.running = False
-        if self.read_thread:
-            self.read_thread.join()
-    
-    def _read_loop(self):
-        """读取循环"""
-        while self.running:
-            if self.ser.in_waiting:
-                # 读取数据并解析
-                data = self.ser.read_all()
-                # 这里需要根据实际协议解析数据帧
-                # 由于协议比较复杂，这里只提供框架
-                try:
-                    # 假设数据以 "AT" 开头，以 "\r\n" 结尾
-                    if data.startswith(b"AT") and data.endswith(b"\r\n"):
-                        # 提取扩展ID和数据
-                        ext_id_bytes = data[2:6]
-                        data_len = data[6]
-                        payload = data[7:7+data_len]
-                        
-                        ext_id = int.from_bytes(ext_id_bytes, byteorder='big')
-                        can_id = ext_id & 0xFF
-                        
-                        if can_id in self.motors:
-                            self.motors[can_id].analysis(payload, ext_id)
-                except Exception as e:
-                    print(f"Error parsing data: {e}")
-            
-            time.sleep(0.001)
-    
-    def close(self):
-        """关闭控制器"""
-        self.stop_reading()
-        self.ser.close()
-
-
-# 示例用法
-def main():
-    print("Starting multi-motor control with synchronization...")
-
-    # 初始化控制器
-    controller = RobStrideController(port='COM21')
-    
-    # 初始化适配器
-    controller.ser.write(bytes.fromhex("41 54 2b 41 54 0d 0a"))
-    time.sleep(0.2)
-
-    # 添加电机
-    # motor1 = controller.add_motor(motor_id=0x01)  # motor1
-    # motor2 = controller.add_motor(motor_id=0x02)  # motor2
-    motor3 = controller.add_motor(motor_id=0x03)  # motor3
-    # motor4 = controller.add_motor(motor_id=0x04)  # motor4
-
-    try:
-        # 设置所有电机为位置模式
-        for motor in controller.motors.values():
+    def setup_motors(self):
+        """设置所有电机为位置模式并启用"""
+        for motor_id, motor in self.motors.items():
             motor.set_position_mode()
-        
-        # 使能所有电机
-        for motor in controller.motors.values():
             motor.enable_motor()
         
         time.sleep(2)
-
-        # 使用同步方法移动所有电机到初始位置
-        initial_positions = {0x01: 0.0, 0x02: 0.0, 0x03: 0.0, 0x04: 0.0}
-        controller.move_all_to_positions(initial_positions, velocity=2.0, acceleration=10.0)
-        time.sleep(1)
-
-        # 移动到不同位置
-        positions_1 = {0x01: 3.0, 0x02: 3.0, 0x03: 3.0, 0x04: 3.0}
-        controller.move_all_to_positions(positions_1, velocity=1.5, acceleration=8.0)
-        time.sleep(1)
-
-        # 再次移动回初始位置
-        controller.move_all_to_positions(initial_positions, velocity=2.5, acceleration=5.0)
-        time.sleep(1)
-
+        print("All motors set up and enabled")
+    
+    def read_potentiometers(self):
+        """读取电位器值"""
+        return process_serial_commands(self.pot_ser)
+    
+    def control_loop(self, interval=0.1):
+        """控制循环 - 读取电位器并控制电机"""
+        try:
+            while self.running:
+                # 读取电位器值
+                pot_values = self.read_potentiometers()
+                
+                if pot_values and len(pot_values) >= 12:
+                    # 处理每个映射的电位器-电机对
+                    for pot_index, motor_id in self.pot_motor_mapping.items():
+                        if pot_index < len(pot_values) and motor_id in self.motors:
+                            # 获取电位器值并映射到电机范围
+                            pot_value = pot_values[pot_index]
+                            mapped_value = map_to_motor(pot_value)
+                            mapped_value = restrict_range(mapped_value, 0, 6.28)
+                            
+                            # 控制电机
+                            self.motors[motor_id].set_position(mapped_value)
+                            
+                            print(f"Pot {pot_index} -> Motor {motor_id}: {pot_value} -> {mapped_value:.2f} rad")
+                        else:
+                            print(f"Invalid mapping: Pot {pot_index} -> Motor {motor_id}")
+                else:
+                    print("Failed to read potentiometer values")
+                
+                time.sleep(interval)
+                
+        except Exception as e:
+            print(f"Control loop error: {e}")
+    
+    def start(self):
+        """启动控制循环"""
+        if not self.running:
+            self.running = True
+            self.control_thread = threading.Thread(target=self.control_loop)
+            self.control_thread.daemon = True
+            self.control_thread.start()
+            print("Control loop started")
+    
+    def stop(self):
+        """停止控制循环并禁用所有电机"""
+        self.running = False
+        if self.control_thread:
+            self.control_thread.join(timeout=1.0)
+        
         # 禁用所有电机
-        for motor in controller.motors.values():
+        for motor in self.motors.values():
             motor.disable_motor()
+        
+        # 关闭串口
+        self.pot_ser.close()
+        self.motor_ser.close()
+        
+        print("Controller stopped and motors disabled")
 
-        print("Multi-motor control with synchronization completed successfully.")
+# ==================== 主程序 ====================
 
-    except Exception as e:
-        print(f"Error: {str(e)}")
-        import traceback
-        traceback.print_exc()
+def main():
+    """主函数"""
+    print("Starting potentiometer-controlled motor system...")
+    
+    # 创建控制器
+    controller = PotentiometerMotorController(pot_port='COM9', motor_port='COM21')
+    
+    try:
+        # 添加电机 (例如添加ID为3的电机)
+        controller.add_motor(0x03)
+        
+        # 设置电位器到电机的映射 (例如电位器6控制电机3)
+        controller.set_pot_motor_mapping(5, 0x03)  # 注意: 电位器索引从0开始，所以6号电位器是索引5
+        
+        # 设置电机
+        controller.setup_motors()
+        
+        # 启动控制循环
+        controller.start()
+        
+        # 保持程序运行
+        print("System running. Press Ctrl+C to stop.")
+        while True:
+            time.sleep(1)
+            
+    except KeyboardInterrupt:
+        print("\nStopping system...")
     finally:
-        controller.close()
-        print("Controller closed")
-
+        controller.stop()
+        print("System stopped.")
 
 if __name__ == "__main__":
     main()

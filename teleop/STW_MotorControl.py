@@ -927,6 +927,7 @@ def runMotorTest():
     
     positionControlTest(bus, activeMotor, 0)
 
+
     # speedLoopTest(bus, motorID1) pass
 
     position = get_encoder_estimates(bus, activeMotor)
