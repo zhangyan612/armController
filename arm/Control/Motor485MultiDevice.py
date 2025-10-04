@@ -148,12 +148,43 @@ class MotorControl:
         self.write32(0x0010, 0, device_id)
 
 
+def moveMotorTest(mc, dev_id):
+    print(f"[Device {dev_id}] Version Info:", mc.version_info(device_id=dev_id))
+    print(f"[Device {dev_id}] Temperature:", mc.read_temperature(device_id=dev_id))
+    print(f"[Device {dev_id}] Servo Status:", mc.servo_status(device_id=dev_id))
+    mc.disable(device_id=dev_id)
+    print(f"[Device {dev_id}] Disabled.")
+    mc.enable(device_id=dev_id)
+    print(f"[Device {dev_id}] Enabled.")
+
+
+    print("Setting target speed to 1000 RPM...", mc.set_target_speed(1000, dev_id))
+    print("Setting accel to 500 ms...", mc.set_accel(500, dev_id))
+    print("Setting decel to 500 ms...", mc.set_decel(500, dev_id))
+    time.sleep(1)
+
+    current_pos = mc.position1(dev_id)
+    print(f'current position {current_pos}')
+
+    print("Moving with accel to 20000...", mc.move_accel(327680, dev_id))
+
+    time.sleep(2)
+    print("Moving with accel to 20000...", mc.move_accel(0, dev_id))
+
+    time.sleep(1)
+
+
+    mc.disable(device_id=dev_id)
+    print(f"[Device {dev_id}] Disabled.")
+
+
+
 # Example usage:
 if __name__ == '__main__':
-    # mc = MotorControl(port='COM3', baudrate=19200)
+    mc = MotorControl(port='COM5', baudrate=19200)
 
     # linux lsusb
-    mc = MotorControl(port='/dev/arm1', baudrate=19200)
+    # mc = MotorControl(port='/dev/arm1', baudrate=19200)
 
     # permission deny 
     # sudo usermod -aG dialout $USER
@@ -171,34 +202,8 @@ if __name__ == '__main__':
 
     try:
         # for dev_id in range(1, 7):
-        dev_id = 6
-        print(f"[Device {dev_id}] Version Info:", mc.version_info(device_id=dev_id))
-        print(f"[Device {dev_id}] Temperature:", mc.read_temperature(device_id=dev_id))
-        print(f"[Device {dev_id}] Servo Status:", mc.servo_status(device_id=dev_id))
-        mc.disable(device_id=dev_id)
-        print(f"[Device {dev_id}] Disabled.")
-        mc.enable(device_id=dev_id)
-        print(f"[Device {dev_id}] Enabled.")
-
-
-        print("Setting target speed to 1000 RPM...", mc.set_target_speed(1000, dev_id))
-        print("Setting accel to 500 ms...", mc.set_accel(500, dev_id))
-        print("Setting decel to 500 ms...", mc.set_decel(500, dev_id))
-        time.sleep(1)
-
-        current_pos = mc.position1(dev_id)
-        print(f'current position {current_pos}')
-
-        print("Moving with accel to 20000...", mc.move_accel(327680, dev_id))
-
-        time.sleep(2)
-        print("Moving with accel to 20000...", mc.move_accel(0, dev_id))
-
-        time.sleep(1)
-
-
-        mc.disable(device_id=dev_id)
-        print(f"[Device {dev_id}] Disabled.")
+        moveMotorTest(mc, dev_id=1)
+        moveMotorTest(mc, dev_id=2)
 
     finally:
         mc.close()
