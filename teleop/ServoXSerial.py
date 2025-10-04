@@ -173,31 +173,31 @@ class MotorController:
 
 # 使用示例
 if __name__ == "__main__":
-    mc = MotorController(port='COM6')
+    mc = MotorController(port='COM54')
     try:
         # 设置减速比
-        mc.set_reduction_ratio(1)
+        # mc.set_reduction_ratio(1)
         
         # 使能电机
-        mc.motor_enable(True)
+        # mc.motor_enable(True)
         
         # 查询编码器角度
         encoder_value = mc.query_encoder_angle()
         print(f"Initial encoder value: {encoder_value}")
         
         # 转动电机
-        mc.set_angle(0)  # 转动6圈
+        # mc.set_angle(0)  # 转动6圈
         
         # 等待运动完成
-        time.sleep(2)
+        # time.sleep(2)
         
         # 再次查询编码器角度
-        encoder_value = mc.query_encoder_angle()
-        print(f"Final encoder value: {encoder_value}")
+        # encoder_value = mc.query_encoder_angle()
+        # print(f"Final encoder value: {encoder_value}")
         
         # 查询圈数
-        rotation_count = mc.query_rotation()
-        print(f"Rotation count: {rotation_count}")
+        # rotation_count = mc.query_rotation()
+        # print(f"Rotation count: {rotation_count}")
         
     finally:
         mc.motor_enable(False)

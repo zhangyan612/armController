@@ -67,8 +67,11 @@ def runMotorTest():
     motorID8 = 0x08     #ElbowRight  not stable 
     motorID9 = 0x09     #ElbowLeft
 
+    motorID10 = 10     #leg5
+    motorID11 = 11     #leg6 
+
     
-    activeMotor = motorID9
+    activeMotor = motorID10
 
     # 执行校准 pass
     # calibrate_motor(bus,motorID1)             
@@ -80,10 +83,10 @@ def runMotorTest():
     print(position)
     err = odriveMotor.get_error(bus, activeMotor, 0)
     print(err)
+    odriveMotor.clear_errors(bus, activeMotor)
 
     # odriveMotor.disable_can(bus, activeMotor)
 
-    # odriveMotor.clear_errors(bus, activeMotor)
 
     # # all motor back to 0 position  pass
     positionControlTest(bus, activeMotor, 0)
@@ -94,8 +97,13 @@ def runMotorTest():
     # positionControlTest(bus, motorID6, 0)
     # positionControlTest(bus, motorID7, 0)
 
-    time.sleep(5)
+    time.sleep(3)
+    positionControlTest(bus, activeMotor, 10)
     
+    time.sleep(3)
+    positionControlTest(bus, activeMotor, 0)
+    time.sleep(3)
+
     # positionControlTest(bus, activeMotor, 0)
 
     # speedLoopTest(bus, motorID1) pass

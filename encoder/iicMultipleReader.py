@@ -39,15 +39,18 @@ class ArduinoEncoder:
 
 # ----------------- 使用示例 -----------------
 if __name__ == "__main__":
-    encoder = ArduinoEncoder('COM21')
+    encoder = ArduinoEncoder('COM10')
 
     # 需要查询的通道
     query_list = [
-        (70, 7),
-        (70, 8),
-        (71, 6),
-        (71, 8),
-        (72, 4)
+        (70, 3), # Left shoulder
+        (70, 5), # right shoulder
+        (71, 1), # left arm wrist 1
+        (71, 7), # left arm wrist 2
+        (71, 8), # left arm elbow
+        (72, 4), # right arm elbow
+        (72, 6), # right arm wrist 1
+        (72, 7), # right arm wrist 1
     ]
 
     result = encoder.query_batch(query_list)

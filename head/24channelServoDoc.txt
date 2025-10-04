@@ -53,3 +53,52 @@
 
 停止当前所有动作
 #STOP\r\n 停止当前所有动作
+
+
+
+
+eyes limit 
+
+left eye
+left-righ 1200 - 1800
+up-down  1200-1520
+
+
+1 - left eye lid down - 1300 open - 1780 -close
+2 - left eye lid up - 1600 open - 1350 -close
+3 - left eye ball up down - 1200 down - 1550 - up
+4 - left eye ball left right - 1200 left - 1750 - right
+
+5 -empty 
+
+
+6- nose lower  - 1420 down - 1620 - up
+
+7 - left cheek  - 1200 down - 1840 - up
+8 - right cheek  - 1900 down - 1160 - up
+
+
+
+9 - right eye ball up down - 1900 down - 1550 - up
+10 - right eye left right - 1320 left - 1550 - right
+
+
+11 - right eye lid down - 1650 open - 1350 - close
+12 - right eye lid up - 1300 open - 1780 - close
+
+
+13 - neck servo, need adjustment 
+
+
+14 empty
+
+15 turn left right 1000 left - 2000 right 
+16 jaw open close   600 close 1600 open  
+
+
+17 right Eyebrow  1100 up - 1600 down
+18 left  Eyebrow  1800 up - 1300 down
+
+19 right eyebrow top - 1680 center - 1900 outside 
+
+20 right eyebrow top - 1500 center - 1300 outside 

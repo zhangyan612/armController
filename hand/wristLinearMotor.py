@@ -204,10 +204,11 @@ if __name__ == "__main__":
     # print(f"Sending stop command: {stop_message}")
     # ser.write(stop_message)
 
-    timeChange = 5
-    id_value = '12'
+    timeChange = 30
+
+    id_value = '01'
+    # pwm_value = 0  # 拉  -6
     pwm_value = 0  # 拉  -6
-    # pwm_value = 2016  # 拉  -6
     # pwm_value = 0  # 松
     # pwm_value = 2300  # 拉  6
     

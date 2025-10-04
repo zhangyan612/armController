@@ -3,7 +3,7 @@ import time
 
 # 配置串口
 ser = serial.Serial(
-    port='COM5',     # 替换为您的实际串口
+    port='COM3',     # 替换为您的实际串口
     baudrate=115200, # 波特率
     parity=serial.PARITY_NONE,
     stopbits=serial.STOPBITS_ONE,
