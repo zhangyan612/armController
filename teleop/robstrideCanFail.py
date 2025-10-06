@@ -541,13 +541,18 @@ class RobStrideController:
 
 # 示例用法
 def main():
+
+    # sudo ip link set down can0
+    # sudo ip link set can0 type can bitrate 1000000 loopback off
+    # sudo ip link set up can0
+
     print("Starting multi-motor control with synchronization...")
 
     # 初始化控制器，使用1Mbps波特率
     controller = RobStrideController(channel='can0', interface='socketcan', bitrate=1000000)
     
     # 添加电机
-    motor3 = controller.add_motor(motor_id=0x03)  # motor3
+    motor3 = controller.add_motor(motor_id=0x06)  # motor3
 
     try:
         # 设置所有电机为位置模式

@@ -310,27 +310,41 @@ def main():
     motorID = 6                                 
     #------1：将某个电机机械角度归零
     set_motor_angle_zero(bus,motorID)
+    time.sleep(1)
     #------2：再将某个电机设置为运控模式
     set_motion_mode(bus,motorID)
+    time.sleep(1)
+
     #------3：再将某个电机设置为运控模式 使能
     set_motion_enable(bus,motorID)
+    time.sleep(1)
 
-    motorID2 = 7
-    set_motor_angle_zero(bus,motorID2)
-    set_motion_mode(bus,motorID2)
-    set_motion_enable(bus,motorID2)
+    # motorID2 = 7
+    # set_motor_angle_zero(bus,motorID2)
+    # set_motion_mode(bus,motorID2)
+    # set_motion_enable(bus,motorID2)
 
-
-
-    #------------以下是控制电机来回旋转的案例-----------------------
-    red = 0.0           #最小角度也是起始角度必须为0
-    fx = 0              #方向标志位
-    red_max = 1.2      #最大角度
-    time_delay = 0.002   #速率延时
-    while True:
-
-        try:  
-
+    # 控制参数
+    red = 0.0
+    fx = 0
+    red_max = 1.2
+    time_delay = 0.01  # 增加延迟时间
+    
+    # 添加发送计数器和时间控制
+    send_count = 0
+    last_time = time.time()
+    
+    try:
+        while True:
+            current_time = time.time()
+            
+            # 控制发送频率，最多 100Hz
+            if current_time - last_time < time_delay:
+                time.sleep(0.001)
+                continue
+                
+            last_time = current_time
+            
             if fx == 0 and red < red_max:
                 red = red + 0.01
             elif fx == 0 and red >= red_max:
@@ -342,15 +356,47 @@ def main():
                 fx = 0
                 time.sleep(1) 
 
-            leg_set_motion_parameter_L(bus,motorID,0,red,0,10,0.5)
-            leg_set_motion_parameter_L(bus,motorID2,0,red,0,10,0.5)
-            time.sleep(time_delay) 
+            # 发送控制命令
+            leg_set_motion_parameter_L(bus, motorID, 0, red, 0, 10, 0.5)
+            # leg_set_motion_parameter_L(bus, motorID2, 0, red, 0, 10, 0.5)
+            
+            send_count += 1
+            if send_count % 100 == 0:  # 每100次发送打印一次状态
+                print(f"已发送 {send_count} 条指令, 当前角度: {red:.2f}")
+
+    except KeyboardInterrupt:  
+        print("按下 Ctrl+C, 结束----")
+        print(f"总共发送了 {send_count} 条指令")
+
+    #------------以下是控制电机来回旋转的案例-----------------------
+    # red = 0.0           #最小角度也是起始角度必须为0
+    # fx = 0              #方向标志位
+    # red_max = 1.2      #最大角度
+    # time_delay = 0.01   #速率延时
+    # while True:
+
+    #     try:  
+
+    #         if fx == 0 and red < red_max:
+    #             red = red + 0.01
+    #         elif fx == 0 and red >= red_max:
+    #             fx = 1
+    #             time.sleep(1) 
+    #         elif fx == 1 and red > 0:
+    #             red = red - 0.01
+    #         elif fx == 1 and red <= 0:
+    #             fx = 0
+    #             time.sleep(1) 
+
+    #         leg_set_motion_parameter_L(bus,motorID,0,red,0,10,0.5)
+    #         # leg_set_motion_parameter_L(bus,motorID2,0,red,0,10,0.5)
+    #         time.sleep(time_delay) 
 
 
         # 当用户按下 Ctrl+C 时，会执行这里的代码
-        except KeyboardInterrupt:  
-            print("按下 Ctrl+C,结束----")
-            break
+        # except KeyboardInterrupt:  
+        #     print("按下 Ctrl+C,结束----")
+        #     break
 
 
     # 在退出时确保资源被释放  

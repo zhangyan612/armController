@@ -7,3 +7,18 @@ ls /dev/ttyUSB*
 ✅ Option 1: Uninstall brltty (most common)
 
 If you don’t use a Braille display, just remove it:
+
+
+
+# 检查 CAN 总线状态
+ip -details link show can0
+
+# 查看 CAN 统计信息
+cat /proc/net/can/stats
+
+
+# 增加发送缓冲区大小
+sudo ip link set can0 down
+sudo ip link set can0 txqueuelen 1000  # 增加队列长度
+sudo ip link set can0 type can bitrate 1000000
+sudo ip link set can0 up

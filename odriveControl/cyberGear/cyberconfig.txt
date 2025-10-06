@@ -1,0 +1,10 @@
+Install the package from pip:
+
+pip install CyberGearDashboard
+
+
+# If this connects without error
+python -m can.viewer --interface socketcan --channel can0
+
+
+python -m CyberGearDashboard  --interface socketcan --channel can0 --motor 6

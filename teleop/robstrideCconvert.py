@@ -328,7 +328,7 @@ def test_motor_communication():
         print("CAN bus initialized successfully")
         
         # Create motor instance (using CAN ID 0x01 as example)
-        motor = RobStrideMotor(can_id=0x01, bus=bus)
+        motor = RobStrideMotor(can_id=0x06, bus=bus)
         
         print("Testing motor communication...")
         
