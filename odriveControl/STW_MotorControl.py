@@ -897,8 +897,8 @@ def runMotorTest():
     # calibrate_motor(bus,motorID5)
     #positionControlTest(bus, motorID1, 1)
 
-    #position, velocity = get_encoder_estimates_safe(bus, motor_id=1)
-    #print(f"Current position: {position:.2f} rev, Velocity: {velocity:.2f} rev/s")
+    position, velocity = get_encoder_estimates_safe(bus, motor_id=2)
+    print(f"Current position: {position:.2f} rev, Velocity: {velocity:.2f} rev/s")
 
     #time.sleep(3)
 
@@ -908,26 +908,26 @@ def runMotorTest():
     # Usage example
     #move_relative_safely(bus, motor_id=1, offset_revs=0.5)  # Move 0.5 revolutions
 
-    motorID = 1
-    position = 3
+    # motorID = 1
+    # position = 3
 
-    set_controller_mode(bus, motorID, control_mode=3, input_mode=3)
-    time.sleep(0.5)
-    # Set to closed loop state
-    set_closed_loop_state(bus, motorID)
-    time.sleep(0.5)
+    # set_controller_mode(bus, motorID, control_mode=3, input_mode=3)
+    # time.sleep(0.5)
+    # # Set to closed loop state
+    # set_closed_loop_state(bus, motorID)
+    # time.sleep(0.5)
 
-    current_pos, _ = get_encoder_estimates(bus, motorID)
-    print(f"Actual current position: {current_pos:.3f} rev")
+    # current_pos, _ = get_encoder_estimates(bus, motorID)
+    # print(f"Actual current position: {current_pos:.3f} rev")
 
-    # Set position
-    set_position(bus, motorID, current_pos+0.5)
+    # # Set position
+    # set_position(bus, motorID, current_pos+0.5)
 
-    time.sleep(5)
+    # time.sleep(5)
     
-    # 6. Release motor (set to idle)
-    set_axis_state(bus, motorID, 1)  # AXIS_STATE_IDLE
-    print(f"Movement complete, motor released")
+    # # 6. Release motor (set to idle)
+    # set_axis_state(bus, motorID, 1)  # AXIS_STATE_IDLE
+    # print(f"Movement complete, motor released")
 
 
     # all motor back to 0 position  pass

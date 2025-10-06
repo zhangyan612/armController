@@ -1,0 +1,9 @@
+
+
+ls /dev/ttyUSB*
+
+
+
+✅ Option 1: Uninstall brltty (most common)
+
+If you don’t use a Braille display, just remove it:

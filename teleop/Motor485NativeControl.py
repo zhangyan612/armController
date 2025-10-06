@@ -177,7 +177,9 @@ class MotorControl:
 
 # 测试代码
 if __name__ == '__main__':
-    mc = MotorControl(port='COM8', baudrate=19200, device_id=0x01)
+    # mc = MotorControl(port='COM8', baudrate=19200, device_id=0x02)
+    mc = MotorControl(port='/dev/ttyUSB2', baudrate=19200, device_id=0x02) # success
+
     try:
         print("Version Info:", mc.version_info())
         print("Temperature:", mc.read_temperature())
