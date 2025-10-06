@@ -71,7 +71,7 @@ def runMotorTest():
     motorID11 = 11     #leg6 
 
     
-    activeMotor = motorID10
+    activeMotor = motorID2
 
     # 执行校准 pass
     # calibrate_motor(bus,motorID1)             
@@ -89,7 +89,7 @@ def runMotorTest():
 
 
     # # all motor back to 0 position  pass
-    positionControlTest(bus, activeMotor, 0)
+    # positionControlTest(bus, activeMotor, 0)
     # positionControlTest(bus, motorID2, 2)
     # positionControlTest(bus, motorID3, 2)
     # positionControlTest(bus, motorID4, 0)
@@ -97,12 +97,12 @@ def runMotorTest():
     # positionControlTest(bus, motorID6, 0)
     # positionControlTest(bus, motorID7, 0)
 
-    time.sleep(3)
-    positionControlTest(bus, activeMotor, 10)
+    # time.sleep(3)
+    # positionControlTest(bus, activeMotor, 10)
     
-    time.sleep(3)
-    positionControlTest(bus, activeMotor, 0)
-    time.sleep(3)
+    # time.sleep(3)
+    # positionControlTest(bus, activeMotor, 0)
+    # time.sleep(3)
 
     # positionControlTest(bus, activeMotor, 0)
 

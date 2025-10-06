@@ -913,7 +913,7 @@ def runMotorTest():
     motorID8 = 0x08     #Elbow1
     motorID9 = 0x09     #Elbow2
 
-    activeMotor = motorID8
+    activeMotor = motorID2
 
     # 执行校准 pass
     # calibrate_motor(bus,motorID1)             
@@ -921,11 +921,11 @@ def runMotorTest():
     clear_errors(bus, activeMotor)
 
     # all motor back to 0 position  pass
-    positionControlTest(bus, activeMotor, 2)
+    # positionControlTest(bus, activeMotor, 2)
 
-    time.sleep(5)
+    # time.sleep(5)
     
-    positionControlTest(bus, activeMotor, 0)
+    # positionControlTest(bus, activeMotor, 0)
 
 
     # speedLoopTest(bus, motorID1) pass
@@ -944,4 +944,9 @@ def runMotorTest():
 if __name__ == "__main__":
     #main()
     #runMotorTest()
+
+    # sudo ip link set up can0
+    # sudo ip link set can0 type can bitrate 500000 loopback off
+    # sudo ip link set up can0
+
     main_console()
