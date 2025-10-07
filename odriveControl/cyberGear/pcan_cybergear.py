@@ -353,6 +353,7 @@ class CANMotorController:
             data2=self.MAIN_CAN_ID,
             data1=data1,
         )
+        print(received_msg_data)
         return self.parse_received_msg(received_msg_data, received_msg_arbitration_id)
 
     def write_single_param(self, param_name, value):
@@ -565,15 +566,32 @@ class CANMotorController:
 
 if __name__ == "__main__":
     import time
-    bus = can.interface.Bus(interface="pcan", channel="PCAN_USBBUS1", bitrate=1000000)
-    motor = CANMotorController(bus, motor_id=6, main_can_id=0)
+    #bus = can.interface.Bus(interface="pcan", channel="pcan", bitrate=1000000)
 
-    # 速度模式
-    motor.write_single_param("run_mode", value=2)
-    motor.enable()
-    motor.write_single_param("spd_ref", value=5)
-    time.sleep(10)
-    motor.write_single_param("spd_ref", value=0)
-    motor.disable()
+    try:
+        # Bring up the interface (you might want to do this via system commands as shown above)
+        # bus = can.interface.Bus(interface="pcan", channel="pcan", bitrate=1000000)  # For PCAN USB
+        
+        bus = can.interface.Bus(interface="socketcan", channel="can0", bitrate=1000000)
+        print("CAN bus initialized successfully")
+        
+        # Your motor control code here
+        motor = CANMotorController(bus, motor_id=6, main_can_id=0)
 
-    bus.shutdown()  # Shutdown the CAN bus
+        # Speed mode
+        motor.write_single_param("run_mode", value=2)
+        motor.enable()
+        motor.write_single_param("spd_ref", value=5)
+        time.sleep(10)
+        motor.write_single_param("spd_ref", value=0)
+        motor.disable()
+
+    except can.CanError as e:
+        print(f"CAN error: {e}")
+    except Exception as e:
+        print(f"Error: {e}")
+    finally:
+        try:
+            bus.shutdown()
+        except:
+            pass
