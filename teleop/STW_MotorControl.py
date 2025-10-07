@@ -776,27 +776,6 @@ def motor_monitor(bus, active_motors):
     monitor_thread.start()
 
 
-def position_tests():
-    bus = init_can_bus()
-    if not bus:
-        return
-
-    active_motors = [1, 2]
-
-    for motor_id in active_motors:
-        try:
-            clear_errors(bus, motor_id)
-            get_encoder_estimates_safe(bus, motor_id)
-            # set_controller_mode(bus, motor_id, control_mode=3, input_mode=3)
-            # set_closed_loop_state(bus, motor_id)
-            # get_encoder_estimates(bus, motor_id)
-            set_axis_state(bus, motor_id, 1)
-            flush_can_buffer(bus)
-
-        except:
-            print(f"Motor {motor_id} initialization failed")
-    
-
 # Main interactive console
 def main_console():
     bus = init_can_bus()
@@ -1026,6 +1005,26 @@ def runMotorTest():
     # 在退出时确保资源被释放  
     bus.shutdown()
 
+
+def position_tests():
+    bus = init_can_bus()
+    if not bus:
+        return
+
+    active_motors = [1,2,8, 9]
+
+    for motor_id in active_motors:
+        try:
+            clear_errors(bus, motor_id)
+            get_encoder_estimates_safe(bus, motor_id)
+            # set_controller_mode(bus, motor_id, control_mode=3, input_mode=3)
+            # set_closed_loop_state(bus, motor_id)
+            # get_encoder_estimates(bus, motor_id)
+            set_axis_state(bus, motor_id, 1)
+            flush_can_buffer(bus)
+
+        except:
+            print(f"Motor {motor_id} initialization failed")
 
 # remember to manually open can port before running code
 # sudo ip link set down can1
