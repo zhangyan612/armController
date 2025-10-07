@@ -51,6 +51,74 @@ def send_can_frame(bus, arbitration_id, data, block_receive=1):
     
     return state, rx_data
 
+
+def send_can_frame_with_response_filter(bus, arbitration_id, data, expected_response_id=None, timeout=1.0):
+    """
+    Send a CAN frame and wait for specific response ID
+    
+    Args:
+        bus: CAN bus object
+        arbitration_id: CAN ID to send to
+        data: data bytes to send
+        expected_response_id: CAN ID we expect to receive (if None, use arbitration_id)
+        timeout: timeout in seconds
+    """
+    state = 0
+    rx_data = [0 for i in range(8)]
+    
+    # If no specific response ID given, use the send ID
+    if expected_response_id is None:
+        expected_response_id = arbitration_id
+    
+    # Create and send the message
+    message = can.Message(
+        arbitration_id=arbitration_id,
+        data=data,
+        is_extended_id=False,
+        is_remote_frame=False
+    )
+    
+    bus.send(message)
+    # print(f"  Sent to {hex(arbitration_id)}, waiting for response from {hex(expected_response_id)}")
+    
+    time_s = time.time()
+    while True:
+        message_ou = bus.recv(0.1)
+        if message_ou is not None:
+            # print(f"  Received message from {hex(message_ou.arbitration_id)}: {message_ou.data}")
+            # Only accept messages with the expected response ID
+            if message_ou.arbitration_id == expected_response_id:
+                rx_data = message_ou.data
+                # print(f"  ✓ Matched expected response ID")
+                break
+            else:
+                print(f"  ✗ Ignoring message from {hex(message_ou.arbitration_id)} - waiting for {hex(expected_response_id)}")
+        elif time.time() - time_s > timeout:
+            print(f"CAN-ID: {hex(arbitration_id)} no response received - timeout")
+            state = 1
+            break
+    
+    return state, rx_data
+
+def flush_can_buffer(bus, timeout=0.01):
+    """
+    Flush the CAN receive buffer by reading all pending messages
+    """
+    start_time = time.time()
+    flushed_count = 0
+    while time.time() - start_time < timeout:
+        try:
+            msg = bus.recv(0)  # Non-blocking read
+            if msg is None:
+                break
+            flushed_count += 1
+        except:
+            break
+    if flushed_count > 0:
+        print(f"Flushed {flushed_count} messages from buffer")
+    return flushed_count
+
+
 # Calibrate the motor
 def calibrate_motor(bus, motor_id):
     """
@@ -100,7 +168,7 @@ def set_controller_mode(bus, motor_id, control_mode, input_mode):
     """
     cmd_id = 0x0B
     arbitration_id = (motor_id << 5) + cmd_id
-    print(f'Set controller mode for motor {motor_id}')
+    print(f'Set controller mode for motor {motor_id} CANID:{hex(arbitration_id)}')
     # print(f'  CAN-ID: {hex(arbitration_id)}')
     
     data = [
@@ -128,7 +196,7 @@ def set_closed_loop_state(bus, motor_id):
     """
     cmd_id = 0x07
     arbitration_id = (motor_id << 5) + cmd_id
-    print(f'Setting motor {motor_id} to closed loop state')
+    print(f'Setting motor {motor_id} CANID:{hex(arbitration_id)} to closed loop state')
     # print(f'  CAN-ID: {hex(arbitration_id)}')
     
     # Command 8 = closed loop control
@@ -216,14 +284,15 @@ def get_encoder_estimates(bus, motor_id):
     """
     cmd_id = 0x09
     arbitration_id = (motor_id << 5) + cmd_id
-    print(f'Requesting encoder estimates for motor {motor_id}')
+    print(f'Requesting encoder estimates for motor {motor_id} CANID:{hex(arbitration_id)}')
+
     # print(f'  CAN-ID: {hex(arbitration_id)}')
     
     # Empty data for request
     data = [0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]
     
-    state, rx_data = send_can_frame(bus, arbitration_id, data)
-    
+    state, rx_data = send_can_frame_with_response_filter(bus, arbitration_id, data)
+
     if state == 0 and len(rx_data) >= 8:
         # Convert bytes to floats (little endian)
         position = struct.unpack('<f', bytes(rx_data[0:4]))[0]
@@ -393,36 +462,36 @@ def get_powers(bus, motor_id):
         print('  Failed to get power information')
         return None, None
 
-# Get encoder estimates (position and velocity)
-def get_encoder_estimates(bus, motor_id):
-    """
-    Get encoder position and velocity estimates
+# # Get encoder estimates (position and velocity)
+# def get_encoder_estimates(bus, motor_id):
+#     """
+#     Get encoder position and velocity estimates
     
-    Args:
-        bus: CAN bus object
-        motor_id: Motor ID
+#     Args:
+#         bus: CAN bus object
+#         motor_id: Motor ID
         
-    Returns:
-        tuple: (position, velocity) estimates
-    """
-    cmd_id = 0x009
-    arbitration_id = (motor_id << 5) + cmd_id
-    print(f'Requesting encoder estimates for motor {motor_id}')
-    # print(f'  CAN-ID: {hex(arbitration_id)}')
+#     Returns:
+#         tuple: (position, velocity) estimates
+#     """
+#     cmd_id = 0x009
+#     arbitration_id = (motor_id << 5) + cmd_id
+#     print(f'Requesting encoder estimates for motor {motor_id}')
+#     # print(f'  CAN-ID: {hex(arbitration_id)}')
     
-    # Empty data for request
-    data = [0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]
+#     # Empty data for request
+#     data = [0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]
     
-    state, rx_data = send_can_frame(bus, arbitration_id, data)
+#     state, rx_data = send_can_frame(bus, arbitration_id, data)
     
-    if state == 0 and len(rx_data) >= 8:
-        position = struct.unpack('<f', bytes(rx_data[0:4]))[0]
-        velocity = struct.unpack('<f', bytes(rx_data[4:8]))[0]
-        print(f'  Position: {position} rev, Velocity: {velocity} rev/s')
-        return position, velocity
-    else:
-        print('  Failed to get encoder estimates')
-        return None, None
+#     if state == 0 and len(rx_data) >= 8:
+#         position = struct.unpack('<f', bytes(rx_data[0:4]))[0]
+#         velocity = struct.unpack('<f', bytes(rx_data[4:8]))[0]
+#         print(f'  Position: {position} rev, Velocity: {velocity} rev/s')
+#         return position, velocity
+#     else:
+#         print('  Failed to get encoder estimates')
+#         return None, None
 
 # Get heartbeat message from the motor
 def get_heartbeat(bus, motor_id):
@@ -444,7 +513,7 @@ def get_heartbeat(bus, motor_id):
     # Empty data for request
     data = [0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]
     
-    state, rx_data = send_can_frame(bus, arbitration_id, data)
+    state, rx_data = send_can_frame_with_response_filter(bus, arbitration_id, data)
     
     if state == 0 and len(rx_data) >= 8:
         axis_error = struct.unpack('<I', bytes(rx_data[0:4]))[0]
@@ -479,39 +548,39 @@ def estop(bus, motor_id):
     send_can_frame(bus, arbitration_id, data, block_receive=0)
 
 
-def get_encoder_estimates(bus, motor_id):
-    """
-    Get encoder position and velocity estimates
+# def get_encoder_estimates(bus, motor_id):
+#     """
+#     Get encoder position and velocity estimates
     
-    Args:
-        bus: CAN bus object
-        motor_id: Motor ID
+#     Args:
+#         bus: CAN bus object
+#         motor_id: Motor ID
         
-    Returns:
-        tuple: (position, velocity) estimates
-            - position: Encoder position in revolutions (float)
-            - velocity: Encoder velocity in revolutions per second (float)
-    """
-    cmd_id = 0x009  # CMD ID for Get_Encoder_Estimates
-    arbitration_id = (motor_id << 5) + cmd_id  # Calculate CAN ID
-    print(f'Requesting encoder estimates for motor {motor_id}')
-    # print(f'  CAN-ID: {hex(arbitration_id)}')
+#     Returns:
+#         tuple: (position, velocity) estimates
+#             - position: Encoder position in revolutions (float)
+#             - velocity: Encoder velocity in revolutions per second (float)
+#     """
+#     cmd_id = 0x009  # CMD ID for Get_Encoder_Estimates
+#     arbitration_id = (motor_id << 5) + cmd_id  # Calculate CAN ID
+#     print(f'Requesting encoder estimates for motor {motor_id}')
+#     # print(f'  CAN-ID: {hex(arbitration_id)}')
     
-    # Empty data for request
-    data = [0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]
+#     # Empty data for request
+#     data = [0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]
     
-    # Send CAN frame and wait for response
-    state, rx_data = send_can_frame(bus, arbitration_id, data)
+#     # Send CAN frame and wait for response
+#     state, rx_data = send_can_frame(bus, arbitration_id, data)
     
-    if state == 0 and len(rx_data) >= 8:
-        # Convert bytes to floats (little endian)
-        position = struct.unpack('<f', bytes(rx_data[0:4]))[0]
-        velocity = struct.unpack('<f', bytes(rx_data[4:8]))[0]
-        print(f'  Position: {position} rev, Velocity: {velocity} rev/s')
-        return position, velocity
-    else:
-        print('  Failed to get encoder estimates')
-        return None, None
+#     if state == 0 and len(rx_data) >= 8:
+#         # Convert bytes to floats (little endian)
+#         position = struct.unpack('<f', bytes(rx_data[0:4]))[0]
+#         velocity = struct.unpack('<f', bytes(rx_data[4:8]))[0]
+#         print(f'  Position: {position} rev, Velocity: {velocity} rev/s')
+#         return position, velocity
+#     else:
+#         print('  Failed to get encoder estimates')
+#         return None, None
 
 def set_axis_state(bus, motor_id, requested_state):
     """
@@ -599,6 +668,7 @@ def get_encoder_estimates_safe(bus, motor_id):
     try:
         # Temporarily set to position mode
         set_controller_mode(bus, motor_id, control_mode=3, input_mode=3)
+        time.sleep(0.1)
         set_closed_loop_state(bus, motor_id)
         time.sleep(0.1)  # Allow state transition
         
@@ -610,7 +680,6 @@ def get_encoder_estimates_safe(bus, motor_id):
         if current_state is not None:
             # Convert back to original state
             set_axis_state(bus, motor_id, current_state)
-            time.sleep(0.1)
 
 def move_relative_safely(bus, motor_id, offset_revs, move_time=5.0):
     """
@@ -648,6 +717,7 @@ def move_relative_safely(bus, motor_id, offset_revs, move_time=5.0):
     # 6. Release motor (set to idle)
     set_axis_state(bus, motor_id, 1)  # AXIS_STATE_IDLE
     print(f"Movement complete, motor released")
+
 
 
 # Continuous position monitoring
@@ -720,6 +790,9 @@ def position_tests():
             # set_controller_mode(bus, motor_id, control_mode=3, input_mode=3)
             # set_closed_loop_state(bus, motor_id)
             # get_encoder_estimates(bus, motor_id)
+            set_axis_state(bus, motor_id, 1)
+            flush_can_buffer(bus)
+
         except:
             print(f"Motor {motor_id} initialization failed")
     
