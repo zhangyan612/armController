@@ -568,5 +568,6 @@ CMD ID: 0x01F（主机→电机）
 odrv0.axis0.config.can.heartbeat_rate_ms = 0
 odrv0.axis0.config.can.encoder_rate_ms = 0
 ```
+odrv0.save_configuration()
 
 对于各个消息的详细内容，请参见 4.1.2。
