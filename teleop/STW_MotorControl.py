@@ -8,6 +8,9 @@ import argparse
 import platform  
 import threading
 
+canPort = 'can2'
+
+
 # Function to send CAN frame and handle response
 def send_can_frame(bus, arbitration_id, data, block_receive=1):
     """
@@ -635,7 +638,7 @@ def init_can_bus():
     else:
         # Linux configuration
         interface = 'socketcan'
-        channel = 'can1'
+        channel = canPort
         bitrate = 500000
     
     try:
@@ -946,7 +949,7 @@ def runMotorTest():
         channel = 'PCAN_USBBUS1'
     else:
         interface = 'socketcan'
-        channel = 'can1'
+        channel = canPort
 
     bus = can.interface.Bus(
         interface=interface,
@@ -1011,8 +1014,9 @@ def position_tests():
     if not bus:
         return
 
-    active_motors = [1,2,8, 9]
-
+    # active_motors = [1,2,8, 9]
+    active_motors = [5]
+    
     for motor_id in active_motors:
         try:
             clear_errors(bus, motor_id)
@@ -1030,6 +1034,14 @@ def position_tests():
 # sudo ip link set down can1
 # sudo ip link set can1 type can bitrate 500000 loopback off
 # sudo ip link set up can1
+
+# sudo ip link set down can2
+# sudo ip link set can2 type can bitrate 500000 loopback off
+# sudo ip link set up can2
+
+# sudo ip link set down can3
+# sudo ip link set can3 type can bitrate 500000 loopback off
+# sudo ip link set up can3
 
 if __name__ == "__main__":
     #main()
