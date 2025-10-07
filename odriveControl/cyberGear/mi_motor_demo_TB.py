@@ -668,7 +668,6 @@ def main():
     bus = can.interface.Bus(bustype='socketcan', channel='can0', bitrate=1000000)  
 
 
-
     # 假设以控制2个小米电机为例(ID号分别为 6、7)，ID号需要改为你自己电机的实际ID号
     motorID = 6                                 
     #------1：将某个电机机械角度归零
@@ -678,10 +677,10 @@ def main():
     #------3：再将某个电机设置为运控模式 使能
     set_motion_enable(bus,motorID)
 
-    motorID2 = 7
-    set_motor_angle_zero(bus,motorID2)
-    set_motion_mode(bus,motorID2)
-    set_motion_enable(bus,motorID2)
+    # motorID2 = 7
+    # set_motor_angle_zero(bus,motorID2)
+    # set_motion_mode(bus,motorID2)
+    # set_motion_enable(bus,motorID2)
 
 
 
@@ -706,7 +705,7 @@ def main():
                 time.sleep(1) 
 
             leg_set_motion_parameter_L(bus,motorID,0,red,0,10,0.5)
-            leg_set_motion_parameter_L(bus,motorID2,0,red,0,10,0.5)
+            # leg_set_motion_parameter_L(bus,motorID2,0,red,0,10,0.5)
             time.sleep(time_delay) 
 
 

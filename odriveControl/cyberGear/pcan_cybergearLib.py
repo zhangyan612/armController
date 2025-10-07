@@ -31,7 +31,16 @@ class CANMotorController:
         "loc_ref": {"index": 0x7016, "format": "f"},
         "limit_spd": {"index": 0x7017, "format": "f"},
         "limit_cur": {"index": 0x7018, "format": "f"},
+        "mechPos": {"index": 0x7019, "format": "f"},      # Load end mechanical angle (rad)
+        "iqf": {"index": 0x701A, "format": "f"},          # iq filter value (A)
+        "mechVel": {"index": 0x701B, "format": "f"},      # Load end speed (rad/s)
+        "VBUS": {"index": 0x701C, "format": "f"},         # bus voltage (V)
+        "rotation": {"index": 0x701D, "format": "s16"},   # Number of turns
+        "loc_kp": {"index": 0x701E, "format": "f"},       # kp of position
+        "spd_kp": {"index": 0x701F, "format": "f"},       # Speed kp
+        "spd_ki": {"index": 0x7020, "format": "f"},       # Speed ki
     }
+    
     TWO_BYTES_BITS = 16
 
     def __init__(self, bus, motor_id=127, main_can_id=254):
@@ -129,8 +138,7 @@ class CANMotorController:
         映射后的值。
         """
         return int(
-            (value - value_min) / (value_max -
-                                   value_min) * (target_max - target_min)
+            (value - value_min) / (value_max - value_min) * (target_max - target_min)
             + target_min
         )
 
@@ -330,6 +338,79 @@ class CANMotorController:
             logging.info(
                 f"Cleared message with ID {hex(received_msg.arbitration_id)}")
 
+    def _read_single_param(self, index, format="u32"):
+        """
+        读取单个参数。
+
+        参数:
+        index: 参数索引。
+        format: 数据格式。
+
+        返回:
+        参数值。
+        """
+        # For reading, we send the index and zeros for the value part
+        data1 = [b for b in struct.pack("<I", index)] + [0, 0, 0, 0]
+
+        self.clear_can_rx()  # 空CAN接收缓存, 避免读到老数据
+
+        received_msg_data, received_msg_arbitration_id = self.send_receive_can_message(
+            cmd_mode=self.CmdModes.SINGLE_PARAM_READ,
+            data2=self.MAIN_CAN_ID,
+            data1=data1,
+        )
+        
+        if received_msg_data:
+            # Parse the parameter value from response
+            # The response should contain the parameter value in the data
+            value_data = received_msg_data[4:8]  # Last 4 bytes contain the value
+            
+            if format == "f":
+                # Float type
+                value = struct.unpack('<f', bytes(value_data))[0]
+            elif format == "u8":
+                # Unsigned 8-bit
+                value = value_data[0]
+            elif format == "s16":
+                # Signed 16-bit
+                value = struct.unpack('<h', bytes(value_data[:2]))[0]
+            elif format == "u16":
+                # Unsigned 16-bit
+                value = struct.unpack('<H', bytes(value_data[:2]))[0]
+            elif format == "s32":
+                # Signed 32-bit
+                value = struct.unpack('<i', bytes(value_data))[0]
+            elif format == "u32":
+                # Unsigned 32-bit
+                value = struct.unpack('<I', bytes(value_data))[0]
+            else:
+                logging.info(f"Unknown format: {format}")
+                return None
+                
+            return value
+        else:
+            return None
+
+    def read_single_param(self, param_name):
+        """
+        通过参数名称读取单个参数。
+
+        参数:
+        param_name: 参数名称。
+
+        返回:
+        参数值。
+        """
+        param_info = self.PARAMETERS.get(param_name)
+        if param_info is None:
+            logging.info(f"Unknown parameter name: {param_name}")
+            return None
+
+        index = param_info["index"]
+        format = param_info["format"]
+
+        return self._read_single_param(index=index, format=format)
+
     def _write_single_param(self, index, value, format="u32"):
         """
         写入单个参数。
@@ -353,7 +434,6 @@ class CANMotorController:
             data2=self.MAIN_CAN_ID,
             data1=data1,
         )
-        # print(received_msg_data)
         return self.parse_received_msg(received_msg_data, received_msg_arbitration_id)
 
     def write_single_param(self, param_name, value):
@@ -561,30 +641,223 @@ class CANMotorController:
         )
 
         return self.parse_received_msg(received_msg_data, received_msg_arbitration_id)
-    
 
 
 if __name__ == "__main__":
     import time
-    #bus = can.interface.Bus(interface="pcan", channel="pcan", bitrate=1000000)
+    import can
 
     try:
-        # Bring up the interface (you might want to do this via system commands as shown above)
-        # bus = can.interface.Bus(interface="pcan", channel="pcan", bitrate=1000000)  # For PCAN USB
-        
+        # Initialize CAN bus
         bus = can.interface.Bus(interface="socketcan", channel="can0", bitrate=1000000)
         print("CAN bus initialized successfully")
         
-        # Your motor control code here
+        # Create motor controller instance
         motor = CANMotorController(bus, motor_id=6, main_can_id=0)
+        
+        print("=== Testing Parameter Reading ===")
+        
+        # Test reading various parameters
+        parameters_to_test = [
+            "run_mode",
+            "mechPos",    # Mechanical position
+            "mechVel",    # Mechanical velocity  
+            "VBUS",       # Bus voltage
+            "rotation",   # Number of turns
+            "iqf",        # iq filter value
+        ]
+        
+        print("\n1. Reading initial parameters...")
+        for param_name in parameters_to_test:
+            try:
+                value = motor.read_single_param(param_name)
+                if value is not None:
+                    print(f"  {param_name}: {value}")
+                else:
+                    print(f"  {param_name}: Failed to read")
+            except Exception as e:
+                print(f"  {param_name}: Error - {e}")
+        
+        print("\n2. Testing motor feedback (position reading)...")
+        # Test motor feedback to see actual position values
+        try:
+            # Enable motor first
+            motor.enable()
+            print("✓ Motor enabled for testing")
+            
+            # Read position multiple times to see if it changes
+            print("Reading position feedback (move motor manually to see changes):")
+            for i in range(10):
+                # Use write_single_param to get motor status feedback
+                status = motor.write_single_param("run_mode", 0)
+                if status and status[1] is not None:
+                    print(f"  Reading {i+1}: Position = {status[1]:.3f} rad, "
+                          f"Velocity = {status[2]:.3f} rad/s, "
+                          f"Torque = {status[3]:.3f} Nm")
+                
+                # Also read mechanical position parameter
+                mech_pos = motor.read_single_param("mechPos")
+                if mech_pos is not None:
+                    print(f"  Mechanical Position: {mech_pos:.3f} rad")
+                
+                time.sleep(1)
+            
+            motor.disable()
+            print("✓ Motor disabled")
+            
+        except Exception as e:
+            print(f"✗ Error in position testing: {e}")
+            try:
+                motor.disable()
+            except:
+                pass
 
-        # Speed mode
-        motor.write_single_param("run_mode", value=2)
-        motor.enable()
-        motor.write_single_param("spd_ref", value=5)
-        time.sleep(10)
-        motor.write_single_param("spd_ref", value=0)
-        motor.disable()
+        print("\n=== Testing All 4 Modes ===")
+
+        
+        # Test 3: SPEED_MODE (速度模式)
+        print("\n3. Testing SPEED_MODE (速度模式)...")
+        try:
+            motor.write_single_param("run_mode", motor.RunModes.SPEED_MODE.value)
+            print("✓ Set to SPEED_MODE")
+            
+            motor.enable()
+            print("✓ Motor enabled")
+            
+            # Test different speeds
+            speeds = [3.0, -2.0, 5.0, 0.0]
+            for speed in speeds:
+                print(f"Setting speed: {speed} rad/s")
+                motor.write_single_param("spd_ref", speed)
+                time.sleep(3)  # Run at this speed for 3 seconds
+                
+                # Read current velocity parameters
+                mech_vel = motor.read_single_param("mechVel")
+                vbus = motor.read_single_param("VBUS")
+                if mech_vel is not None:
+                    print(f"  Mechanical Velocity: {mech_vel:.3f} rad/s")
+                if vbus is not None:
+                    print(f"  Bus Voltage: {vbus:.1f} V")
+            
+            motor.disable()
+            print("✓ Motor disabled")
+            
+        except Exception as e:
+            print(f"✗ Error in SPEED_MODE: {e}")
+
+
+
+        # Test 1: CONTROL_MODE (运控模式)
+        print("\n1. Testing CONTROL_MODE (运控模式)...")
+        try:
+            motor.write_single_param("run_mode", motor.RunModes.CONTROL_MODE.value)
+            print("✓ Set to CONTROL_MODE")
+            
+            motor.enable()
+            print("✓ Motor enabled")
+            
+            # Send control commands
+            print("Sending control commands...")
+            for i in range(5):
+                torque = 0.5 * (1 if i % 2 == 0 else -1)  # Alternate torque
+                response = motor.send_motor_control_command(
+                    torque=torque,
+                    target_angle=1.0,
+                    target_velocity=2.0,
+                    Kp=10,
+                    Kd=0.5
+                )
+                if response and response[0] is not None:
+                    print(f"  Command {i+1}: Pos={response[1]:.3f}rad, Vel={response[2]:.3f}rad/s")
+                time.sleep(0.5)
+                
+            motor.disable()
+            print("✓ Motor disabled")
+            
+        except Exception as e:
+            print(f"✗ Error in CONTROL_MODE: {e}")
+
+
+        # Test 4: CURRENT_MODE (电流模式)
+        print("\n4. Testing CURRENT_MODE (电流模式)...")
+        try:
+            motor.write_single_param("run_mode", motor.RunModes.CURRENT_MODE.value)
+            print("✓ Set to CURRENT_MODE")
+            
+            motor.enable()
+            print("✓ Motor enabled")
+            
+            # Test different current/torque values
+            currents = [0.3, -0.2, 0.5, 0.0]
+            for current in currents:
+                print(f"Setting current/torque: {current} A/Nm")
+                motor.write_single_param("iq_ref", current)
+                time.sleep(2)  # Apply current for 2 seconds
+                
+                # Read current parameters
+                iqf = motor.read_single_param("iqf")
+                rotation = motor.read_single_param("rotation")
+                if iqf is not None:
+                    print(f"  iq filter value: {iqf:.3f} A")
+                if rotation is not None:
+                    print(f"  Rotation turns: {rotation}")
+            
+            motor.disable()
+            print("✓ Motor disabled")
+            
+        except Exception as e:
+            print(f"✗ Error in CURRENT_MODE: {e}")
+
+
+        # Test 2: POSITION_MODE (位置模式)
+        print("\n2. Testing POSITION_MODE (位置模式)...")
+        try:
+            motor.write_single_param("run_mode", motor.RunModes.POSITION_MODE.value)
+            print("✓ Set to POSITION_MODE")
+            
+            # Set position control parameters
+            motor.write_single_param("limit_spd", 5.0)  # Limit speed to 5 rad/s
+            motor.write_single_param("loc_kp", 20.0)    # Position gain
+            
+            motor.enable()
+            print("✓ Motor enabled")
+            
+            # Move to different positions
+            positions = [1.0, -1.0, 0.5, 0.0]
+            for pos in positions:
+                print(f"Moving to position: {pos} rad")
+                motor.write_single_param("loc_ref", pos)
+                time.sleep(2)  # Wait for movement
+                
+                # Read current position parameters
+                mech_pos = motor.read_single_param("mechPos")
+                run_mode = motor.read_single_param("run_mode")
+                if mech_pos is not None:
+                    print(f"  Mechanical Position: {mech_pos:.3f} rad")
+                if run_mode is not None:
+                    print(f"  Run Mode: {run_mode}")
+            
+            motor.disable()
+            print("✓ Motor disabled")
+            
+        except Exception as e:
+            print(f"✗ Error in POSITION_MODE: {e}")
+
+
+
+        print("\n=== Final Parameter Reading ===")
+        print("Reading parameters after all tests...")
+        for param_name in parameters_to_test:
+            try:
+                value = motor.read_single_param(param_name)
+                if value is not None:
+                    print(f"  {param_name}: {value}")
+                else:
+                    print(f"  {param_name}: Failed to read")
+            except Exception as e:
+                print(f"  {param_name}: Error - {e}")
+
+        print("\n=== All Tests Completed ===")
 
     except can.CanError as e:
         print(f"CAN error: {e}")
@@ -593,5 +866,6 @@ if __name__ == "__main__":
     finally:
         try:
             bus.shutdown()
+            print("CAN bus shutdown")
         except:
             pass
