@@ -69,7 +69,7 @@ def calibrate_motor(bus, motor_id):
     
     # Send calibration command (4 = motor calibration)
     data = [0x04, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]
-    print(f'  Sending data: {data}')
+    # print(f'  Sending data: {data}')
     send_can_frame(bus, arbitration_id, data)
     
     time.sleep(3.0)  # Wait for motor calibration to complete
@@ -101,7 +101,7 @@ def set_controller_mode(bus, motor_id, control_mode, input_mode):
     cmd_id = 0x0B
     arbitration_id = (motor_id << 5) + cmd_id
     print(f'Set controller mode for motor {motor_id}')
-    print(f'  CAN-ID: {hex(arbitration_id)}')
+    # print(f'  CAN-ID: {hex(arbitration_id)}')
     
     data = [
         control_mode & 0xFF, 
@@ -114,7 +114,7 @@ def set_controller_mode(bus, motor_id, control_mode, input_mode):
         (input_mode >> 24) & 0xFF
     ]
     
-    print(f'  Sending data: {data}')
+    # print(f'  Sending data: {data}')
     send_can_frame(bus, arbitration_id, data)
 
 # Set closed loop state
@@ -129,12 +129,12 @@ def set_closed_loop_state(bus, motor_id):
     cmd_id = 0x07
     arbitration_id = (motor_id << 5) + cmd_id
     print(f'Setting motor {motor_id} to closed loop state')
-    print(f'  CAN-ID: {hex(arbitration_id)}')
+    # print(f'  CAN-ID: {hex(arbitration_id)}')
     
     # Command 8 = closed loop control
     data = [0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]
     
-    print(f'  Sending data: {data}')
+    # print(f'  Sending data: {data}')
     send_can_frame(bus, arbitration_id, data)
 
 # Set velocity
@@ -151,7 +151,7 @@ def set_velocity(bus, motor_id, velocity, torque_ff=0):
     cmd_id = 0x0D
     arbitration_id = (motor_id << 5) + cmd_id
     print(f'Setting velocity for motor {motor_id} to {velocity} rev/s')
-    print(f'  CAN-ID: {hex(arbitration_id)}')
+    # print(f'  CAN-ID: {hex(arbitration_id)}')
     
     # Convert velocity to IEEE 754 float (little endian)
     vel_bytes = struct.pack('<f', velocity)
@@ -180,7 +180,7 @@ def set_position(bus, motor_id, position, vel_ff=0, torque_ff=0):
     cmd_id = 0x0C
     arbitration_id = (motor_id << 5) + cmd_id
     print(f'Setting position for motor {motor_id} to {position} revolutions')
-    print(f'  CAN-ID: {hex(arbitration_id)}')
+    # print(f'  CAN-ID: {hex(arbitration_id)}')
     
     # Convert position to IEEE 754 float (little endian)
     pos_bytes = struct.pack('<f', position)
@@ -199,7 +199,7 @@ def set_position(bus, motor_id, position, vel_ff=0, torque_ff=0):
     # Combine into data array
     data = list(pos_bytes) + list(vel_bytes) + list(torque_bytes)
     
-    print(f'  Sending data: {data}')
+    # print(f'  Sending data: {data}')
     send_can_frame(bus, arbitration_id, data, block_receive=0)
 
 # Get encoder estimates (position and velocity)
@@ -217,7 +217,7 @@ def get_encoder_estimates(bus, motor_id):
     cmd_id = 0x09
     arbitration_id = (motor_id << 5) + cmd_id
     print(f'Requesting encoder estimates for motor {motor_id}')
-    print(f'  CAN-ID: {hex(arbitration_id)}')
+    # print(f'  CAN-ID: {hex(arbitration_id)}')
     
     # Empty data for request
     data = [0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]
@@ -247,7 +247,7 @@ def reboot_motor(bus, motor_id):
     cmd_id = 0x016
     arbitration_id = (motor_id << 5) + cmd_id
     print(f'Rebooting motor {motor_id}')
-    print(f'  CAN-ID: {hex(arbitration_id)}')
+    # print(f'  CAN-ID: {hex(arbitration_id)}')
     
     # Empty data for reboot command
     data = [0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]
@@ -271,12 +271,12 @@ def get_error(bus, motor_id, error_type):
     cmd_id = 0x003
     arbitration_id = (motor_id << 5) + cmd_id
     print(f'Getting error for motor {motor_id}')
-    print(f'  CAN-ID: {hex(arbitration_id)}')
+    # print(f'  CAN-ID: {hex(arbitration_id)}')
     
     # Set error type
     data = [error_type, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]
     
-    print(f'  Sending data: {data}')
+    # print(f'  Sending data: {data}')
     state, rx_data = send_can_frame(bus, arbitration_id, data)
     
     if state == 0 and len(rx_data) >= 4:
@@ -299,12 +299,12 @@ def clear_errors(bus, motor_id):
     cmd_id = 0x018
     arbitration_id = (motor_id << 5) + cmd_id
     print(f'Clearing errors for motor {motor_id}')
-    print(f'  CAN-ID: {hex(arbitration_id)}')
+    # print(f'  CAN-ID: {hex(arbitration_id)}')
     
     # Empty data for clear errors command
     data = [0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]
     
-    print(f'  Sending data: {data}')
+    # print(f'  Sending data: {data}')
     send_can_frame(bus, arbitration_id, data, block_receive=0)
 
 # Set linear count for the encoder
@@ -320,7 +320,7 @@ def set_linear_count(bus, motor_id, linear_count):
     cmd_id = 0x019
     arbitration_id = (motor_id << 5) + cmd_id
     print(f'Setting linear count for motor {motor_id} to {linear_count}')
-    print(f'  CAN-ID: {hex(arbitration_id)}')
+    # print(f'  CAN-ID: {hex(arbitration_id)}')
     
     # Convert linear count to int32 (little endian)
     linear_count_bytes = struct.pack('<i', linear_count)
@@ -346,7 +346,7 @@ def get_torques(bus, motor_id):
     cmd_id = 0x01C
     arbitration_id = (motor_id << 5) + cmd_id
     print(f'Getting torques for motor {motor_id}')
-    print(f'  CAN-ID: {hex(arbitration_id)}')
+    # print(f'  CAN-ID: {hex(arbitration_id)}')
     
     # Empty data for request
     data = [0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]
@@ -377,7 +377,7 @@ def get_powers(bus, motor_id):
     cmd_id = 0x01D
     arbitration_id = (motor_id << 5) + cmd_id
     print(f'Getting powers for motor {motor_id}')
-    print(f'  CAN-ID: {hex(arbitration_id)}')
+    # print(f'  CAN-ID: {hex(arbitration_id)}')
     
     # Empty data for request
     data = [0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]
@@ -408,7 +408,7 @@ def get_encoder_estimates(bus, motor_id):
     cmd_id = 0x009
     arbitration_id = (motor_id << 5) + cmd_id
     print(f'Requesting encoder estimates for motor {motor_id}')
-    print(f'  CAN-ID: {hex(arbitration_id)}')
+    # print(f'  CAN-ID: {hex(arbitration_id)}')
     
     # Empty data for request
     data = [0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]
@@ -439,7 +439,7 @@ def get_heartbeat(bus, motor_id):
     cmd_id = 0x001
     arbitration_id = (motor_id << 5) + cmd_id
     print(f'Requesting heartbeat for motor {motor_id}')
-    print(f'  CAN-ID: {hex(arbitration_id)}')
+    # print(f'  CAN-ID: {hex(arbitration_id)}')
     
     # Empty data for request
     data = [0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]
@@ -470,7 +470,7 @@ def estop(bus, motor_id):
     cmd_id = 0x002
     arbitration_id = (motor_id << 5) + cmd_id
     print(f'Sending Estop to motor {motor_id}')
-    print(f'  CAN-ID: {hex(arbitration_id)}')
+    # print(f'  CAN-ID: {hex(arbitration_id)}')
     
     # Empty data for Estop command
     data = [0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]
@@ -495,7 +495,7 @@ def get_encoder_estimates(bus, motor_id):
     cmd_id = 0x009  # CMD ID for Get_Encoder_Estimates
     arbitration_id = (motor_id << 5) + cmd_id  # Calculate CAN ID
     print(f'Requesting encoder estimates for motor {motor_id}')
-    print(f'  CAN-ID: {hex(arbitration_id)}')
+    # print(f'  CAN-ID: {hex(arbitration_id)}')
     
     # Empty data for request
     data = [0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]
@@ -525,7 +525,7 @@ def set_axis_state(bus, motor_id, requested_state):
     cmd_id = 0x007  # CMD ID for Set_Axis_State
     arbitration_id = (motor_id << 5) + cmd_id  # Calculate CAN ID
     print(f'Setting axis state for motor {motor_id} to {requested_state}')
-    print(f'  CAN-ID: {hex(arbitration_id)}')
+    # print(f'  CAN-ID: {hex(arbitration_id)}')
     
     # Convert requested_state to bytes (little-endian, 4 bytes)
     state_bytes = struct.pack('<I', requested_state)
@@ -533,7 +533,7 @@ def set_axis_state(bus, motor_id, requested_state):
     # Prepare the data frame (first 4 bytes are the state, remaining bytes are 0)
     data = list(state_bytes) + [0x00, 0x00, 0x00, 0x00]
     
-    print(f'  Sending data: {data}')
+    # print(f'  Sending data: {data}')
     send_can_frame(bus, arbitration_id, data, block_receive=0)
 
 def disable_can(bus, motor_id):
@@ -547,7 +547,7 @@ def disable_can(bus, motor_id):
     cmd_id = 0x01E  # CMD ID for Disable_Can
     arbitration_id = (motor_id << 5) + cmd_id  # Calculate CAN ID
     print(f'Disabling CAN for motor {motor_id}')
-    print(f'  CAN-ID: {hex(arbitration_id)}')
+    # print(f'  CAN-ID: {hex(arbitration_id)}')
     
     # Empty data for Disable_Can command
     data = [0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]
@@ -566,7 +566,7 @@ def init_can_bus():
     else:
         # Linux configuration
         interface = 'socketcan'
-        channel = 'can0'
+        channel = 'can1'
         bitrate = 500000
     
     try:
@@ -864,37 +864,19 @@ def speedLoopTest(bus, motor_id):
 
 
 def runMotorTest():
+
     # remember to manually open can port before running code
-    # sudo ip link set up can0
-    # sudo ip link set can0 type can bitrate 500000 loopback off
-    # sudo ip link set up can0
+    # sudo ip link set down can1
+    # sudo ip link set can1 type can bitrate 500000 loopback off
+    # sudo ip link set up can1
+
 
     if platform.system() == 'Windows':
         interface = 'pcan'
         channel = 'PCAN_USBBUS1'
     else:
         interface = 'socketcan'
-        channel = 'can0'
-
-    bus = can.interface.Bus(
-        interface=interface,
-        channel=channel,
-        bitrate=500000
-    )
-    print(f"Connected to can bus")
-
-    motorID1 = 0x01      
-    motorID2 = 0x02                       
-    motorID3 = 0x03   
-    motorID4 = 0x04     
-    motorID5 = 0x05    
-
-    if platform.system() == 'Windows':
-        interface = 'pcan'
-        channel = 'PCAN_USBBUS1'
-    else:
-        interface = 'socketcan'
-        channel = 'can0'
+        channel = 'can1'
 
     bus = can.interface.Bus(
         interface=interface,
@@ -913,12 +895,25 @@ def runMotorTest():
     motorID8 = 0x08     #Elbow1
     motorID9 = 0x09     #Elbow2
 
-    activeMotor = motorID2
 
     # 执行校准 pass
     # calibrate_motor(bus,motorID1)             
 
-    clear_errors(bus, activeMotor)
+    for motor_id in range(1, 9):
+        activeMotor = motor_id
+
+        clear_errors(bus, activeMotor)
+        set_closed_loop_state(bus, activeMotor)
+        
+        heartbeat = get_heartbeat(bus, activeMotor)
+        print(heartbeat)
+
+        power = get_powers(bus, activeMotor)
+        print(power)
+        position = get_encoder_estimates(bus, activeMotor)
+        print(position)
+        set_axis_state(bus, activeMotor, 1) # IDLE
+        time.sleep(1)
 
     # all motor back to 0 position  pass
     # positionControlTest(bus, activeMotor, 2)
@@ -929,11 +924,11 @@ def runMotorTest():
 
 
     # speedLoopTest(bus, motorID1) pass
+    # set_closed_loop_state(bus, activeMotor)
+    # position = get_encoder_estimates(bus, activeMotor)
+    # print(position)
 
-    position = get_encoder_estimates(bus, activeMotor)
-    print(position)
-
-    set_axis_state(bus, activeMotor, 1) # IDLE
+    # set_axis_state(bus, activeMotor, 1) # IDLE
 
     # odriveMotor.reboot_motor(bus, motorID4)
 
@@ -943,10 +938,10 @@ def runMotorTest():
 
 if __name__ == "__main__":
     #main()
-    #runMotorTest()
+    runMotorTest()
 
     # sudo ip link set up can0
     # sudo ip link set can0 type can bitrate 500000 loopback off
     # sudo ip link set up can0
 
-    main_console()
+    # main_console()
