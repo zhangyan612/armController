@@ -574,5 +574,6 @@ if __name__ == "__main__":
     motor.write_single_param("spd_ref", value=5)
     time.sleep(10)
     motor.write_single_param("spd_ref", value=0)
+    motor.disable()
 
     bus.shutdown()  # Shutdown the CAN bus
