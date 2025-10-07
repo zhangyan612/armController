@@ -706,24 +706,23 @@ def motor_monitor(bus, active_motors):
     monitor_thread.start()
 
 
-def position_monitors():
+def position_tests():
     bus = init_can_bus()
     if not bus:
         return
 
-    active_motors = [2]
+    active_motors = [1, 2]
 
     for motor_id in active_motors:
         try:
-            set_controller_mode(bus, motor_id, control_mode=3, input_mode=3)
-            set_closed_loop_state(bus, motor_id)
-            active_motors.append(motor_id)
-            print(f"Motor {motor_id} initialized for control")
+            clear_errors(bus, motor_id)
+            get_encoder_estimates_safe(bus, motor_id)
+            # set_controller_mode(bus, motor_id, control_mode=3, input_mode=3)
+            # set_closed_loop_state(bus, motor_id)
+            # get_encoder_estimates(bus, motor_id)
         except:
             print(f"Motor {motor_id} initialization failed")
     
-    motor_monitor(bus, active_motors)
-
 
 # Main interactive console
 def main_console():
@@ -732,12 +731,11 @@ def main_console():
         return
     
     # Initialize motors 1-6 in closed loop state
-    active_motors = []
-    for motor_id in range(1, 7):
+    active_motors = range(1, 3)
+    for motor_id in active_motors:
         try:
             set_controller_mode(bus, motor_id, control_mode=3, input_mode=3)
             set_closed_loop_state(bus, motor_id)
-            active_motors.append(motor_id)
             print(f"Motor {motor_id} initialized for control")
         except:
             print(f"Motor {motor_id} initialization failed")
@@ -746,43 +744,44 @@ def main_console():
     motor_monitor(bus, active_motors)
 
     # Command interface
-    print("\nEnter commands in format: <motor_id> <position>")
-    print("Example: '1 3.5' to move motor 1 to 3.5 revolutions")
-    print("Type 'exit' to quit\n")
+    # print("\nEnter commands in format: <motor_id> <position>")
+    # print("Example: '1 3.5' to move motor 1 to 3.5 revolutions")
+    # print("Type 'exit' to quit\n")
     
-    try:
-        while True:
-            cmd = input(">>> ").strip()
-            if cmd.lower() == 'exit':
-                break
+    # try:
+    #     while True:
+    #         cmd = input(">>> ").strip()
+    #         if cmd.lower() == 'exit':
+    #             break
                 
-            try:
-                parts = cmd.split()
-                if len(parts) != 2:
-                    raise ValueError("Invalid command format")
+    #         try:
+    #             parts = cmd.split()
+    #             if len(parts) != 2:
+    #                 raise ValueError("Invalid command format")
                 
-                motor_id = int(parts[0])
-                position = float(parts[1])
+    #             motor_id = int(parts[0])
+    #             position = float(parts[1])
                 
-                if motor_id not in active_motors:
-                    print(f"Error: Motor {motor_id} not active")
-                    continue
+    #             if motor_id not in active_motors:
+    #                 print(f"Error: Motor {motor_id} not active")
+    #                 continue
                     
-                # Move motor
-                move_motor(bus, motor_id, position)
-            except ValueError as e:
-                print(f"Invalid input: {e}. Use format: <motor_id> <position>")
-            except Exception as e:
-                print(f"Error: {e}")
-    finally:
-        # Clean up all motors
-        for motor_id in active_motors:
-            try:
-                set_axis_state(bus, motor_id, 1)  # Ensure idle state
-            except:
-                pass
-        bus.shutdown()
-        print("\nAll motors released. CAN bus shut down.")
+    #             # Move motor
+    #             move_motor(bus, motor_id, position)
+    #         except ValueError as e:
+    #             print(f"Invalid input: {e}. Use format: <motor_id> <position>")
+    #         except Exception as e:
+    #             print(f"Error: {e}")
+    # finally:
+    #     # Clean up all motors
+    #     for motor_id in active_motors:
+    #         try:
+    #             set_axis_state(bus, motor_id, 1)  # Ensure idle state
+    #         except:
+    #             pass
+
+    #     bus.shutdown()
+    #     print("\nAll motors released. CAN bus shut down.")
 
 # Main function with command line arguments
 def main():
@@ -963,5 +962,5 @@ def runMotorTest():
 if __name__ == "__main__":
     #main()
     # runMotorTest()
-    position_monitors()
+    position_tests()
     # main_console()
