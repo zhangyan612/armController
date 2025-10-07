@@ -696,6 +696,35 @@ def move_motor(bus, motor_id, position):
         return False
 
 
+def motor_monitor(bus, active_motors):
+    # Start monitoring thread
+    monitor_thread = threading.Thread(
+        target=monitor_positions, 
+        args=(bus, active_motors),
+        daemon=True
+    )
+    monitor_thread.start()
+
+
+def position_monitors():
+    bus = init_can_bus()
+    if not bus:
+        return
+
+    active_motors = [2]
+
+    for motor_id in active_motors:
+        try:
+            set_controller_mode(bus, motor_id, control_mode=3, input_mode=3)
+            set_closed_loop_state(bus, motor_id)
+            active_motors.append(motor_id)
+            print(f"Motor {motor_id} initialized for control")
+        except:
+            print(f"Motor {motor_id} initialization failed")
+    
+    motor_monitor(bus, active_motors)
+
+
 # Main interactive console
 def main_console():
     bus = init_can_bus()
@@ -713,14 +742,9 @@ def main_console():
         except:
             print(f"Motor {motor_id} initialization failed")
     
-    # Start monitoring thread
-    monitor_thread = threading.Thread(
-        target=monitor_positions, 
-        args=(bus, active_motors),
-        daemon=True
-    )
-    monitor_thread.start()
-    
+
+    motor_monitor(bus, active_motors)
+
     # Command interface
     print("\nEnter commands in format: <motor_id> <position>")
     print("Example: '1 3.5' to move motor 1 to 3.5 revolutions")
@@ -865,11 +889,6 @@ def speedLoopTest(bus, motor_id):
 
 def runMotorTest():
 
-    # remember to manually open can port before running code
-    # sudo ip link set down can1
-    # sudo ip link set can1 type can bitrate 500000 loopback off
-    # sudo ip link set up can1
-
 
     if platform.system() == 'Windows':
         interface = 'pcan'
@@ -936,12 +955,13 @@ def runMotorTest():
     bus.shutdown()
 
 
+# remember to manually open can port before running code
+# sudo ip link set down can1
+# sudo ip link set can1 type can bitrate 500000 loopback off
+# sudo ip link set up can1
+
 if __name__ == "__main__":
     #main()
-    runMotorTest()
-
-    # sudo ip link set up can0
-    # sudo ip link set can0 type can bitrate 500000 loopback off
-    # sudo ip link set up can0
-
+    # runMotorTest()
+    position_monitors()
     # main_console()
