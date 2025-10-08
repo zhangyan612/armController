@@ -36,6 +36,10 @@ def test_motor_connection(bus, motor_id):
         print(f"✗ Error communicating with Motor ID {motor_id}: {e}")
 
 
+# sudo ip link set down can0
+# sudo ip link set can0 type can bitrate 1000000 loopback off
+# sudo ip link set up can0
+
 if __name__ == "__main__":
     try:
         # Initialize CAN bus

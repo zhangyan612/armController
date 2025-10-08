@@ -8,7 +8,9 @@ import argparse
 import platform  
 import threading
 
-canPort = 'can2'
+upperBodyPort = 'can1'
+righeLegPort = 'can2'
+leftLegPort = 'can3'
 
 
 # Function to send CAN frame and handle response
@@ -94,8 +96,8 @@ def send_can_frame_with_response_filter(bus, arbitration_id, data, expected_resp
                 rx_data = message_ou.data
                 # print(f"  ✓ Matched expected response ID")
                 break
-            else:
-                print(f"  ✗ Ignoring message from {hex(message_ou.arbitration_id)} - waiting for {hex(expected_response_id)}")
+            # else:
+            #     print(f"  ✗ Ignoring message from {hex(message_ou.arbitration_id)} - waiting for {hex(expected_response_id)}")
         elif time.time() - time_s > timeout:
             print(f"CAN-ID: {hex(arbitration_id)} no response received - timeout")
             state = 1
@@ -465,36 +467,6 @@ def get_powers(bus, motor_id):
         print('  Failed to get power information')
         return None, None
 
-# # Get encoder estimates (position and velocity)
-# def get_encoder_estimates(bus, motor_id):
-#     """
-#     Get encoder position and velocity estimates
-    
-#     Args:
-#         bus: CAN bus object
-#         motor_id: Motor ID
-        
-#     Returns:
-#         tuple: (position, velocity) estimates
-#     """
-#     cmd_id = 0x009
-#     arbitration_id = (motor_id << 5) + cmd_id
-#     print(f'Requesting encoder estimates for motor {motor_id}')
-#     # print(f'  CAN-ID: {hex(arbitration_id)}')
-    
-#     # Empty data for request
-#     data = [0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]
-    
-#     state, rx_data = send_can_frame(bus, arbitration_id, data)
-    
-#     if state == 0 and len(rx_data) >= 8:
-#         position = struct.unpack('<f', bytes(rx_data[0:4]))[0]
-#         velocity = struct.unpack('<f', bytes(rx_data[4:8]))[0]
-#         print(f'  Position: {position} rev, Velocity: {velocity} rev/s')
-#         return position, velocity
-#     else:
-#         print('  Failed to get encoder estimates')
-#         return None, None
 
 # Get heartbeat message from the motor
 def get_heartbeat(bus, motor_id):
@@ -551,40 +523,6 @@ def estop(bus, motor_id):
     send_can_frame(bus, arbitration_id, data, block_receive=0)
 
 
-# def get_encoder_estimates(bus, motor_id):
-#     """
-#     Get encoder position and velocity estimates
-    
-#     Args:
-#         bus: CAN bus object
-#         motor_id: Motor ID
-        
-#     Returns:
-#         tuple: (position, velocity) estimates
-#             - position: Encoder position in revolutions (float)
-#             - velocity: Encoder velocity in revolutions per second (float)
-#     """
-#     cmd_id = 0x009  # CMD ID for Get_Encoder_Estimates
-#     arbitration_id = (motor_id << 5) + cmd_id  # Calculate CAN ID
-#     print(f'Requesting encoder estimates for motor {motor_id}')
-#     # print(f'  CAN-ID: {hex(arbitration_id)}')
-    
-#     # Empty data for request
-#     data = [0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]
-    
-#     # Send CAN frame and wait for response
-#     state, rx_data = send_can_frame(bus, arbitration_id, data)
-    
-#     if state == 0 and len(rx_data) >= 8:
-#         # Convert bytes to floats (little endian)
-#         position = struct.unpack('<f', bytes(rx_data[0:4]))[0]
-#         velocity = struct.unpack('<f', bytes(rx_data[4:8]))[0]
-#         print(f'  Position: {position} rev, Velocity: {velocity} rev/s')
-#         return position, velocity
-#     else:
-#         print('  Failed to get encoder estimates')
-#         return None, None
-
 def set_axis_state(bus, motor_id, requested_state):
     """
     Set the axis state of the motor (e.g., calibration, closed-loop control, idle).
@@ -629,7 +567,7 @@ def disable_can(bus, motor_id):
     print(f'CAN disabled for motor {motor_id}. Motor will reboot.')
 
 # CAN bus initialization with platform detection
-def init_can_bus():
+def init_can_bus(port):
     if platform.system() == 'Windows':
         # Windows configuration
         interface = 'pcan'
@@ -638,7 +576,7 @@ def init_can_bus():
     else:
         # Linux configuration
         interface = 'socketcan'
-        channel = canPort
+        channel = port
         bitrate = 500000
     
     try:
@@ -780,8 +718,8 @@ def motor_monitor(bus, active_motors):
 
 
 # Main interactive console
-def main_console():
-    bus = init_can_bus()
+def main_console(port='can1'):
+    bus = init_can_bus(port)
     if not bus:
         return
     
@@ -949,7 +887,7 @@ def runMotorTest():
         channel = 'PCAN_USBBUS1'
     else:
         interface = 'socketcan'
-        channel = canPort
+        channel = 'can1'
 
     bus = can.interface.Bus(
         interface=interface,
@@ -1008,27 +946,32 @@ def runMotorTest():
     # 在退出时确保资源被释放  
     bus.shutdown()
 
-
-def position_tests():
-    bus = init_can_bus()
+def position_tests(port='can1', active_motors=[1,2], set_zero_pos=False):
+    bus = init_can_bus(port)
     if not bus:
-        return
+        return {}
 
-    # active_motors = [1,2,8, 9]
-    active_motors = [5]
-    
+    positionList = {}
     for motor_id in active_motors:
         try:
             clear_errors(bus, motor_id)
-            get_encoder_estimates_safe(bus, motor_id)
-            # set_controller_mode(bus, motor_id, control_mode=3, input_mode=3)
-            # set_closed_loop_state(bus, motor_id)
-            # get_encoder_estimates(bus, motor_id)
+            position, velocity = get_encoder_estimates_safe(bus, motor_id)
+
+            positionList[motor_id] = position if position is not None else 0
+
             set_axis_state(bus, motor_id, 1)
+
+            if set_zero_pos:
+                set_linear_count(bus, motor_id, 0)
+
             flush_can_buffer(bus)
 
-        except:
-            print(f"Motor {motor_id} initialization failed")
+        except Exception as e:
+            print(f"Motor {motor_id} initialization failed on {port}: {e}")
+    
+    bus.shutdown()
+    return positionList
+
 
 # remember to manually open can port before running code
 # sudo ip link set down can1
@@ -1046,5 +989,17 @@ def position_tests():
 if __name__ == "__main__":
     #main()
     # runMotorTest()
-    position_tests()
+    # Run tests on multiple CAN ports
+    all_positions = {}
+
+    # Collect results from each port
+    # all_positions.update(position_tests('can1', [1, 2, 3, 8, 9], False))
+    # all_positions.update(position_tests('can2', [5, 7, 10], True))
+    # all_positions.update(position_tests('can3', [4, 6, 11], True))
+
+    # Print the combined results
+    print("\n=== Combined Motor Positions ===")
+    for motor_id, position in sorted(all_positions.items()):
+        print(f"Motor {motor_id}: {position:.3f}")
+
     # main_console()
