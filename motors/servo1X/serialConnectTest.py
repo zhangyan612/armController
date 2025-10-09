@@ -171,34 +171,69 @@ class MotorController:
         self.ser.close()
         print("Connection closed")
 
-# 使用示例
+
+
+def test_connections():
+    motor_ids = [0, 1, 6, 7]
+
+    for i in motor_ids:
+        port = f"/dev/ttyCH9344USB{i}"
+        print(f"\nTesting motor on port {port}...")
+
+        mc = MotorController(port=port)
+        
+        try:
+            # mc.set_reduction_ratio(1)  # 设置减速比
+            mc.motor_enable(True)  # optional if you need to enable before reading
+
+            encoder_value = mc.query_encoder_angle()
+            print(f"Motor {i} initial encoder value: {encoder_value}")
+
+        except Exception as e:
+            print(f"Motor {i} connection failed: {e}")
+
+        finally:
+            mc.motor_enable(False)
+            mc.close()
+
+
+
+
+
 if __name__ == "__main__":
-    mc = MotorController(port='COM6')
-    try:
-        # 设置减速比
-        mc.set_reduction_ratio(1)
+    test_connections()
+    # mc = MotorController(port='COM6')
+
+    # i=7
+    # port = f"/dev/ttyCH9344USB{i}"
+
+    # mc = MotorController(port=port)
+
+    # try:
+    #     # 设置减速比
+    #     mc.set_reduction_ratio(1)
         
-        # 使能电机
-        mc.motor_enable(True)
+    #     # 使能电机
+    #     # mc.motor_enable(True)
         
-        # 查询编码器角度
-        encoder_value = mc.query_encoder_angle()
-        print(f"Initial encoder value: {encoder_value}")
+    #     # 查询编码器角度
+    #     encoder_value = mc.query_encoder_angle()
+    #     print(f"Initial encoder value: {encoder_value}")
         
-        # 转动电机
-        mc.set_angle(0)  # 转动6圈
+    #     # 转动电机
+    #     # mc.set_angle(0)  # 转动6圈
         
-        # 等待运动完成
-        time.sleep(2)
+    #     # 等待运动完成
+    #     # time.sleep(2)
         
-        # 再次查询编码器角度
-        encoder_value = mc.query_encoder_angle()
-        print(f"Final encoder value: {encoder_value}")
+    #     # 再次查询编码器角度
+    #     # encoder_value = mc.query_encoder_angle()
+    #     # print(f"Final encoder value: {encoder_value}")
         
-        # 查询圈数
-        rotation_count = mc.query_rotation()
-        print(f"Rotation count: {rotation_count}")
+    #     # # 查询圈数
+    #     # rotation_count = mc.query_rotation()
+    #     # print(f"Rotation count: {rotation_count}")
         
-    finally:
-        mc.motor_enable(False)
-        mc.close()
+    # finally:
+    #     mc.motor_enable(False)
+    #     mc.close()

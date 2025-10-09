@@ -3,7 +3,6 @@
 ls /dev/ttyUSB*
 
 
-
 ✅ Option 1: Uninstall brltty (most common)
 
 If you don’t use a Braille display, just remove it:
@@ -24,6 +23,7 @@ sudo ip link set can0 type can bitrate 1000000
 sudo ip link set can0 up
 
 
+usb 8 channel installation 
 
 sudo dmesg | grep tty
 
@@ -35,23 +35,17 @@ idVendor=1a86, idProduct=55d9, Product: USB2.0 To Multi Serial Ports, Manufactur
 lsusb
 
 
-
-sudo modprobe ch348
-
-modprobe: FATAL: Module ch348 not found in directory /lib/modules/6.8.0-85-generic
-
+for 8 channel usb to ttl 
 
 install driver 
 
 sudo apt update && sudo apt install -y git build-essential dkms && 
 
-git clone https://github.com/WCHSoftGroup/ch34xser_linux.git && cd ch34xser_linux 
+cd /home/yan/repos/armController/arm/drivers/CH9344SER_LINUX/driver
 
-cd driver 
-
-make && sudo make install && sudo depmod && sudo modprobe ch34x 
-
-sudo modprobe ch343
+make
+sudo make install && sudo depmod 
+sudo modprobe ch9344
 
 
 
@@ -60,18 +54,24 @@ Then replug your USB-TTL board and check:
 sudo dmesg | grep tty
 
 
-
-cd /home/yan/repos/armController/arm/drivers/CH9344SER_LINUX/LINUX/driver
-
-make
-
-sudo modprobe ch9344
-
 /LINUX/driver$ sudo dmesg | grep tty
 [    0.163414] printk: legacy console [tty0] enabled
 [ 3830.800278] usb_ch9344 1-6:1.0: ttyCH9344USB from 0 - 7: ch9344 device attached.
 
 
-🧩 To list all 8 ports
+To list all 8 ports
 
 ls /dev/ttyCH9344USB*
+
+
+for linear motor controller 
+
+
+ls /dev/ttyUSB*
+/dev/ttyUSB0
+
+
+
+
+also have two cameras 
+1 audio 
