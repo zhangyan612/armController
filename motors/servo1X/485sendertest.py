@@ -14,9 +14,9 @@ except Exception as e:
     print('pyserial required: pip install pyserial')
     raise
 
-PORT = 'COM3'
+PORT = 'COM5'
 BAUD = 115200
-MSG = b'C;'
+MSG = b'1C;'
 
 
 def send_with_rts(port=PORT, baud=BAUD, msg=MSG, timeout=0.5, rts_settle=0.05, post_tx_wait=0.05):
