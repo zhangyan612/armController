@@ -83,8 +83,16 @@ def publish_to_mqtt(client, readings):
     """
     Publish the readings to MQTT topic
     """
-    client.publish(TOPIC, json.dumps(readings))
+    client.publish(TOPIC, readings)
     print(f"Published to MQTT: {readings}")
+
+# If you know the range is 0–9999, you can pack each number into 14 bits for compresson
+def encode_bitpack(data):
+    bitstream = 0
+    for num in data:
+        bitstream = (bitstream << 14) | num
+    byte_length = (14 * len(data) + 7) // 8
+    return bitstream.to_bytes(byte_length, 'big')
 
 def main():
     cfg = load_config()
@@ -109,9 +117,10 @@ def main():
                 if significant_change(current_readings, last_published, threshold=5):
                     # Print to screen
                     # print(f"Publishing encoder change: {current_readings}")
-                    
+                    print(len(current_readings))
+                    encoded = encode_bitpack(current_readings)
                     # Publish to MQTT
-                    publish_to_mqtt(client, current_readings)
+                    publish_to_mqtt(client, encoded)
                     last_published = current_readings  # Update last published values
                 # else:
                 #     print(f"No significant change: {current_readings}")
