@@ -1,0 +1,1 @@
+savedcmd_/home/yan/repos/armController/arm/drivers/CH9344SER_LINUX/LINUX/driver/Module.symvers :=  scripts/mod/modpost -M -m -a      -o /home/yan/repos/armController/arm/drivers/CH9344SER_LINUX/LINUX/driver/Module.symvers -T /home/yan/repos/armController/arm/drivers/CH9344SER_LINUX/LINUX/driver/modules.order -i Module.symvers -e 
