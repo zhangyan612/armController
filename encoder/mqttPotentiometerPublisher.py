@@ -108,7 +108,7 @@ def main():
                 # Check if significant change occurred
                 if significant_change(current_readings, last_published, threshold=5):
                     # Print to screen
-                    print(f"Publishing encoder change: {current_readings}")
+                    # print(f"Publishing encoder change: {current_readings}")
                     
                     # Publish to MQTT
                     publish_to_mqtt(client, current_readings)
