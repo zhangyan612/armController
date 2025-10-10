@@ -6,6 +6,7 @@ import os
 import threading
 
 TOPIC = "joint_state"
+data_length = 10
 
 def load_config():
     script_dir = os.path.dirname(os.path.abspath(__file__))
@@ -13,6 +14,14 @@ def load_config():
     config_path = os.path.join(root_dir, "mqtt_config.json")
     with open(config_path, "r") as f:
         return json.load(f)
+
+def decode_bitpack(payload, count):
+    bitstream = int.from_bytes(payload, 'big')
+    result = []
+    for _ in range(count):
+        result.insert(0, bitstream & ((1 << 14) - 1))
+        bitstream >>= 14
+    return result
 
 class MQTTReceiver:
     def __init__(self):
@@ -47,7 +56,7 @@ class MQTTReceiver:
     def on_message(self, client, userdata, msg):
         try:
             # Parse the raw list of potentiometer readings
-            pot_readings = json.loads(msg.payload.decode())
+            pot_readings = decode_bitpack(msg.payload, data_length)
             print(f"Received potentiometer readings: {pot_readings}")
             
             # Call the message callback if set
@@ -105,6 +114,7 @@ class MQTTReceiver:
             self.client.disconnect()
             self.client.loop_stop()
             print("MQTT receiver stopped")
+
 
 def main():
     """Standalone test function"""
