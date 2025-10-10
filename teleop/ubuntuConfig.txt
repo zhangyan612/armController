@@ -75,3 +75,10 @@ ls /dev/ttyUSB*
 
 also have two cameras 
 1 audio 
+
+
+
+/bin/python3 -m pip --version
+
+/bin/python3 -m pip install sounddevice
+/bin/python3 -m pip install numpy
