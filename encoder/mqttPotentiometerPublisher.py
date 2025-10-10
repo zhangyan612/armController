@@ -6,6 +6,7 @@ import os
 import serial
 
 TOPIC = "joint_state"
+change_threshold = 15  # Minimum change to trigger publish
 
 def load_config():
     script_dir = os.path.dirname(os.path.abspath(__file__))
@@ -53,7 +54,7 @@ def read_potentiometers():
     try:
         for command in commands:
             ser.write(bytes([command]))
-            response = read_serial_data(ser, 22)
+            response = read_serial_data(ser, 26)  # 12 channels * 2 bytes + 2 bytes for start/end markers
 
             if command == 0xEE:
                 percentages = hex_to_percentage(response[2:-2])  # Remove start and end markers
@@ -65,7 +66,7 @@ def read_potentiometers():
         ser.close()
         return None
 
-def significant_change(current, previous, threshold=10):
+def significant_change(current, previous):
     """
     Check if any element in current list has changed by more than threshold
     compared to previous list.
@@ -74,7 +75,7 @@ def significant_change(current, previous, threshold=10):
         return True
     
     for curr, prev in zip(current, previous):
-        if abs(curr - prev) > threshold:
+        if abs(curr - prev) > change_threshold:
             return True
     
     return False
@@ -114,9 +115,9 @@ def main():
             
             if current_readings is not None:
                 # Check if significant change occurred
-                if significant_change(current_readings, last_published, threshold=5):
+                if significant_change(current_readings, last_published):
                     # Print to screen
-                    # print(f"Publishing encoder change: {current_readings}")
+                    print(f"Publishing encoder change: {current_readings}")
                     print(len(current_readings))
                     encoded = encode_bitpack(current_readings)
                     # Publish to MQTT

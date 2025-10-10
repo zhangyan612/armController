@@ -6,7 +6,7 @@ import os
 import threading
 
 TOPIC = "joint_state"
-data_length = 10
+data_length = 12
 
 def load_config():
     script_dir = os.path.dirname(os.path.abspath(__file__))
