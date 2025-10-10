@@ -1,0 +1,1 @@
+savedcmd_/home/yan/repos/armController/arm/drivers/CH9344SER_LINUX/LINUX/driver/ch9344.mod := printf '%s\n'   ch9344.o | awk '!x[$$0]++ { print("/home/yan/repos/armController/arm/drivers/CH9344SER_LINUX/LINUX/driver/"$$0) }' > /home/yan/repos/armController/arm/drivers/CH9344SER_LINUX/LINUX/driver/ch9344.mod

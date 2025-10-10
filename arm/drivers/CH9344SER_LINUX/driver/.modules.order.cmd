@@ -1,0 +1,1 @@
+savedcmd_/home/yan/repos/armController/arm/drivers/CH9344SER_LINUX/LINUX/driver/modules.order := {   echo /home/yan/repos/armController/arm/drivers/CH9344SER_LINUX/LINUX/driver/ch9344.o; :; } > /home/yan/repos/armController/arm/drivers/CH9344SER_LINUX/LINUX/driver/modules.order
