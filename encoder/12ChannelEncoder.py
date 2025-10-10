@@ -22,7 +22,7 @@ def read_serial_data(ser, expected_bytes):
 
 def process_serial_commands():
     commands = [0xEE, 0xFF]
-    ser = serial.Serial('COM9', 115200, timeout=1)
+    ser = serial.Serial('COM21', 115200, timeout=1)
     
     try:
         for command in commands:
