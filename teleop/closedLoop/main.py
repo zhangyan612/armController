@@ -5,8 +5,12 @@ import can
 from pcan_cybergearLib import CANMotorController
 
 
-motor1_range  = [0, 2]
-
+motor_ranges = {
+    1: [-1.5, 2.5],
+    2: [-0.5, 2.0],
+    3: [-2.0, 0.5],
+    4: [-1.1, 1.4]
+}
 
 # map value from encoder reading to motor
 def map_to_motor(value, in_min=0, in_max=9940, out_min=0, out_max=6.28):
@@ -73,6 +77,8 @@ class MotorController:
             if motor:
                 self.motors[motor_id] = motor
                 self.current_positions[motor_id] = 0.0
+
+                #if motor position is not in acceptable range, throw error
                 
         print(f"✓ Successfully initialized {len(self.motors)} motors")
         
@@ -90,28 +96,23 @@ class MotorController:
         # print(f"Processing potentiometer readings: {pot_readings}")
         
         # Map each potentiometer reading to motor position
-        if pot_readings[5]:
-            mapped_position = map_to_motor(pot_readings[5])
-            restricted_position = restrict_range(mapped_position)
-            print(f"Moving Motor 1 to position: {restricted_position:.3f} rad")
-            # self.move_motor(1, restricted_position)
+        for motor_id, m_range in motor_ranges.items():
+            pot_index = motor_id - 1  # assuming pot_readings[0] -> motor 1, etc.
+            if pot_readings[pot_index]:
+                mapped_position = map_to_motor(
+                    pot_readings[pot_index], 0, 9999,
+                    out_min=m_range[0], out_max=m_range[1]
+                )
+                print(f"Moving Motor {motor_id} to position: {mapped_position:.3f} rad")
+                # restricted_position = restrict_range(mapped_position)
+                # self.move_motor(motor_id, mapped_position)
 
-        # for i, reading in enumerate(pot_readings[:4]):
-        #     motor_id = i + 1
-            
-        #     if motor_id in self.motors:
-        #         # Convert reading to motor position
-        #         mapped_position = map_to_motor(reading)
-        #         restricted_position = restrict_range(mapped_position)
-                
-        #         # Move motor to new position
-        #         self.move_motor(motor_id, restricted_position)
-                
+
     def move_motor(self, motor_id, position):
         """Move specific motor to position"""
         try:
             motor = self.motors[motor_id]
-            motor.write_single_command(motor.RunModes.POSITION_MODE.value, position, 0, 0, 0)
+            motor.write_single_param("loc_ref", position)
             self.current_positions[motor_id] = position
             print(f"Motor {motor_id} moved to position: {position:.3f} rad")
         except Exception as e:
@@ -173,13 +174,13 @@ def main():
     
     try:
         # Create CAN bus
-        # robstride_bus = create_can_bus()
+        robstride_bus = create_can_bus()
         
         # # Initialize motors
-        # controller.setup_motors(robstride_bus)
+        controller.setup_motors(robstride_bus)
         
-        # if not controller.motors:
-        #     print("No motors initialized. Continuing with MQTT for testing...")
+        if not controller.motors:
+            print("No motors initialized. Continuing with MQTT for testing...")
             
         # Setup MQTT
         controller.setup_mqtt()

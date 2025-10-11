@@ -678,186 +678,186 @@ if __name__ == "__main__":
             except Exception as e:
                 print(f"  {param_name}: Error - {e}")
         
-        print("\n2. Testing motor feedback (position reading)...")
-        # Test motor feedback to see actual position values
-        try:
-            # Enable motor first
-            motor.enable()
-            print("✓ Motor enabled for testing")
+        # print("\n2. Testing motor feedback (position reading)...")
+        # # Test motor feedback to see actual position values
+        # try:
+        #     # Enable motor first
+        #     motor.enable()
+        #     print("✓ Motor enabled for testing")
             
-            # Read position multiple times to see if it changes
-            print("Reading position feedback (move motor manually to see changes):")
-            for i in range(10):
-                # Use write_single_param to get motor status feedback
-                status = motor.write_single_param("run_mode", 0)
-                if status and status[1] is not None:
-                    print(f"  Reading {i+1}: Position = {status[1]:.3f} rad, "
-                          f"Velocity = {status[2]:.3f} rad/s, "
-                          f"Torque = {status[3]:.3f} Nm")
+        #     # Read position multiple times to see if it changes
+        #     print("Reading position feedback (move motor manually to see changes):")
+        #     for i in range(10):
+        #         # Use write_single_param to get motor status feedback
+        #         status = motor.write_single_param("run_mode", 0)
+        #         if status and status[1] is not None:
+        #             print(f"  Reading {i+1}: Position = {status[1]:.3f} rad, "
+        #                   f"Velocity = {status[2]:.3f} rad/s, "
+        #                   f"Torque = {status[3]:.3f} Nm")
                 
-                # Also read mechanical position parameter
-                mech_pos = motor.read_single_param("mechPos")
-                if mech_pos is not None:
-                    print(f"  Mechanical Position: {mech_pos:.3f} rad")
+        #         # Also read mechanical position parameter
+        #         mech_pos = motor.read_single_param("mechPos")
+        #         if mech_pos is not None:
+        #             print(f"  Mechanical Position: {mech_pos:.3f} rad")
                 
-                time.sleep(1)
+        #         time.sleep(1)
             
-            motor.disable()
-            print("✓ Motor disabled")
+        #     motor.disable()
+        #     print("✓ Motor disabled")
             
-        except Exception as e:
-            print(f"✗ Error in position testing: {e}")
-            try:
-                motor.disable()
-            except:
-                pass
+        # except Exception as e:
+        #     print(f"✗ Error in position testing: {e}")
+        #     try:
+        #         motor.disable()
+        #     except:
+        #         pass
 
-        print("\n=== Testing All 4 Modes ===")
+        # print("\n=== Testing All 4 Modes ===")
 
         
-        # Test 3: SPEED_MODE (速度模式)
-        print("\n3. Testing SPEED_MODE (速度模式)...")
-        try:
-            motor.write_single_param("run_mode", motor.RunModes.SPEED_MODE.value)
-            print("✓ Set to SPEED_MODE")
+        # # Test 3: SPEED_MODE (速度模式)
+        # print("\n3. Testing SPEED_MODE (速度模式)...")
+        # try:
+        #     motor.write_single_param("run_mode", motor.RunModes.SPEED_MODE.value)
+        #     print("✓ Set to SPEED_MODE")
             
-            motor.enable()
-            print("✓ Motor enabled")
+        #     motor.enable()
+        #     print("✓ Motor enabled")
             
-            # Test different speeds
-            speeds = [3.0, -2.0, 5.0, 0.0]
-            for speed in speeds:
-                print(f"Setting speed: {speed} rad/s")
-                motor.write_single_param("spd_ref", speed)
-                time.sleep(3)  # Run at this speed for 3 seconds
+        #     # Test different speeds
+        #     speeds = [3.0, -2.0, 5.0, 0.0]
+        #     for speed in speeds:
+        #         print(f"Setting speed: {speed} rad/s")
+        #         motor.write_single_param("spd_ref", speed)
+        #         time.sleep(3)  # Run at this speed for 3 seconds
                 
-                # Read current velocity parameters
-                mech_vel = motor.read_single_param("mechVel")
-                vbus = motor.read_single_param("VBUS")
-                if mech_vel is not None:
-                    print(f"  Mechanical Velocity: {mech_vel:.3f} rad/s")
-                if vbus is not None:
-                    print(f"  Bus Voltage: {vbus:.1f} V")
+        #         # Read current velocity parameters
+        #         mech_vel = motor.read_single_param("mechVel")
+        #         vbus = motor.read_single_param("VBUS")
+        #         if mech_vel is not None:
+        #             print(f"  Mechanical Velocity: {mech_vel:.3f} rad/s")
+        #         if vbus is not None:
+        #             print(f"  Bus Voltage: {vbus:.1f} V")
             
-            motor.disable()
-            print("✓ Motor disabled")
+        #     motor.disable()
+        #     print("✓ Motor disabled")
             
-        except Exception as e:
-            print(f"✗ Error in SPEED_MODE: {e}")
+        # except Exception as e:
+        #     print(f"✗ Error in SPEED_MODE: {e}")
 
 
 
-        # Test 1: CONTROL_MODE (运控模式)
-        print("\n1. Testing CONTROL_MODE (运控模式)...")
-        try:
-            motor.write_single_param("run_mode", motor.RunModes.CONTROL_MODE.value)
-            print("✓ Set to CONTROL_MODE")
+        # # Test 1: CONTROL_MODE (运控模式)
+        # print("\n1. Testing CONTROL_MODE (运控模式)...")
+        # try:
+        #     motor.write_single_param("run_mode", motor.RunModes.CONTROL_MODE.value)
+        #     print("✓ Set to CONTROL_MODE")
             
-            motor.enable()
-            print("✓ Motor enabled")
+        #     motor.enable()
+        #     print("✓ Motor enabled")
             
-            # Send control commands
-            print("Sending control commands...")
-            for i in range(5):
-                torque = 0.5 * (1 if i % 2 == 0 else -1)  # Alternate torque
-                response = motor.send_motor_control_command(
-                    torque=torque,
-                    target_angle=1.0,
-                    target_velocity=2.0,
-                    Kp=10,
-                    Kd=0.5
-                )
-                if response and response[0] is not None:
-                    print(f"  Command {i+1}: Pos={response[1]:.3f}rad, Vel={response[2]:.3f}rad/s")
-                time.sleep(0.5)
+        #     # Send control commands
+        #     print("Sending control commands...")
+        #     for i in range(5):
+        #         torque = 0.5 * (1 if i % 2 == 0 else -1)  # Alternate torque
+        #         response = motor.send_motor_control_command(
+        #             torque=torque,
+        #             target_angle=1.0,
+        #             target_velocity=2.0,
+        #             Kp=10,
+        #             Kd=0.5
+        #         )
+        #         if response and response[0] is not None:
+        #             print(f"  Command {i+1}: Pos={response[1]:.3f}rad, Vel={response[2]:.3f}rad/s")
+        #         time.sleep(0.5)
                 
-            motor.disable()
-            print("✓ Motor disabled")
+        #     motor.disable()
+        #     print("✓ Motor disabled")
             
-        except Exception as e:
-            print(f"✗ Error in CONTROL_MODE: {e}")
+        # except Exception as e:
+        #     print(f"✗ Error in CONTROL_MODE: {e}")
 
 
-        # Test 4: CURRENT_MODE (电流模式)
-        print("\n4. Testing CURRENT_MODE (电流模式)...")
-        try:
-            motor.write_single_param("run_mode", motor.RunModes.CURRENT_MODE.value)
-            print("✓ Set to CURRENT_MODE")
+        # # Test 4: CURRENT_MODE (电流模式)
+        # print("\n4. Testing CURRENT_MODE (电流模式)...")
+        # try:
+        #     motor.write_single_param("run_mode", motor.RunModes.CURRENT_MODE.value)
+        #     print("✓ Set to CURRENT_MODE")
             
-            motor.enable()
-            print("✓ Motor enabled")
+        #     motor.enable()
+        #     print("✓ Motor enabled")
             
-            # Test different current/torque values
-            currents = [0.3, -0.2, 0.5, 0.0]
-            for current in currents:
-                print(f"Setting current/torque: {current} A/Nm")
-                motor.write_single_param("iq_ref", current)
-                time.sleep(2)  # Apply current for 2 seconds
+        #     # Test different current/torque values
+        #     currents = [0.3, -0.2, 0.5, 0.0]
+        #     for current in currents:
+        #         print(f"Setting current/torque: {current} A/Nm")
+        #         motor.write_single_param("iq_ref", current)
+        #         time.sleep(2)  # Apply current for 2 seconds
                 
-                # Read current parameters
-                iqf = motor.read_single_param("iqf")
-                rotation = motor.read_single_param("rotation")
-                if iqf is not None:
-                    print(f"  iq filter value: {iqf:.3f} A")
-                if rotation is not None:
-                    print(f"  Rotation turns: {rotation}")
+        #         # Read current parameters
+        #         iqf = motor.read_single_param("iqf")
+        #         rotation = motor.read_single_param("rotation")
+        #         if iqf is not None:
+        #             print(f"  iq filter value: {iqf:.3f} A")
+        #         if rotation is not None:
+        #             print(f"  Rotation turns: {rotation}")
             
-            motor.disable()
-            print("✓ Motor disabled")
+        #     motor.disable()
+        #     print("✓ Motor disabled")
             
-        except Exception as e:
-            print(f"✗ Error in CURRENT_MODE: {e}")
+        # except Exception as e:
+        #     print(f"✗ Error in CURRENT_MODE: {e}")
 
 
-        # Test 2: POSITION_MODE (位置模式)
-        print("\n2. Testing POSITION_MODE (位置模式)...")
-        try:
-            motor.write_single_param("run_mode", motor.RunModes.POSITION_MODE.value)
-            print("✓ Set to POSITION_MODE")
+        # # Test 2: POSITION_MODE (位置模式)
+        # print("\n2. Testing POSITION_MODE (位置模式)...")
+        # try:
+        #     motor.write_single_param("run_mode", motor.RunModes.POSITION_MODE.value)
+        #     print("✓ Set to POSITION_MODE")
             
-            # Set position control parameters
-            motor.write_single_param("limit_spd", 5.0)  # Limit speed to 5 rad/s
-            motor.write_single_param("loc_kp", 20.0)    # Position gain
+        #     # Set position control parameters
+        #     motor.write_single_param("limit_spd", 5.0)  # Limit speed to 5 rad/s
+        #     motor.write_single_param("loc_kp", 20.0)    # Position gain
             
-            motor.enable()
-            print("✓ Motor enabled")
+        #     motor.enable()
+        #     print("✓ Motor enabled")
             
-            # Move to different positions
-            positions = [1.0, -1.0, 0.5, 0.0]
-            for pos in positions:
-                print(f"Moving to position: {pos} rad")
-                motor.write_single_param("loc_ref", pos)
-                time.sleep(2)  # Wait for movement
+        #     # Move to different positions
+        #     positions = [1.0, -1.0, 0.5, 0.0]
+        #     for pos in positions:
+        #         print(f"Moving to position: {pos} rad")
+        #         motor.write_single_param("loc_ref", pos)
+        #         time.sleep(2)  # Wait for movement
                 
-                # Read current position parameters
-                mech_pos = motor.read_single_param("mechPos")
-                run_mode = motor.read_single_param("run_mode")
-                if mech_pos is not None:
-                    print(f"  Mechanical Position: {mech_pos:.3f} rad")
-                if run_mode is not None:
-                    print(f"  Run Mode: {run_mode}")
+        #         # Read current position parameters
+        #         mech_pos = motor.read_single_param("mechPos")
+        #         run_mode = motor.read_single_param("run_mode")
+        #         if mech_pos is not None:
+        #             print(f"  Mechanical Position: {mech_pos:.3f} rad")
+        #         if run_mode is not None:
+        #             print(f"  Run Mode: {run_mode}")
             
-            motor.disable()
-            print("✓ Motor disabled")
+        #     motor.disable()
+        #     print("✓ Motor disabled")
             
-        except Exception as e:
-            print(f"✗ Error in POSITION_MODE: {e}")
+        # except Exception as e:
+        #     print(f"✗ Error in POSITION_MODE: {e}")
 
 
 
-        print("\n=== Final Parameter Reading ===")
-        print("Reading parameters after all tests...")
-        for param_name in parameters_to_test:
-            try:
-                value = motor.read_single_param(param_name)
-                if value is not None:
-                    print(f"  {param_name}: {value}")
-                else:
-                    print(f"  {param_name}: Failed to read")
-            except Exception as e:
-                print(f"  {param_name}: Error - {e}")
+        # print("\n=== Final Parameter Reading ===")
+        # print("Reading parameters after all tests...")
+        # for param_name in parameters_to_test:
+        #     try:
+        #         value = motor.read_single_param(param_name)
+        #         if value is not None:
+        #             print(f"  {param_name}: {value}")
+        #         else:
+        #             print(f"  {param_name}: Failed to read")
+        #     except Exception as e:
+        #         print(f"  {param_name}: Error - {e}")
 
-        print("\n=== All Tests Completed ===")
+        # print("\n=== All Tests Completed ===")
 
     except can.CanError as e:
         print(f"CAN error: {e}")
