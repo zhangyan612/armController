@@ -3,12 +3,14 @@ import smbus2
 import os
 
 class RDKX3Encoder:
-    def __init__(self, i2c_bus=0):  # Changed default to bus 0
+    def __init__(self, i2c_bus=0, retry_count=2, retry_delay=1.0):
         """
         Initialize RDK-X3 encoder reader
         
         Args:
             i2c_bus (int): I2C bus number (default: 0 for RDK-X3 based on your scan)
+            retry_count (int): Number of retries for failed reads
+            retry_delay (float): Delay between retries in seconds
         """
         # TCA9548A addresses
         self.TCA9548A_ADDRESSES = [0x70, 0x71, 0x72]
@@ -20,6 +22,8 @@ class RDKX3Encoder:
         self.COUNTS_TO_DEGREES = 360.0 / self.COUNTS_PER_REV
         
         self.i2c_bus = i2c_bus
+        self.retry_count = retry_count
+        self.retry_delay = retry_delay
         
         # Check I2C device existence and permissions
         i2c_device = f"/dev/i2c-{i2c_bus}"
@@ -83,27 +87,40 @@ class RDKX3Encoder:
             print(f"Error selecting channel {channel} on TCA {hex(tca_addr)}: {e}")
             return False
     
-    def read_mt6701_angle(self):
-        """Read angle from MT6701 sensor"""
-        try:
-            # Write the register address we want to read from
-            self.bus.write_byte(self.MT6701_ADDRESS, self.ANGLE_REGISTER)
-            time.sleep(0.001)  # Short delay
-            
-            # Read 2 bytes from the device
-            data = self.bus.read_i2c_block_data(self.MT6701_ADDRESS, self.ANGLE_REGISTER, 2)
-            
-            if len(data) == 2:
-                angle_h = data[0]
-                angle_l = data[1]
-                angle_count = (angle_h << 6) | (angle_l & 0x3F)
-                angle_deg = angle_count * self.COUNTS_TO_DEGREES
-                return angle_deg
-            else:
-                return None
-        except Exception as e:
-            print(f"Error reading MT6701: {e}")
-            return None
+    def read_mt6701_angle_with_retry(self):
+        """Read angle from MT6701 sensor with retry logic"""
+        last_error = None
+        
+        for attempt in range(self.retry_count + 1):
+            try:
+                # Write the register address we want to read from
+                self.bus.write_byte(self.MT6701_ADDRESS, self.ANGLE_REGISTER)
+                time.sleep(0.001)  # Short delay
+                
+                # Read 2 bytes from the device
+                data = self.bus.read_i2c_block_data(self.MT6701_ADDRESS, self.ANGLE_REGISTER, 2)
+                
+                if len(data) == 2:
+                    angle_h = data[0]
+                    angle_l = data[1]
+                    angle_count = (angle_h << 6) | (angle_l & 0x3F)
+                    angle_deg = angle_count * self.COUNTS_TO_DEGREES
+                    
+                    if attempt > 0:
+                        print(f"  ✓ Success after {attempt + 1} attempts")
+                    return angle_deg
+                else:
+                    last_error = "Incomplete data received"
+                    
+            except Exception as e:
+                last_error = str(e)
+                if attempt < self.retry_count:
+                    print(f"  Retry {attempt + 1}/{self.retry_count} after error: {e}")
+                    time.sleep(self.retry_delay)
+                else:
+                    print(f"  Failed after {self.retry_count + 1} attempts: {e}")
+        
+        return None
     
     def get_board_address(self, board_id):
         """Convert board ID to TCA9548A address"""
@@ -140,7 +157,7 @@ class RDKX3Encoder:
         channel = port - 1
         if self.select_mux_channel(tca_addr, channel):
             time.sleep(0.005)  # 5ms delay for sensor stabilization
-            return self.read_mt6701_angle()
+            return self.read_mt6701_angle_with_retry()
         else:
             return None
     
@@ -157,6 +174,7 @@ class RDKX3Encoder:
         results = []
         
         for board_id, port in query_list:
+            print(f"Reading Board {board_id}, Port {port}...")
             angle = self.query_single(board_id, port)
             
             results.append({
@@ -172,11 +190,11 @@ class RDKX3Encoder:
         self.disable_all_tca()
         print("RDK-X3 Encoder closed")
 
-# Quick test with proper error handling
+# Test with improved error handling
 if __name__ == "__main__":
     try:
-        # Initialize with bus 0 (where your devices are)
-        encoder = RDKX3Encoder(i2c_bus=0)
+        # Initialize with bus 0 and retry settings
+        encoder = RDKX3Encoder(i2c_bus=0, retry_count=2, retry_delay=1.0)
         
         # Define your query list
         query_list = [
@@ -190,29 +208,26 @@ if __name__ == "__main__":
             (72, 7),  # Right arm wrist 2
         ]
         
-        print("\nReading encoder values...")
+        print("\nReading encoder values with retry...")
         result = encoder.query_batch(query_list)
         
-        print("\nEncoder Readings:")
+        print("\nFinal Encoder Readings:")
+        successful_reads = 0
         for reading in result:
             board = reading["board"]
             port = reading["port"]
             angle = reading["angle"]
-            status = f"{angle}°" if angle is not None else "Error"
+            if angle is not None:
+                status = f"{angle}°"
+                successful_reads += 1
+            else:
+                status = "ERROR"
             print(f"  Board {board}, Port {port}: {status}")
+        
+        print(f"\nSuccessfully read {successful_reads}/{len(query_list)} encoders")
             
     except Exception as e:
         print(f"Failed to initialize encoder: {e}")
-        print("\nTroubleshooting steps:")
-        print("1. Check if I2C devices are visible:")
-        print("   sudo i2cdetect -y 0")
-        print("2. Check permissions:")
-        print("   ls -l /dev/i2c-0")
-        print("3. Try running with sudo:")
-        print("   sudo python3 encoder_reader.py")
-        print("4. Add user to i2c group:")
-        print("   sudo usermod -a -G i2c $USER")
-        print("   (then logout and login again)")
     finally:
         if 'encoder' in locals():
             encoder.close()
