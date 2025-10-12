@@ -1,13 +1,14 @@
 import time
 import smbus2
+import os
 
 class RDKX3Encoder:
-    def __init__(self, i2c_bus=1):
+    def __init__(self, i2c_bus=0):  # Changed default to bus 0
         """
         Initialize RDK-X3 encoder reader
         
         Args:
-            i2c_bus (int): I2C bus number (default: 1 for RDK-X3)
+            i2c_bus (int): I2C bus number (default: 0 for RDK-X3 based on your scan)
         """
         # TCA9548A addresses
         self.TCA9548A_ADDRESSES = [0x70, 0x71, 0x72]
@@ -18,28 +19,62 @@ class RDKX3Encoder:
         self.COUNTS_PER_REV = 16384
         self.COUNTS_TO_DEGREES = 360.0 / self.COUNTS_PER_REV
         
+        self.i2c_bus = i2c_bus
+        
+        # Check I2C device existence and permissions
+        i2c_device = f"/dev/i2c-{i2c_bus}"
+        if not os.path.exists(i2c_device):
+            raise FileNotFoundError(f"I2C device {i2c_device} does not exist")
+        
+        # Check if we have read/write permissions
+        if not os.access(i2c_device, os.R_OK | os.W_OK):
+            print(f"Warning: No read/write permissions for {i2c_device}")
+            print("Try running with sudo or add user to i2c group:")
+            print("sudo usermod -a -G i2c $USER")
+            print("Then logout and login again")
+        
         # Initialize I2C bus
         try:
             self.bus = smbus2.SMBus(i2c_bus)
             print(f"RDK-X3 Encoder initialized on I2C bus {i2c_bus}")
+            
+            # Verify we can communicate with TCA devices
+            self.verify_tca_devices()
+            
         except Exception as e:
-            print(f"Error initializing I2C bus: {e}")
+            print(f"Error initializing I2C bus {i2c_bus}: {e}")
             raise
+    
+    def verify_tca_devices(self):
+        """Verify TCA9548 devices are accessible"""
+        print("Verifying TCA9548 devices...")
+        for addr in self.TCA9548A_ADDRESSES:
+            try:
+                # Try to write to the device (disable all channels)
+                self.bus.write_byte(addr, 0x00)
+                print(f"✓ TCA9548A at {hex(addr)} is accessible")
+            except Exception as e:
+                print(f"✗ TCA9548A at {hex(addr)} failed: {e}")
     
     def disable_all_tca(self):
         """Disable all TCA9548A multiplexer channels"""
+        success = True
         for tca_addr in self.TCA9548A_ADDRESSES:
             try:
                 self.bus.write_byte(tca_addr, 0x00)
             except Exception as e:
                 print(f"Error disabling TCA at {hex(tca_addr)}: {e}")
+                success = False
+        return success
     
     def select_mux_channel(self, tca_addr, channel):
         """Select specific channel on TCA9548A multiplexer"""
         if channel > 7:
             return False
         
-        self.disable_all_tca()
+        if not self.disable_all_tca():
+            return False
+            
         try:
             self.bus.write_byte(tca_addr, 1 << channel)
             time.sleep(0.0003)  # 300 microseconds delay
@@ -137,13 +172,13 @@ class RDKX3Encoder:
         self.disable_all_tca()
         print("RDK-X3 Encoder closed")
 
-# Usage example
+# Quick test with proper error handling
 if __name__ == "__main__":
-    # Initialize the encoder reader
-    encoder = RDKX3Encoder(i2c_bus=1)
-    
     try:
-        # Define the query list
+        # Initialize with bus 0 (where your devices are)
+        encoder = RDKX3Encoder(i2c_bus=0)
+        
+        # Define your query list
         query_list = [
             (70, 3),  # Left shoulder
             (70, 5),  # Right shoulder
@@ -155,14 +190,10 @@ if __name__ == "__main__":
             (72, 7),  # Right arm wrist 2
         ]
         
-        angle = encoder.query_single(70, 3)
-        print(f"Single Query - Board 70, Port 3: {angle}°")
-
-        # Query all encoders
+        print("\nReading encoder values...")
         result = encoder.query_batch(query_list)
         
-        # Print results
-        print("Encoder Readings:")
+        print("\nEncoder Readings:")
         for reading in result:
             board = reading["board"]
             port = reading["port"]
@@ -171,6 +202,17 @@ if __name__ == "__main__":
             print(f"  Board {board}, Port {port}: {status}")
             
     except Exception as e:
-        print(f"Error: {e}")
+        print(f"Failed to initialize encoder: {e}")
+        print("\nTroubleshooting steps:")
+        print("1. Check if I2C devices are visible:")
+        print("   sudo i2cdetect -y 0")
+        print("2. Check permissions:")
+        print("   ls -l /dev/i2c-0")
+        print("3. Try running with sudo:")
+        print("   sudo python3 encoder_reader.py")
+        print("4. Add user to i2c group:")
+        print("   sudo usermod -a -G i2c $USER")
+        print("   (then logout and login again)")
     finally:
-        encoder.close()
+        if 'encoder' in locals():
+            encoder.close()
