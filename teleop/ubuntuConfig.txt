@@ -23,6 +23,38 @@ sudo ip link set can0 type can bitrate 1000000
 sudo ip link set can0 up
 
 
+# Create a setup script in /usr/local/bin/setup_can.sh:
+
+Make it executable:
+sudo chmod +x /usr/local/bin/setup_can.sh
+
+2. Create a systemd service file
+Create /etc/systemd/system/can-setup.service with:
+
+[Unit]
+Description=Setup CAN interfaces
+After=network.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/setup_can.sh
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target
+
+3. Enable and start it
+sudo systemctl daemon-reload
+sudo systemctl enable can-setup.service
+sudo systemctl start can-setup.service
+
+
+You can verify it runs correctly:
+
+ip link show can0
+
+
+
 usb 8 channel installation 
 
 sudo dmesg | grep tty
@@ -82,3 +114,8 @@ also have two cameras
 
 /bin/python3 -m pip install sounddevice
 /bin/python3 -m pip install numpy
+
+
+
+
+
