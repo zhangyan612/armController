@@ -994,8 +994,8 @@ if __name__ == "__main__":
 
     # Collect results from each port
     all_positions.update(position_tests('can1', [1, 2, 3, 8, 9], False))
-    # all_positions.update(position_tests('can2', [5, 7, 10], False))
-    # all_positions.update(position_tests('can3', [4, 6, 11], False))
+    all_positions.update(position_tests('can2', [5, 7, 10], False))
+    all_positions.update(position_tests('can3', [4, 6, 11], False))
 
     # Print the combined results
     print("\n=== Combined Motor Positions ===")
