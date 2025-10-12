@@ -217,4 +217,8 @@ def main():
 
 if __name__ == '__main__':
     # main()
-    send_commands(['1A=3.14'])
+    # send_commands(['1A=3.14'])
+    # send_commands(['1B=2'])    
+    send_commands(['1E=1'])
+
+    # send_commands(['1C'])
