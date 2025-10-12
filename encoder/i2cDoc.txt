@@ -1,0 +1,14 @@
+
+https://www.waveshare.com/wiki/RDK-X3
+
+Detect I2C Devices
+Sudo i2cdetect-y-r 1
+Sudo i2cdetect-y-r 0
+
+This command will start the I2C detection circuit, and the devices that are actually connected to the circuit will be displayed, but the devices that are not linked to the circuit will not be displayed, and the 7-bit I2C address will be detected.
+
+sudo ls/dev/i2c-*
+
+
+List all open I2C. RDK X3 has only two I2C hardware
+/dev/i2c-0/dev/i2c-1
