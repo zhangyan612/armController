@@ -22,13 +22,13 @@ def read_serial_data(ser, expected_bytes):
 
 def process_serial_commands():
     commands = [0xEE, 0xFF]
-    ser = serial.Serial('COM21', 115200, timeout=1)
+    ser = serial.Serial('COM10', 115200, timeout=1)
     
     try:
         for command in commands:
             ser.write(bytes([command]))
             # response = read_serial_data(ser, 66)  # 32 channels
-            response = read_serial_data(ser, 22)  # 16 channel
+            response = read_serial_data(ser, 26)  # 16 channel
 
             if command == 0xEE:
                 percentages = hex_to_percentage(response[2:-2])  # Remove start and end markers

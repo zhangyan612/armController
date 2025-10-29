@@ -22,7 +22,7 @@ def read_serial_data(ser, expected_bytes):
 def process_serial_commands():
     commands = [0xEE]  # 只使用0xEE命令读取编码器位置
     ser = serial.Serial(
-        port='COM9',
+        port='COM21',
         baudrate=115200,
         bytesize=serial.EIGHTBITS,
         parity=serial.PARITY_NONE,
