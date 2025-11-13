@@ -12,43 +12,87 @@ class TimerApp:
         self.root.title("Task Timer")
         self.root.geometry("600x500")  # Increased height to accommodate daily objective
         
+        # VS Code Dark Theme Colors
+        self.bg_color = "#1e1e1e"  # Main background
+        self.sidebar_bg = "#252526"  # Sidebar background
+        self.text_bg = "#1e1e1e"  # Text area background
+        self.text_fg = "#d4d4d4"  # Text foreground
+        self.accent_color = "#007acc"  # VS Code blue
+        self.button_bg = "#0e639c"  # Button background
+        self.button_hover = "#1177bb"  # Button hover
+        self.label_fg = "#cccccc"  # Label text color
+        self.border_color = "#3c3c3c"  # Border color
+        self.success_color = "#4EC9B0"  # Success green
+        self.warning_color = "#CE9178"  # Warning orange
+        
+        # Configure root background
+        self.root.configure(bg=self.bg_color)
+        
         # Daily objective section
-        self.objective_frame = tk.Frame(root, relief=tk.RAISED, bd=1)
+        self.objective_frame = tk.Frame(root, relief=tk.RAISED, bd=1, 
+                                       bg=self.sidebar_bg, highlightbackground=self.border_color,
+                                       highlightthickness=1)
         self.objective_frame.pack(pady=10, fill=tk.X, padx=20)
         
-        self.objective_label = tk.Label(self.objective_frame, text="Daily Objective:", font=("Helvetica", 12, "bold"))
-        self.objective_label.pack(anchor=tk.W)
+        self.objective_label = tk.Label(self.objective_frame, text="Daily Objective:", 
+                                       font=("Segoe UI", 12, "bold"), bg=self.sidebar_bg, 
+                                       fg=self.label_fg)
+        self.objective_label.pack(anchor=tk.W, padx=5, pady=(5,0))
         
-        self.objective_text = tk.Label(self.objective_frame, text="No objective set", wraplength=500, 
-                                      font=("Helvetica", 10), fg="blue", height=2)
+        self.objective_text = tk.Label(self.objective_frame, text="No objective set", 
+                                      wraplength=500, font=("Segoe UI", 10), 
+                                      fg=self.accent_color, bg=self.sidebar_bg, 
+                                      height=2, justify=tk.LEFT)
         self.objective_text.pack(fill=tk.X, padx=5)
         
         self.complete_button = tk.Button(self.objective_frame, text="Complete Objective", 
-                                        command=self.complete_objective, state=tk.DISABLED)
+                                        command=self.complete_objective, state=tk.DISABLED,
+                                        bg=self.button_bg, fg="white", font=("Segoe UI", 9),
+                                        relief=tk.FLAT, padx=10, pady=5)
         self.complete_button.pack(pady=5)
         
         # Task section
-        self.task_label = tk.Label(root, text="Current Task:")
-        self.task_label.pack()
+        self.task_label = tk.Label(root, text="Current Task:", bg=self.bg_color, 
+                                  fg=self.label_fg, font=("Segoe UI", 11))
+        self.task_label.pack(pady=(10,5))
         
-        self.task_text = tk.Text(root, height=4, width=50)
+        self.task_text = tk.Text(root, height=4, width=50, bg=self.text_bg, fg=self.text_fg,
+                                font=("Consolas", 10), insertbackground=self.text_fg,
+                                relief=tk.FLAT, highlightbackground=self.border_color,
+                                highlightthickness=1, padx=5, pady=5)
         self.task_text.pack()
         
-        self.interval_label = tk.Label(root, text="Time interval: ")
-        self.interval_label.pack()
+        self.interval_label = tk.Label(root, text="Time interval: ", bg=self.bg_color, 
+                                      fg=self.label_fg, font=("Segoe UI", 11))
+        self.interval_label.pack(pady=(15,5))
         
         self.intervals = ["5 minutes", "10 minutes", "15 minutes", "20 minutes", "30 minutes", "1 hour"]
         self.interval_var = tk.StringVar(root)
         self.interval_var.set(self.intervals[0])  # Default value
         
+        # Custom style for dropdown
+        self.root.option_add('*TCombobox*Listbox.background', self.text_bg)
+        self.root.option_add('*TCombobox*Listbox.foreground', self.text_fg)
+        self.root.option_add('*TCombobox*Listbox.selectBackground', self.accent_color)
+        self.root.option_add('*TCombobox*Listbox.selectForeground', 'white')
+        
         self.interval_dropdown = tk.OptionMenu(root, self.interval_var, *self.intervals)
-        self.interval_dropdown.pack()
+        self.interval_dropdown.config(bg=self.button_bg, fg="white", font=("Segoe UI", 9),
+                                     relief=tk.FLAT, highlightbackground=self.border_color,
+                                     highlightthickness=1)
+        self.interval_dropdown.pack(pady=5)
         
-        self.start_button = tk.Button(root, text="Start", command=self.start_timer)
-        self.start_button.pack()
+        self.start_button = tk.Button(root, text="Start Timer", command=self.start_timer,
+                                     bg=self.success_color, fg="white", font=("Segoe UI", 10, "bold"),
+                                     relief=tk.FLAT, padx=20, pady=8)
+        self.start_button.pack(pady=15)
         
-        self.countdown_label = tk.Label(root, text="", font=("Helvetica", 48))
+        self.countdown_label = tk.Label(root, text="", font=("Segoe UI", 48, "bold"),
+                                       bg=self.bg_color, fg=self.accent_color)
         self.countdown_label.pack(pady=20)
+        
+        # Add hover effects to buttons
+        self.setup_hover_effects()
         
         self.log_file = "task_log.txt"
         self.objective_file = "daily_objectives.json"
@@ -61,6 +105,34 @@ class TimerApp:
         
         # Check and set daily objective
         self.check_daily_objective()
+
+    def setup_hover_effects(self):
+        # Configure button hover effects
+        buttons = [self.complete_button, self.start_button, self.interval_dropdown]
+        
+        for button in buttons:
+            # Bind events for hover effect
+            button.bind("<Enter>", lambda e, b=button: self.on_enter(e, b))
+            button.bind("<Leave>", lambda e, b=button: self.on_leave(e, b))
+    
+    def on_enter(self, event, button):
+        """Change button color on hover"""
+        if button == self.start_button:
+            button.config(bg="#5FD7B0")  # Lighter green
+        elif button == self.complete_button and button['state'] == tk.NORMAL:
+            button.config(bg=self.button_hover)
+        elif button == self.interval_dropdown:
+            button.config(bg="#1f7bbb")
+    
+    def on_leave(self, event, button):
+        """Revert button color when not hovering"""
+        if button == self.start_button:
+            button.config(bg=self.success_color)
+        elif button == self.complete_button:
+            if button['state'] == tk.NORMAL:
+                button.config(bg=self.button_bg)
+        elif button == self.interval_dropdown:
+            button.config(bg=self.button_bg)
 
     def check_daily_objective(self):
         """检查是否需要设置每日目标"""
@@ -95,40 +167,83 @@ class TimerApp:
 
     def set_daily_objective(self):
         """设置每日目标"""
-        objective = simpledialog.askstring("Daily Objective", 
-                                          "What's your objective for today?",
-                                          initialvalue="")
-        if objective:
-            self.current_objective = objective
-            self.objective_completed = False
-            
-            # 保存到文件
-            objectives = self.load_objectives()
-            today = date.today().isoformat()
-            objectives[today] = {
-                'objective': objective,
-                'completed': False,
-                'date': today
-            }
-            self.save_objectives(objectives)
-            
-            self.display_objective()
-        else:
-            # 如果用户没有输入，稍后再次询问
+        # Create a custom dialog with dark theme
+        dialog = tk.Toplevel(self.root)
+        dialog.title("Daily Objective")
+        dialog.configure(bg=self.bg_color)
+        dialog.geometry("400x200")
+        dialog.transient(self.root)
+        dialog.grab_set()
+        
+        # Center the dialog
+        dialog.geometry("+%d+%d" % (self.root.winfo_rootx() + 100, 
+                                   self.root.winfo_rooty() + 100))
+        
+        label = tk.Label(dialog, text="What's your objective for today?", 
+                        bg=self.bg_color, fg=self.label_fg, font=("Segoe UI", 11))
+        label.pack(pady=20)
+        
+        entry = tk.Entry(dialog, width=40, bg=self.text_bg, fg=self.text_fg,
+                        font=("Segoe UI", 10), relief=tk.FLAT, 
+                        highlightbackground=self.border_color, highlightthickness=1)
+        entry.pack(pady=10, padx=20, fill=tk.X)
+        entry.focus_set()
+        
+        def on_ok():
+            objective = entry.get().strip()
+            if objective:
+                self.current_objective = objective
+                self.objective_completed = False
+                
+                # 保存到文件
+                objectives = self.load_objectives()
+                today = date.today().isoformat()
+                objectives[today] = {
+                    'objective': objective,
+                    'completed': False,
+                    'date': today
+                }
+                self.save_objectives(objectives)
+                
+                self.display_objective()
+                dialog.destroy()
+            else:
+                messagebox.showwarning("Empty Objective", "Please enter an objective.", parent=dialog)
+        
+        def on_cancel():
+            # If user cancels, ask again later
+            dialog.destroy()
             self.root.after(1000, self.set_daily_objective)
+        
+        button_frame = tk.Frame(dialog, bg=self.bg_color)
+        button_frame.pack(pady=20)
+        
+        ok_btn = tk.Button(button_frame, text="OK", command=on_ok, bg=self.button_bg, 
+                          fg="white", font=("Segoe UI", 9), relief=tk.FLAT, padx=15)
+        ok_btn.pack(side=tk.LEFT, padx=10)
+        
+        cancel_btn = tk.Button(button_frame, text="Cancel", command=on_cancel, 
+                              bg=self.sidebar_bg, fg=self.label_fg, font=("Segoe UI", 9), 
+                              relief=tk.FLAT, padx=15)
+        cancel_btn.pack(side=tk.LEFT, padx=10)
+        
+        dialog.bind('<Return>', lambda e: on_ok())
+        dialog.bind('<Escape>', lambda e: on_cancel())
 
     def display_objective(self):
         """显示当前目标"""
         if hasattr(self, 'current_objective'):
             status = "✓ Completed" if self.objective_completed else "○ In Progress"
-            color = "green" if self.objective_completed else "blue"
+            color = self.success_color if self.objective_completed else self.accent_color
             self.objective_text.config(text=f"{self.current_objective} - {status}", fg=color)
             
             # 启用或禁用完成按钮
             if self.objective_completed:
-                self.complete_button.config(state=tk.DISABLED, text="Objective Completed")
+                self.complete_button.config(state=tk.DISABLED, text="Objective Completed",
+                                          bg=self.sidebar_bg, fg=self.border_color)
             else:
-                self.complete_button.config(state=tk.NORMAL, text="Complete Objective")
+                self.complete_button.config(state=tk.NORMAL, text="Complete Objective",
+                                          bg=self.button_bg, fg="white")
 
     def complete_objective(self):
         """标记目标为完成"""
@@ -195,6 +310,7 @@ class TimerApp:
             self.remaining_time = interval
             self.current_task = task
             self.timer_running = True
+            self.start_button.config(state=tk.DISABLED, bg=self.border_color, text="Timer Running...")
             self.update_countdown()
         else:
             messagebox.showwarning("No Task", "Please enter a task to start the timer.")
@@ -206,10 +322,17 @@ class TimerApp:
             mins, secs = divmod(self.remaining_time, 60)
             time_format = '{:02d}:{:02d}'.format(mins, secs)
             self.countdown_label.config(text=time_format)
+            
+            # Change color when under 1 minute
+            if self.remaining_time <= 60:
+                self.countdown_label.config(fg=self.warning_color)
+            else:
+                self.countdown_label.config(fg=self.accent_color)
+                
             self.remaining_time -= 1
             self.after_id = self.root.after(1000, self.update_countdown)
         elif self.remaining_time <= 0 and self.timer_running:
-            self.countdown_label.config(text="Time's up!")
+            self.countdown_label.config(text="Time's up!", fg=self.warning_color)
             self.timer_ended()
 
     def timer_ended(self):
@@ -218,6 +341,7 @@ class TimerApp:
             self.root.after_cancel(self.after_id)
             self.after_id = None
             
+        self.start_button.config(state=tk.NORMAL, bg=self.success_color, text="Start Timer")
         winsound.Beep(1000, 1000)  # Notification sound when the time is up
         response = messagebox.askyesno("Timer Ended", f"Did you finish the task '{self.current_task}'?")
         if response:
@@ -240,13 +364,15 @@ class TimerApp:
             extra_time = extra_minutes * 60  # 转换为秒
             self.remaining_time += extra_time
             self.timer_running = True
+            self.countdown_label.config(fg=self.accent_color)
+            self.start_button.config(state=tk.DISABLED, bg=self.border_color, text="Timer Running...")
             self.update_countdown()
             messagebox.showinfo("Timer Extended", f"Added {extra_minutes} minutes to the timer.")
 
     def ask_new_task(self):
         # 任务完成后询问新任务
         self.task_text.delete("1.0", tk.END)
-        self.countdown_label.config(text="")
+        self.countdown_label.config(text="", fg=self.accent_color)
         messagebox.showinfo("Next Task", "Please enter your next task and click Start.")
 
     def check_idle(self):
