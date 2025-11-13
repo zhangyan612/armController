@@ -1,0 +1,41 @@
+This article, "Aligning Cyber Space with Physical World: A Comprehensive Survey on Embodied AI," systematically reviews the most recent advancements in embodied artificial intelligence (AI), with a particular focus on the integration of large multimodal language models (MLMs), world models (WMs), and the increasing alignment between digital (cyberspace) and physical environments.[3][4][5]
+
+### Core Focus Areas
+
+- The survey explores the rapid progress in embodied AI, which involves physical agents (like robots) that actively perceive, interact, and learn within real-world or simulated environments.[4][5][3]
+- It organizes the field into four primary research tasks:
+  - Visual active perception
+  - Embodied interaction
+  - Multi-modal embodied agents
+  - Sim-to-real robotic control/adaptation[5][3][4]
+
+### Novelty and Contributions
+
+- Unlike earlier surveys, this work is the first comprehensive review contextualized in the era of large-scale MLMs (post-2023), covering not just vision-language-action models but also the architecture and advances of embodied robots, simulators, and foundational multimodal models.[4][5]
+- It categorizes and summarizes research into:
+  - Embodied robots and their designs
+  - Simulators used for training and benchmarking
+  - Taxonomies and benchmarks for each core task
+  - Proposed a unified large dataset (ARIO) that aggregates episodes and tasks across different embodiments for standardized evaluation.[5]
+
+### Benchmarks, Datasets, and Methods
+
+- The survey provides detailed benchmarking of current models, highlighting methodological advances such as cross-modal matching, memory-augmented navigation, and causal learning for robust policy adaptation.[5]
+- It discusses trends in dataset construction, especially those that now include semantic and linguistic annotations to better leverage language models in robotic perception and interaction tasks.[5]
+
+### Challenges and Future Directions
+
+- Key research challenges identified include improving cross-domain generalization (sim-to-real transfer), memory and historical context integration, robust perception under dynamic settings, and harnessing foundation models to accelerate progress in AGI via embodied agents.[4][5]
+- The article concludes with forward-looking research directions aiming to strengthen agent autonomy, adaptability, and the seamless merging of cyber and physical intelligence.[4][5]
+
+In summary, this survey serves as an up-to-date, authoritative resource for understanding the landscape of embodied AI, its progress, and pressing open problems as the field rapidly embraces large language and world models.[3][4][5]
+
+[1](https://arxiv.org/pdf/2407.06886.pdf)
+[2](https://pmc.ncbi.nlm.nih.gov/articles/PMC12420807/)
+[3](https://arxiv.org/html/2407.06886v1)
+[4](https://arxiv.org/html/2407.06886v7)
+[5](https://arxiv.org/html/2407.06886v8)
+[6](https://arxiv.org/abs/2407.06886)
+[7](https://ribbitribbit.co/paper/arxiv.2407.06886-Aligning-Cyber-Space-with-Physical-World-A-Comprehensive)
+[8](https://www.semanticscholar.org/paper/Aligning-Cyber-Space-with-Physical-World:-A-Survey-Liu-Chen/7080139d78e718b0efe91cf1bbfe17f288100596)
+[9](https://www.the-innovation.org/data/article/informatics/preview/pdf/TII-2025-0015.pdf)
