@@ -99,6 +99,16 @@ The pursuit of human-level agility and balance in humanoid robots continues to d
 
 
 AnyTrack
+Any2Track可以作为一个强大的基础运动控制器，被应用于更广泛的下游任务，如全身遥操作、机器人技能学习以及与大型语言模型结合的具身智能等。
+
+
 
 Comprehensive Survey on Embodied AI
 https://arxiv.org/pdf/2407.06886
+
+
+
+Search
+
+A Comprehensive Survey on Reinforcement Learning-based Agentic Search:Foundations, Roles, Optimizations, Evaluations, and Applications
+https://github.com/ventr1c/Awesome-RL-based-Agentic-Search-Paper
