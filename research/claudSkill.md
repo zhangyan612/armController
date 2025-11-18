@@ -14,6 +14,7 @@ Claude 用 Skills 来“把特定任务做得更专业”。一个 Skill 就是�
 
 
 
+一篇最新自演化AI Agents全新范式系统性综述
 https://mp.weixin.qq.com/s/J4F5-_FI2Q4JtqSuonPsTg
 
 统一框架：把“演化”抽象成四大模块
@@ -23,9 +24,24 @@ https://mp.weixin.qq.com/s/J4F5-_FI2Q4JtqSuonPsTg
 模块职责示例System Inputs定义任务/数据/约束金融问答、代码修复Agent System被优化的“本体”LLM + 提示 + 记忆 + 工具Environment提供可量化反馈单元测试结果、人类评分Optimiser搜索更好配置贝叶斯优化、RL、进化算法
 
 
-2 记忆不再“金鱼”：Memory Optimisation短程记忆长程记忆递归摘要、动态过滤外挂向量库、知识图谱、遗忘曲线代表工作：MemGPT、HippoRAG、A-MEM、MemoryBank
+1 提示词自己写自己：Prompt Optimisation
+Edit-Based：GRIPS 做短语级增删改
+Generative：OPRO 让 LLM 一次性生成全新提示
+Text-Gradient：TextGrad 把“自然语言批评”当成梯度
+Evolutionary：PromptBreeder 维持一个“提示种群”不断变异
 
-3 工具“自生”：Tool OptimisationTraining-Based：ToolLLM、Confucius、ReTool（用 RL 学调用）Inference-Time：EASYTOOL 把 100+ API 文档压缩成 1 句人话Tool Creation：CREATOR、LATM、Alita——直接让 Agent 写代码造新工具
+
+2 记忆不再“金鱼”：Memory Optimisation
+短程记忆
+长程记忆
+递归摘要、动态过滤外挂向量库、知识图谱、遗忘曲线
+代表工作：MemGPT、HippoRAG、A-MEM、MemoryBank
+
+
+3 工具“自生”：Tool Optimisation
+Training-Based：ToolLLM、Confucius、ReTool（用 RL 学调用）
+Inference-Time：EASYTOOL 把 100+ API 文档压缩成 1 句人话
+Tool Creation：CREATOR、LATM、Alita——直接让 Agent 写代码造新工具
 
 
 图 6：多智能体工作流搜索空间 vs 优化算法 vs 目标（准/快/省/安全）演化维度做法代表Prompt 级多 Agent 提示一起搜DSPy、AutoAgentsTopology 级把“谁跟谁说话”变成可微边GPTSwarm、DynaSwarm、G-Designer统一联合提示 + 拓扑 + 工具同时搜ADAS、EvoFlow、MAS-ZEROBackbone 级用对抗轨迹继续 SFT/RLMaPoRL、OPTIMA、Sirius

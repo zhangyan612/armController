@@ -95,3 +95,10 @@ These open-source projects collectively offer valuable resources ranging from so
 ## Conclusion 
  
 The pursuit of human-level agility and balance in humanoid robots continues to drive innovation in locomotion control. State-of-the-Art research is concentrated in Whole-Body Control (WBC), Model Predictive Control (MPC), and Reinforcement Learning (RL), often in synergistic combinations. While WBC provides comprehensive coordination across all actuators, MPC offers predictive stability and constraint handling, and RL brings adaptability and the ability to learn complex behaviors from data. The "best way" to achieve robust humanoid balancing typically involves a hybrid, hierarchical approach that leverages the strengths of model-based methods for foundational stability and learning-based methods for adaptability to dynamic and uncertain environments. The open-source community, through projects like `wb_humanoid_mpc` and **Mini π**, is instrumental in fostering collaborative development and making these advanced control techniques accessible to a wider audience, paving the way for more capable and versatile humanoid robots in the future.
+
+
+
+AnyTrack
+
+Comprehensive Survey on Embodied AI
+https://arxiv.org/pdf/2407.06886
